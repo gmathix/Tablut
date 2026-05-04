@@ -1,8 +1,10 @@
 package view;
 
 import boardifier.model.GameStageModel;
+import boardifier.view.ClassicBoardLook;
 import boardifier.view.GameStageView;
 
+import boardifier.view.TextLook;
 import model.TablutStageModel;
 
 /**
@@ -28,8 +30,8 @@ import model.TablutStageModel;
  *   for red pot, a subclass RedPotLook of GridLook is used, in order to override the method that render the borders.
  */
 
-public class HoleStageView extends GameStageView {
-    public HoleStageView(String name, GameStageModel gameStageModel) {
+public class TablutStageView extends GameStageView {
+    public TablutStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
     }
 
@@ -37,6 +39,8 @@ public class HoleStageView extends GameStageView {
     public void createLooks() {
         TablutStageModel model = (TablutStageModel)gameStageModel;
 
+        addLook(new TextLook(model.getPlayerName()));
+        addLook(new ClassicBoardLook(2, 4, model.getBoard(), 1, 1, true));
         /*
         TO FULFILL:
             using the model of the board, pots and pawns

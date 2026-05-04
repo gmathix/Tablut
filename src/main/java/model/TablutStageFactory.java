@@ -2,6 +2,7 @@ package model;
 
 import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
+import boardifier.model.TextElement;
 
 /**
  * TablutStageFactory must create the game elements that are defined in TablutStageModel
@@ -30,6 +31,12 @@ public class TablutStageFactory extends StageElementsFactory {
     @Override
     public void setup() {
 
+        TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
+        text.setLocation(0,0);
+        stageModel.setPlayerName(text);
+
+        TablutBoard board = new TablutBoard(0, 1, stageModel);
+        stageModel.setBoard(board);
         /*
         TO FULFILL:
             - create the board, pots, pawns and set them in the stage model

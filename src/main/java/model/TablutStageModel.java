@@ -77,6 +77,35 @@ public class TablutStageModel extends GameStageModel {
     TO FULFILL:
         - create setters for all attributes. NB: in setters, do not forget to add elements to the stage (see addGrid() & addElement())
      */
+    public void setBoard(TablutBoard board) {
+        this.board = board;
+        addContainer(board);
+    }
+    public void setBlackPot(TablutPawnPot blackPot) {
+        this.blackPot = blackPot;
+        addContainer(blackPot);
+    }
+    public void setRedPot(TablutPawnPot redPot) {
+        this.redPot = redPot;
+        addContainer(redPot);
+    }
+    public void setBlackPawns(Pawn[] blackPawns) {
+        this.blackPawns = blackPawns;
+        for(int i=0;i<blackPawns.length;i++) {
+            addElement(blackPawns[i]);
+        }
+    }
+    public void setRedPawns(Pawn[] redPawns) {
+        this.redPawns = redPawns;
+        for(int i=0;i<redPawns.length;i++) {
+            addElement(redPawns[i]);
+        }
+    }
+    public void setPlayerName(TextElement playerName) {
+        this.playerName = playerName;
+        addElement(playerName);
+    }
+
 
     private void setupCallbacks() {
 
