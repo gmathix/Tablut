@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
 
+
+
 /**
  * Tablut main board represent the element where pawns are put when played
  * Thus, a simple ContainerElement with 3 rows and 3 column is needed.
@@ -14,10 +16,28 @@ import java.awt.*;
  * this class also contains method to determine all the valid cells to put a
  * pawn with a given value.
  */
+
 public class TablutBoard extends ContainerElement {
+    static final int BOARD_SIZE = 9;
+
+    /* 2 = moscovite (yellow)
+     * 3 = soldier (green)
+     * 4 = king (green)
+     */
+    public static int[][] startingBoard = {
+            {0, 0, 0, 2, 2, 2, 0, 0, 0},
+            {0, 0, 0, 0, 2, 0, 0, 0, 0},
+            {0, 0, 0, 0, 3, 0, 0, 0, 0},
+            {2, 0, 0, 0, 3, 0, 0, 0, 2},
+            {2, 2, 3, 3, 4, 3, 3, 2, 2},
+            {2, 0, 0, 0, 3, 0, 0, 0, 2},
+            {0, 0, 0, 0, 3, 0, 0, 0, 0},
+            {0, 0, 0, 0, 2, 0, 0, 0, 0},
+            {0, 0, 0, 2, 2, 2, 0, 0, 0},
+    };
     public TablutBoard(int x, int y, GameStageModel gameStageModel) {
         // call the super-constructor to create a 9x9 grid, named "holeboard", and in x,y in space
-        super("holeboard", x, y, 9 , 9, gameStageModel);
+        super("tablutboard", x, y, BOARD_SIZE , BOARD_SIZE, gameStageModel);
     }
 
     public void setValidCells(int number) {

@@ -37,8 +37,9 @@ public class TablutStageModel extends GameStageModel {
     private TablutBoard board;
     private TablutPawnPot blackPot;
     private TablutPawnPot redPot;
-    private Pawn[] blackPawns;
-    private Pawn[] redPawns;
+    private Pawn[] moscovitePawns;
+    private Pawn[] soldierPawns;
+    private Pawn[] kingPawns;
     private TextElement playerName;
     // Uncomment next line if the example with a main container is used. see end of TablutStageFactory and TablutStageView
     //private ContainerElement mainContainer;
@@ -62,13 +63,15 @@ public class TablutStageModel extends GameStageModel {
         return redPot;
     }
 
-    public Pawn[] getBlackPawns() {
-        return blackPawns;
+    public Pawn[] getMoscovitePawns() {
+        return moscovitePawns;
     }
 
-    public Pawn[] getRedPawns() {
-        return redPawns;
+    public Pawn[] getSoldierPawns() {
+        return soldierPawns;
     }
+
+    public Pawn[] getKingPawns() { return kingPawns; }
 
     public TextElement getPlayerName() {
         return playerName;
@@ -89,16 +92,22 @@ public class TablutStageModel extends GameStageModel {
         this.redPot = redPot;
         addContainer(redPot);
     }
-    public void setBlackPawns(Pawn[] blackPawns) {
-        this.blackPawns = blackPawns;
-        for(int i=0;i<blackPawns.length;i++) {
-            addElement(blackPawns[i]);
+    public void setMoscovitePawns(Pawn[] moscovitePawns) {
+        this.moscovitePawns = moscovitePawns;
+        for(int i = 0; i< moscovitePawns.length; i++) {
+            addElement(moscovitePawns[i]);
         }
     }
-    public void setRedPawns(Pawn[] redPawns) {
-        this.redPawns = redPawns;
-        for(int i=0;i<redPawns.length;i++) {
-            addElement(redPawns[i]);
+    public void setSoldierPawns(Pawn[] soldierPawns) {
+        this.soldierPawns = soldierPawns;
+        for(int i = 0; i< soldierPawns.length; i++) {
+            addElement(soldierPawns[i]);
+        }
+    }
+    public void setKingPawns(Pawn[] kingPawns) {
+        this.kingPawns = kingPawns;
+        for(int i = 0; i< kingPawns.length; i++) {
+            addElement(kingPawns[i]);
         }
     }
     public void setPlayerName(TextElement playerName) {
@@ -136,7 +145,7 @@ public class TablutStageModel extends GameStageModel {
             // skip invalid cells
             if ((row >= 0) && (row <= 2) && (col >= 0) && (col <= 2)) {
                 p = (Pawn) (board.getElement(row, col));
-                if (p.getColor() == Pawn.PAWN_BLACK) {
+                if (p.getColor() == Pawn.PAWN_MOSCOVITE) {
                     nbBlack++;
                     countBlack += p.getNumber();
                 } else {

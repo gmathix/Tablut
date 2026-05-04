@@ -34,7 +34,7 @@ public class TablutDecider extends Decider {
         int rowDest = 0; // the dest. row in board
         int colDest = 0; // the dest. col in board
 
-        if (model.getIdPlayer() == Pawn.PAWN_BLACK) {
+        if (model.getIdPlayer() == Pawn.PAWN_MOSCOVITE) {
             pot = stage.getBlackPot();
         }
         else {
@@ -58,7 +58,7 @@ public class TablutDecider extends Decider {
             }
         }
 
-        ActionList actions = ActionFactory.generatePutInContainer( model, pawn, "holeboard", rowDest, colDest);
+        ActionList actions = ActionFactory.generatePutInContainer( model, pawn, "tablutboard", rowDest, colDest);
         actions.setDoEndOfTurn(true); // after playing this action list, it will be the end of turn for current player.
 
         return actions;

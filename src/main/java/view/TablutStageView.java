@@ -5,7 +5,11 @@ import boardifier.view.ClassicBoardLook;
 import boardifier.view.GameStageView;
 
 import boardifier.view.TextLook;
+import model.Pawn;
+import model.TablutBoard;
 import model.TablutStageModel;
+
+import java.util.Arrays;
 
 /**
  * HoleStageView has to create all the looks for all game elements created by the HoleStageFactory.
@@ -40,7 +44,17 @@ public class TablutStageView extends GameStageView {
         TablutStageModel model = (TablutStageModel)gameStageModel;
 
         addLook(new TextLook(model.getPlayerName()));
-        addLook(new ClassicBoardLook(2, 4, model.getBoard(), 1, 1, true));
+        addLook(new ClassicBoardLook(2, 6, model.getBoard(), 1, 1, true));
+
+        System.out.printf(Arrays.toString(model.getMoscovitePawns()));
+        for (int i = 0; i < 16; i++) {
+            addLook(new PawnLook(model.getMoscovitePawns()[i]));
+        }
+        for (int i = 0; i < 8; i++) {
+            addLook(new PawnLook(model.getSoldierPawns()[i]));
+        }
+        addLook(new PawnLook(model.getKingPawns()[0]));
+
         /*
         TO FULFILL:
             using the model of the board, pots and pawns

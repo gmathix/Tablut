@@ -100,7 +100,7 @@ public class TablutController extends Controller {
         gameStage.getBoard().setValidCells(pawnIndex+1);
         if (!gameStage.getBoard().canReachCell(row,col)) return false;
 
-        ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "holeboard", row, col);
+        ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "tablutboard", row, col);
         actions.setDoEndOfTurn(true); // after playing this action list, it will be the end of turn for current player.
         ActionPlayer play = new ActionPlayer(model, this, actions);
         play.start();

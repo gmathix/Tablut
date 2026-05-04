@@ -2,6 +2,8 @@ package boardifier.control;
 
 import boardifier.model.*;
 import boardifier.view.*;
+import model.Pawn;
+import model.TablutStageModel;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -12,15 +12,19 @@ public class Pawn extends GameElement {
 
     private int number;
     private int color;
-    public static int PAWN_BLACK = 0;
-    public static int PAWN_RED = 1;
+
+
+    public static int PAWN_MOSCOVITE = 2;
+    public static int PAWN_SOLDIER   = 3;
+    public static int PAWN_KING      = 4;
+
 
     public Pawn(int number, int color, GameStageModel gameStageModel) {
         super(gameStageModel);
         ElementTypes.register("pawn",50);
         type = ElementTypes.getType("pawn");
         this.number = number;
-        this.color = color;
+        this.color  = color;
     }
 
     public int getNumber() {

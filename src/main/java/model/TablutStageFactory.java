@@ -3,6 +3,9 @@ package model;
 import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
+import view.PawnLook;
+
+import static model.TablutBoard.startingBoard;
 
 /**
  * TablutStageFactory must create the game elements that are defined in TablutStageModel
@@ -37,6 +40,44 @@ public class TablutStageFactory extends StageElementsFactory {
 
         TablutBoard board = new TablutBoard(0, 1, stageModel);
         stageModel.setBoard(board);
+
+        Pawn[] moscovitePawns = new Pawn[16];
+        Pawn[] soldierPawns   = new Pawn[8];
+        Pawn[] kingPawns      = new Pawn[1];
+
+        for (int i = 0; i < 16; i++) {
+            moscovitePawns[i] = new Pawn(i+1, Pawn.PAWN_MOSCOVITE, stageModel);
+        }
+        for (int i = 0; i < 8; i++) {
+            soldierPawns[i] = new Pawn(i+1, Pawn.PAWN_SOLDIER, stageModel);
+        }
+        kingPawns[0] = new Pawn(1, Pawn.PAWN_KING, stageModel);
+
+        stageModel.setMoscovitePawns(moscovitePawns);
+        stageModel.setSoldierPawns(soldierPawns);
+        stageModel.setKingPawns(kingPawns);
+
+
+
+        int moscoviteIdx = 0;
+        int soldierIdx   = 0;
+        for (int i = 0; i < TablutBoard.BOARD_SIZE; i++) {
+            for (int j = 0; j < TablutBoard.BOARD_SIZE; j++) {
+                int type = TablutBoard.startingBoard[i][j];
+                if (type != 0) {
+                    if (type == Pawn.PAWN_MOSCOVITE) {
+                        board.addElement(moscovitePawns[moscoviteIdx], i, j);
+                        moscoviteIdx++;
+                    } else if (type == Pawn.PAWN_SOLDIER) {
+                        board.addElement(soldierPawns[soldierIdx], i, j);
+                        soldierIdx++;
+                    } else if (type == Pawn.PAWN_KING) {
+                        board.addElement(kingPawns[0], i, j);
+                    }
+                }
+            }
+        }
+
         /*
         TO FULFILL:
             - create the board, pots, pawns and set them in the stage model
