@@ -85,6 +85,11 @@ public class TablutController extends Controller {
         boolean isYellow = model.getIdPlayer() == 1;
 
 
+        if (line.contains("STOP")) {
+            stopStage();
+        }
+
+
         int colSrc = line.charAt(0) - 'A';
         int rowSrc = line.charAt(1) - '1';
         int colDest = line.charAt(2) - 'A';
