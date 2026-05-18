@@ -20,6 +20,10 @@ import java.awt.*;
 public class TablutBoard extends ContainerElement {
     static final int BOARD_SIZE = 9;
 
+    // current coordinates of the king
+    private int kingX;
+    private int kingY;
+
     /* 2 = moscovite (yellow)
      * 3 = soldier (green)
      * 4 = king (green)
@@ -38,7 +42,14 @@ public class TablutBoard extends ContainerElement {
     public TablutBoard(int x, int y, GameStageModel gameStageModel) {
         // call the super-constructor to create a 9x9 grid, named "holeboard", and in x,y in space
         super("tablutboard", x, y, BOARD_SIZE , BOARD_SIZE, gameStageModel);
+        this.kingY = 4;
+        this.kingX = 4;
     }
+
+    public int getKingX() { return kingX; }
+    public int getKingY() { return kingY; }
+    public void setKingX(int kingX) { this.kingX = kingX; }
+    public void setKingY(int kingY) { this.kingY = kingY; }
 
     public void setValidCells(int number) {
         resetReachableCells(false);
@@ -51,11 +62,7 @@ public class TablutBoard extends ContainerElement {
     }
     public List<Point> computeValidCells(int number) {
         List<Point> lst = new ArrayList<>();
-         /*
-        TO FULFILL:
-            - compute the list of cells that are valid to play taking the pawn value (i.e. number) into account.
-            each Point in this list consists in couple x,y, where x is a column and y a row in the board.
-         */
+
 
         Pawn pawn;
         int pawnY = 0, pawnX = 0;
@@ -74,37 +81,37 @@ public class TablutBoard extends ContainerElement {
 
         // check horizontal empty squares to the left
         for (int x = pawnX-1; x >= 0; x--) {
-            if (!(getElement(pawnY, x) instanceof Pawn)) {
+            if (!(getElement(pawnY, x) instanceof Pawn) && !(x == 4 && pawnY == 4)) {
                 lst.add(new Point(x, pawnY));
             } else {
-                // there is a pawn here, can't go further
+                // there is a pawn here or it's the forbidden center square, can't go further
                 break;
             }
         }
         // check horizontal empty squares to the right
         for (int x = pawnX+1; x < BOARD_SIZE; x++) {
-            if (!(getElement(pawnY, x) instanceof Pawn)) {
+            if (!(getElement(pawnY, x) instanceof Pawn) && !(x == 4 && pawnY == 4)) {
                 lst.add(new Point(x, pawnY));
             } else {
-                // there is a pawn here, can't go further
+                // there is a pawn here or it's the forbidden center square, can't go further
                 break;
             }
         }
         // check vertical empty squares up
         for (int y = pawnY-1; y >= 0; y--) {
-            if (!(getElement(y, pawnX) instanceof Pawn)) {
+            if (!(getElement(y, pawnX) instanceof Pawn) && !(y == 4 && pawnX == 4)) {
                 lst.add(new Point(pawnX, y));
             } else {
-                // there is a pawn here, can't go further
+                // there is a pawn here or it's the forbidden center square, can't go further
                 break;
             }
         }
         // check vertical empty squares down
         for (int y = pawnY+1; y < BOARD_SIZE; y++) {
-            if (!(getElement(y, pawnX) instanceof Pawn)) {
+            if (!(getElement(y, pawnX) instanceof Pawn) && !(y == 4 && pawnX == 4)) {
                 lst.add(new Point(pawnX, y));
             } else {
-                // there is a pawn here, can't go further
+                // there is a pawn here or it's the forbidden center square, can't go further
                 break;
             }
         }
