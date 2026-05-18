@@ -56,6 +56,61 @@ public class TablutBoard extends ContainerElement {
             - compute the list of cells that are valid to play taking the pawn value (i.e. number) into account.
             each Point in this list consists in couple x,y, where x is a column and y a row in the board.
          */
+
+        Pawn pawn;
+        int pawnY = 0, pawnX = 0;
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (getElement(i, j) instanceof Pawn p) {
+                    if (p.getNumber() == number) {
+                        pawn = p;
+                        pawnY = i;
+                        pawnX = j;
+                    }
+                }
+            }
+        }
+
+
+        // check horizontal empty squares to the left
+        for (int x = pawnX-1; x >= 0; x--) {
+            if (!(getElement(pawnY, x) instanceof Pawn)) {
+                lst.add(new Point(x, pawnY));
+            } else {
+                // there is a pawn here, can't go further
+                break;
+            }
+        }
+        // check horizontal empty squares to the right
+        for (int x = pawnX+1; x < BOARD_SIZE; x++) {
+            if (!(getElement(pawnY, x) instanceof Pawn)) {
+                lst.add(new Point(x, pawnY));
+            } else {
+                // there is a pawn here, can't go further
+                break;
+            }
+        }
+        // check vertical empty squares up
+        for (int y = pawnY-1; y >= 0; y--) {
+            if (!(getElement(y, pawnX) instanceof Pawn)) {
+                lst.add(new Point(pawnX, y));
+            } else {
+                // there is a pawn here, can't go further
+                break;
+            }
+        }
+        // check vertical empty squares down
+        for (int y = pawnY+1; y < BOARD_SIZE; y++) {
+            if (!(getElement(y, pawnX) instanceof Pawn)) {
+                lst.add(new Point(pawnX, y));
+            } else {
+                // there is a pawn here, can't go further
+                break;
+            }
+        }
+
+
+
         return lst;
     }
 }

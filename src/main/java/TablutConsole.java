@@ -46,6 +46,11 @@ public class TablutConsole {
         control.setFirstStageName("tablut");
         try {
             control.startGame();
+
+            int first = Math.random() > 0.5 ? 1 : 0;
+            control.setFirstPlayerColor(first == 0 ? "Green" : "Yellow");
+            System.out.printf("%s makes the first move\n", first == 0 ? "Green" : "Yellow");
+
             control.stageLoop();
         }
         catch(GameException e) {

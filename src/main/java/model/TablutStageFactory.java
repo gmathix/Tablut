@@ -49,9 +49,9 @@ public class TablutStageFactory extends StageElementsFactory {
             moscovitePawns[i] = new Pawn(i+1, Pawn.PAWN_MOSCOVITE, stageModel);
         }
         for (int i = 0; i < 8; i++) {
-            soldierPawns[i] = new Pawn(i+1, Pawn.PAWN_SOLDIER, stageModel);
+            soldierPawns[i] = new Pawn(16 + i+1, Pawn.PAWN_SOLDIER, stageModel);
         }
-        kingPawns[0] = new Pawn(1, Pawn.PAWN_KING, stageModel);
+        kingPawns[0] = new Pawn(25, Pawn.PAWN_KING, stageModel);
 
         stageModel.setMoscovitePawns(moscovitePawns);
         stageModel.setSoldierPawns(soldierPawns);

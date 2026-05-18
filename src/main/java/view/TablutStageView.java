@@ -46,7 +46,6 @@ public class TablutStageView extends GameStageView {
         addLook(new TextLook(model.getPlayerName()));
         addLook(new ClassicBoardLook(2, 6, model.getBoard(), 1, 1, true));
 
-        System.out.printf(Arrays.toString(model.getMoscovitePawns()));
         for (int i = 0; i < 16; i++) {
             addLook(new PawnLook(model.getMoscovitePawns()[i]));
         }
