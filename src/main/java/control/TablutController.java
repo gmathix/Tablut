@@ -12,6 +12,7 @@ import boardifier.view.View;
 import model.Pawn;
 import model.TablutStageModel;
 
+import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -103,11 +104,11 @@ public class TablutController extends Controller {
 
 
         GameElement elementSrc = gameStage.getBoard().getElement(rowSrc, colSrc);
-        Pawn pawn;
+        Pawn currPawn;
         if (!(elementSrc instanceof Pawn)) {
             return false;
         } else {
-            pawn = (Pawn) elementSrc;
+            currPawn = (Pawn) elementSrc;
         }
 
         GameElement elementDst = gameStage.getBoard().getElement(rowDest, colDest);
@@ -119,21 +120,66 @@ public class TablutController extends Controller {
         String playerColor = model.getIdPlayer() == 0 ? firstPlayerColor : secondPlayerColor;
 
         // check if selected pawn does not belong to the current player
-        if (playerColor.equals("Green") && pawn.getColor() == Pawn.PAWN_MOSCOVITE) {
+        if (playerColor.equals("Green") && currPawn.getColor() == Pawn.PAWN_MOSCOVITE) {
             return false;
         }
-        else if (playerColor.equals("Yellow") && pawn.getColor() != Pawn.PAWN_MOSCOVITE) {
+        else if (playerColor.equals("Yellow") && currPawn.getColor() != Pawn.PAWN_MOSCOVITE) {
             return false;
         }
-        gameStage.getBoard().setValidCells(pawn.getNumber());
+        gameStage.getBoard().setValidCells(currPawn.getNumber());
         if (!gameStage.getBoard().canReachCell(rowDest, colDest)) return false;
 
+        boolean isYellow = playerColor.equals("Yellow");
 
         ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
         actions.setDoEndOfTurn(true);
         ActionPlayer play = new ActionPlayer(model, this, actions);
         play.start();
 
+
+        // check capture
+        int horizontalDirection = 0;
+        int verticalDirection = 0;
+
+        if (colSrc - colDest != 0)
+            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
+        if (rowSrc - rowDest != 0)
+            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
+
+
+        int[] dy_vals = {-1, 0, 1, 0};
+        int[] dx_vals = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            int dy = dy_vals[i];
+            int dx = dx_vals[i];
+
+            // do not check the squares on the path the pawn came from
+            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
+            if (dy == -verticalDirection && verticalDirection != 0) continue;
+
+            // check bounds for pawn 2 squares away
+            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
+            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+
+
+            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
+            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+
+            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
+                if (isYellow) {
+                    if (sideP.getColor() != Pawn.PAWN_MOSCOVITE && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        gameStage.getBoard().removeElement(sideEl);
+                        gameStage.removeElement(sideEl);
+                    }
+                } else {
+                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
+                        gameStage.getBoard().removeElement(sideEl);
+                        gameStage.removeElement(sideEl);
+                    }
+                }
+            }
+        }
 
 
 
