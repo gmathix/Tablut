@@ -77,11 +77,5 @@ public class TablutStageFactory extends StageElementsFactory {
                 }
             }
         }
-
-        /*
-        TO FULFILL:
-            - create the board, pots, pawns and set them in the stage model
-            - assign the pawns to their cells in the pots
-         */
     }
 }

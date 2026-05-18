@@ -18,15 +18,7 @@ public class TablutConsole {
                 mode = 0;
             }
         }
-        /*
-        TO FULFILL:
-            - add both players to model taking mode value into account
-            - register the model and view class names (i.e model.HoleStageModel & view.HoleStageView
-            - create the controller
-            - set the name of the first stage to use when starting the game
-            - start the game
-            - start the stage loop.
-         */
+
 
         Model model = new Model();
         if (mode == 0) {
@@ -48,7 +40,7 @@ public class TablutConsole {
             control.startGame();
 
             int first = Math.random() > 0.5 ? 1 : 0;
-            control.setFirstPlayerColor(first == 0 ? "Green" : "Yellow");
+            model.setIdPlayer(first);
             System.out.printf("%s makes the first move\n", first == 0 ? "Green" : "Yellow");
 
             control.stageLoop();

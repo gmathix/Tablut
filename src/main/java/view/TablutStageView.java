@@ -53,13 +53,5 @@ public class TablutStageView extends GameStageView {
             addLook(new PawnLook(model.getSoldierPawns()[i]));
         }
         addLook(new PawnLook(model.getKingPawns()[0]));
-
-        /*
-        TO FULFILL:
-            using the model of the board, pots and pawns
-            - create & add the look of the main board using an instance of ClassicBoardLook, with cells of size 4x2
-            - create & add the look of the two pots using instances of PawnPotLook with cells of size 4x2
-            - crate & add the look of the 8 pawns
-         */
     }
 }
