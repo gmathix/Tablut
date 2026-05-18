@@ -140,12 +140,15 @@ public class TablutStageModel extends GameStageModel {
 
         // count surrounding moscovites
         int nbSurrounging = 0;
+        boolean hasCenterNeighbor = false;
         int[] dy_vals = {-1, 0, 1, 0};
         int[] dx_vals = {0, 1, 0, -1};
+
         for (int i = 0; i < 4; i++) {
             int y = kingY + dy_vals[i];
             int x = kingX + dx_vals[i];
             if (y < 0 || y > 8 || x < 0 || x > 8) continue;
+            if (y == 4 && x == 4) hasCenterNeighbor = true;
             if (getBoard().getElement(y, x) instanceof Pawn p) {
                 if (p.getColor() == Pawn.PAWN_MOSCOVITE) {
                     nbSurrounging++;
@@ -154,12 +157,12 @@ public class TablutStageModel extends GameStageModel {
         }
 
 
-        /* either the king is at the center and is surrounded by 3 moscovites,
-         * or it is not at the center and is surrounded by 4 moscovites.
+        /* either the king is next to the center square and is surrounded by 3 moscovites,
+         * or it is surrounded by 4 moscovites.
          * in both cases, current turn must yellow
          */
         if (model.getIdPlayer() == 1) {
-            if ((kingY == 4 && kingX == 4 && nbSurrounging == 3) || (nbSurrounging == 4)) {
+            if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
                 idWinner = 1;
                 winMessage = "yellow surrounded the king";
             }
