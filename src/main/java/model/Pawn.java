@@ -14,9 +14,9 @@ public class Pawn extends GameElement {
     private int color;
 
 
-    public static int PAWN_MOSCOVITE = 2;
-    public static int PAWN_SOLDIER   = 3;
-    public static int PAWN_KING      = 4;
+    public static final int PAWN_MOSCOVITE = 2;
+    public static final int PAWN_SOLDIER   = 3;
+    public static final int PAWN_KING      = 4;
 
 
     public Pawn(int number, int color, GameStageModel gameStageModel) {
@@ -32,5 +32,16 @@ public class Pawn extends GameElement {
     }
     public int getColor() {
         return color;
+    }
+
+    public String toString() {
+        String type = switch (color) {
+            case PAWN_MOSCOVITE -> "moscovite";
+            case PAWN_SOLDIER ->   "soldier";
+            case PAWN_KING ->      "king";
+            default ->             "thing";
+        };
+
+        return String.format("Pawn : %s, number %d\n", type, number);
     }
 }
