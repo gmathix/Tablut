@@ -126,11 +126,44 @@ public class TablutStageModel extends GameStageModel {
         String winMessage = "";
 
 
-        // check if the king has reached an edge
+        // dy and dx vals for clockwise rotation
+        int[] dy_vals = {-1, 0, 1, 0};
+        int[] dx_vals = {0, 1, 0, -1};
+
 
         int kingX = getBoard().getKingX();
         int kingY = getBoard().getKingY();
-        System.out.printf("King coords : (%d,%d)\n", kingX, kingY);
+
+
+
+        // check if the king can reach one edge or two
+        int nbEdgesRechable = 0;
+        for (int i = 0; i < 4; i++) {
+            int y = kingY;
+            int x = kingX;
+            boolean isFreeWay = true;
+
+            for (int j = 0; j < 9; j++) {
+                y += dy_vals[i];
+                x += dx_vals[i];
+                if (y < 0 || y > 8 || x < 0 || x > 8) break;
+                if (getBoard().getElement(y, x) instanceof Pawn) {
+                    isFreeWay = false;
+                }
+            }
+
+            if (isFreeWay) {
+                nbEdgesRechable++;
+            }
+        }
+        if (nbEdgesRechable == 1) {
+            System.out.printf("\nPlayer 1 : Raichi\n\n");
+        } else if (nbEdgesRechable >= 2) {
+            System.out.printf("\nPlayer 1 : Tuichi!\n\n");
+        }
+
+
+        // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (model.getIdPlayer() == 0) {
                 idWinner = 0;
@@ -141,8 +174,7 @@ public class TablutStageModel extends GameStageModel {
         // count surrounding moscovites
         int nbSurrounging = 0;
         boolean hasCenterNeighbor = false;
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, 1, 0, -1};
+
 
         for (int i = 0; i < 4; i++) {
             int y = kingY + dy_vals[i];

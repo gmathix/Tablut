@@ -135,11 +135,6 @@ public class TablutController extends Controller {
         }
 
 
-        // make move
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
-        actions.setDoEndOfTurn(true);
-        ActionPlayer play = new ActionPlayer(model, this, actions);
-        play.start();
 
 
         // check capture
@@ -184,6 +179,18 @@ public class TablutController extends Controller {
                 }
             }
         }
+
+
+
+
+        // make move
+        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
+        actions.setDoEndOfTurn(true);
+        ActionPlayer play = new ActionPlayer(model, this, actions);
+        play.start();
+
+
+
 
         return true;
     }
