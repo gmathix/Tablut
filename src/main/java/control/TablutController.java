@@ -48,7 +48,8 @@ public class TablutController extends Controller {
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
-            TablutDecider decider = new TablutDecider(model,this);
+            TablutNegamaxDecider decider = new TablutNegamaxDecider(model, this, 10);
+//            TablutDecider decider = new TablutDecider(model,this);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
         }
@@ -136,49 +137,50 @@ public class TablutController extends Controller {
 
 
 
+        gameStage.checkCapture(isYellow, colSrc, colDest, rowSrc, rowDest);
 
-        // check capture
-        int horizontalDirection = 0;
-        int verticalDirection = 0;
-
-        if (colSrc - colDest != 0)
-            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
-        if (rowSrc - rowDest != 0)
-            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
-
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, -1, 0, 1};
-
-        for (int i = 0; i < 4; i++) {
-            int dy = dy_vals[i];
-            int dx = dx_vals[i];
-
-            // do not check the squares on the path the pawn came from
-            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-            if (dy == -verticalDirection && verticalDirection != 0) continue;
-
-            // check bounds for pawn 2 squares away
-            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
-            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
-
-
-            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
-            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
-
-            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-                if (isYellow) {
-                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        gameStage.getBoard().removeElement(sideEl);
-                        gameStage.removeElement(sideEl);
-                    }
-                } else {
-                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() == Pawn.PAWN_SOLDIER) {
-                        gameStage.getBoard().removeElement(sideEl);
-                        gameStage.removeElement(sideEl);
-                    }
-                }
-            }
-        }
+//        // check capture
+//        int horizontalDirection = 0;
+//        int verticalDirection = 0;
+//
+//        if (colSrc - colDest != 0)
+//            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
+//        if (rowSrc - rowDest != 0)
+//            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
+//
+//        int[] dy_vals = {-1, 0, 1, 0};
+//        int[] dx_vals = {0, -1, 0, 1};
+//
+//        for (int i = 0; i < 4; i++) {
+//            int dy = dy_vals[i];
+//            int dx = dx_vals[i];
+//
+//            // do not check the squares on the path the pawn came from
+//            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
+//            if (dy == -verticalDirection && verticalDirection != 0) continue;
+//
+//            // check bounds for pawn 2 squares away
+//            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
+//            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+//
+//
+//            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
+//            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+//
+//            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
+//                if (isYellow) {
+//                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
+//                        gameStage.getBoard().removeElement(sideEl);
+//                        gameStage.removeElement(sideEl);
+//                    }
+//                } else {
+//                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
+//                        gameStage.getBoard().removeElement(sideEl);
+//                        gameStage.removeElement(sideEl);
+//                    }
+//                }
+//            }
+//        }
 
 
 
@@ -188,6 +190,8 @@ public class TablutController extends Controller {
         actions.setDoEndOfTurn(true);
         ActionPlayer play = new ActionPlayer(model, this, actions);
         play.start();
+
+
 
 
 
