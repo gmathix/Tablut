@@ -14,6 +14,7 @@ import model.TablutStageModel;
 
 import javax.swing.*;
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -29,19 +30,38 @@ public class TablutController extends Controller {
 
 
     /**
+     *Implementing a file reader to read the entry file
      * Defines what to do within the single stage of the single party
      * It is pretty straight forward to write :
+     * calling the stageLoop() method twice to
      */
     public void stageLoop() {
-        consoleIn = new BufferedReader(new InputStreamReader(System.in));
+        stageLoop(null);
+    }
+    public void stageLoop(String inputFile) {
+        if (inputFile!= null){
+            try {
+                consoleIn =new BufferedReader(new FileReader(inputFile));
+                System.out.println("game scenario based on the entry file  : " + inputFile);
+            } catch (IOException e) {
+                System.out.println("Error: \"" + inputFile + " Keyboardb mode on:\". ");
+                consoleIn = new BufferedReader(new InputStreamReader(System.in));
+
+            }
+
+        } else {
+                consoleIn = new BufferedReader(new InputStreamReader(System.in));
+            }
         update();
-        while(! model.isEndStage()) {
+        while (!model.isEndStage()) {
             playTurn();
             endOfTurn();
             update();
         }
         endGame();
-    }
+        }
+
+
 
     private void playTurn() {
         // get the new player

@@ -9,6 +9,7 @@ public class TablutConsole {
     public static void main(String[] args) {
 
         int mode = 0;
+        String inputFile = null;
         if (args.length == 1) {
             try {
                 mode = Integer.parseInt(args[0]);
@@ -17,6 +18,9 @@ public class TablutConsole {
             catch(NumberFormatException e) {
                 mode = 0;
             }
+        }
+        if (args.length >= 2 && mode == 0) {
+            inputFile = args[1];
         }
 
 
@@ -43,7 +47,7 @@ public class TablutConsole {
             model.setIdPlayer(first);
             System.out.printf("%s makes the first move\n", first == 0 ? "Green" : "Yellow");
 
-            control.stageLoop();
+            control.stageLoop(inputFile);
         }
         catch(GameException e) {
             System.out.println("error while starting the game");
