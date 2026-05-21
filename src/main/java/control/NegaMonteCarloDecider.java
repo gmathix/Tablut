@@ -15,8 +15,12 @@ import model.TablutBoard;
 import model.TablutStageModel;
 
 public class NegaMonteCarloDecider extends Decider {
+    private int level;
+
+
     public NegaMonteCarloDecider(Model model, Controller control, int level) {
         super(model, control);
+        this.level = level;
     }
 
 
@@ -32,12 +36,11 @@ public class NegaMonteCarloDecider extends Decider {
 
         int turn = model.getIdPlayer();
 
-        NegaMonteCarlo negaMonteCarlo = new NegaMonteCarlo();
+        NegaMonteCarlo negaMonteCarlo = new NegaMonteCarlo(level);
 
 
 
-        Move bestMove = new Move(0, 0, 0, 0);
-
+        Move bestMove = negaMonteCarlo.findBestMove(board, turn);
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());

@@ -49,7 +49,8 @@ public class TablutController extends Controller {
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
 //            TablutNegamaxDecider decider = new TablutNegamaxDecider(model, this, 10);
-            MonteCarloDecider decider = new MonteCarloDecider(model, this, 10);
+//            MonteCarloDecider decider = new MonteCarloDecider(model, this, 10);
+            NegaMonteCarloDecider decider = new NegaMonteCarloDecider(model, this, 8);
 //            TablutDecider decider = new TablutDecider(model,this);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
