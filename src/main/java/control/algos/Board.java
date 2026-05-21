@@ -198,6 +198,9 @@ public class Board {
     }
 
 
+    /**
+     * @return MAX_VALUE for green win, MIN_VALUE for yellow win
+     */
     public double checkWin() {
 
 

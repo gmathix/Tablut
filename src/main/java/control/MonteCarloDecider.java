@@ -8,14 +8,18 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.Board;
+import control.algos.MonteCarlo;
 import control.algos.NegaMonteCarlo;
 import model.Move;
 import model.TablutBoard;
 import model.TablutStageModel;
 
 public class MonteCarloDecider extends Decider  {
+    private int level;
+
     public MonteCarloDecider(Model model, Controller control, int level) {
         super(model, control);
+        this.level = level;
     }
 
 
@@ -31,11 +35,11 @@ public class MonteCarloDecider extends Decider  {
 
         int turn = model.getIdPlayer();
 
-        NegaMonteCarlo negaMonteCarlo = new NegaMonteCarlo();
+        MonteCarlo monteCarlo = new MonteCarlo(level);
 
 
 
-        Move bestMove = new Move(0, 0, 0, 0);
+        Move bestMove = monteCarlo.findBestMove(board, turn);
 
 
 
