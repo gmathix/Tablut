@@ -4,8 +4,8 @@ public class Evaluation {
 
 
     // weights for each evaluation criteria
-    public static final double ENCERCLEMENT_WEIGHT = 0.7;
-    public static final double MATERIAL_WEIGHT     = 0.3;
+    public static final double ENCERCLEMENT_WEIGHT = 0.6;
+    public static final double MATERIAL_WEIGHT     = 0.4;
 
     
     /**
