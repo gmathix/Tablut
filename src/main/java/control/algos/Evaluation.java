@@ -18,7 +18,12 @@ public class Evaluation {
      *      - either it is green to play and it can reach one or more edges -> green wins
      *      - or it is yellow to play and the king can reach two or more edges (Tuichi) -> green wins
      *      - or it is yellow to play and they can surround the king -> yellow wins
-     *   3. Material difference :
+     *   3. King encerclement (relative to green) :
+     *      - Vertically or horizontally, surrounding pieces receive a +5 score
+     *      - Diagonally, they receive a +2.5 score
+     *      - Moscovites (yellow pieces) receive a x3 multiplier
+     *      - Total encerclement is then negative
+     *   4. Material difference :
      *      - Calculate the proportion difference between the remaining pawns :
      *         - Green pawns are 8 at the start
      *         - Yellow pawns are 16 at the start
