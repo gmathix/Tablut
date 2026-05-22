@@ -81,37 +81,45 @@ public class TablutBoard extends ContainerElement {
 
         // check horizontal empty squares to the left
         for (int x = pawnX-1; x >= 0; x--) {
-            if (!(getElement(pawnY, x) instanceof Pawn) && !(x == 4 && pawnY == 4)) {
-                lst.add(new Point(x, pawnY));
+            if (!(getElement(pawnY, x) instanceof Pawn)) {
+                if (!(x == 4 && pawnY == 4)) {
+                    lst.add(new Point(x, pawnY));
+                }
             } else {
-                // there is a pawn here or it's the forbidden center square, can't go further
+                // there is a pawn here, can't go further
                 break;
             }
         }
         // check horizontal empty squares to the right
         for (int x = pawnX+1; x < BOARD_SIZE; x++) {
-            if (!(getElement(pawnY, x) instanceof Pawn) && !(x == 4 && pawnY == 4)) {
-                lst.add(new Point(x, pawnY));
+            if (!(getElement(pawnY, x) instanceof Pawn)) {
+                if (!(x == 4 && pawnY == 4)) {
+                    lst.add(new Point(x, pawnY));
+                }
             } else {
-                // there is a pawn here or it's the forbidden center square, can't go further
+                // there is a pawn here, can't go further
                 break;
             }
         }
         // check vertical empty squares up
         for (int y = pawnY-1; y >= 0; y--) {
-            if (!(getElement(y, pawnX) instanceof Pawn) && !(y == 4 && pawnX == 4)) {
-                lst.add(new Point(pawnX, y));
+            if (!(getElement(y, pawnX) instanceof Pawn)) {
+                if (!(x == 4 && pawnY == 4)) {
+                    lst.add(new Point(pawnX, y));
+                }
             } else {
-                // there is a pawn here or it's the forbidden center square, can't go further
+                // there is a pawn here, can't go further
                 break;
             }
         }
         // check vertical empty squares down
         for (int y = pawnY+1; y < BOARD_SIZE; y++) {
-            if (!(getElement(y, pawnX) instanceof Pawn) && !(y == 4 && pawnX == 4)) {
-                lst.add(new Point(pawnX, y));
+            if (!(getElement(y, pawnX) instanceof Pawn)) {
+                if (!(x == 4 && pawnY == 4)) {
+                    lst.add(new Point(pawnX, y));
+                }
             } else {
-                // there is a pawn here or it's the forbidden center square, can't go further
+                // there is a pawn here, can't go further
                 break;
             }
         }
