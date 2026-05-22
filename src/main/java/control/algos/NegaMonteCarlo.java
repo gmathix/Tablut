@@ -51,7 +51,7 @@ public class NegaMonteCarlo {
     public static final double C = Math.sqrt(2);
 
     private final long timeLimitMs;
-    private final int negamaxDepth;
+    private final int negamaxDepth = 2;
 
     private NegamaxSearch negamaxSearch;
 
@@ -117,11 +117,6 @@ public class NegaMonteCarlo {
             case 10 -> 15000;
             default ->  5000;
         };
-        this.negamaxDepth = switch (level) {
-            case 0, 1, 2, 3, 4, 5 -> 2;
-            case 6, 7, 8, 9, 10   -> 3;
-            default -> 2;
-        };
 
         this.negamaxSearch = new NegamaxSearch(this.negamaxDepth);
     }
@@ -129,7 +124,7 @@ public class NegaMonteCarlo {
 
     private double UCB(Node node) {
         if (node.visits == 0) return Double.POSITIVE_INFINITY; // should be impossible but let's avoid having to debug a NaN
-        return ((double) node.wins / node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
+        return ((double) node.wins / (double) node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
     }
 
     public Move findBestMove(Board board, int turn) {
@@ -141,7 +136,7 @@ public class NegaMonteCarlo {
 
         Node currentNode;
 
-
+        int nbEvals = 0;
 
         long startTimeMillis = System.currentTimeMillis();
 
@@ -151,7 +146,7 @@ public class NegaMonteCarlo {
              * 1. Selection
              */
             currentNode = root;
-            while (currentNode.isFullyExpanded()) {
+            while (currentNode.isFullyExpanded() && !currentNode.isTerminal()) {
                 double bestScore = Double.NEGATIVE_INFINITY;
                 Node bestNode = null;
                 for (Node child : currentNode.children.values()) {
@@ -187,32 +182,26 @@ public class NegaMonteCarlo {
              * 3. Simulation (replaced with low depth negamax)
              */
             double score;
-            double winStatus = currentNode.board.checkWin();
-            if (winStatus != 0) {
-                score = winStatus == Integer.MAX_VALUE ? 1.0 : 0.0;
-            } else {
-                double negamaxScore = smallNegamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
-                score = 1 / (1 + Math.exp(-negamaxScore / 50));
-            }
+            double negamaxScore = negamaxSearch.negamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+//            double negamaxScore = smallNegamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+            score = 1 / (1 + Math.exp(-negamaxScore / 100));
+
 
 
             /**
              * 4. Backpropagation
              */
+            int leafTurn = currentNode.turn;
             while (currentNode != root) {
-
                 currentNode.visits++;
 
 
-                /** since score is from green's perspective :
-                 * node representing a move played by green means green wants a high score
-                 * node representing a move played by yellow means yellow wants a low score
-                 */
-                if (currentNode.turn == 1) { // node belongs to player 0
-                    currentNode.wins += score;
-                } else { // node belong to player 1
+                if (currentNode.turn == leafTurn) {
                     currentNode.wins += 1 - score;
+                } else {
+                    currentNode.wins += score;
                 }
+
 
                 currentNode = currentNode.parent;
             }
@@ -231,6 +220,7 @@ public class NegaMonteCarlo {
             }
         }
 
+        System.out.printf("evaluated %d positions\n", nbEvals);
 
         return bestMove;
     }
@@ -241,12 +231,8 @@ public class NegaMonteCarlo {
      */
     private double smallNegamax(Board board, int depth, int turn, double alpha, double beta) {
         double win = board.checkWin();
-        if (win != 0) {
-            return win == Integer.MAX_VALUE ? 1000 : -1000;
-        }
-        if (depth == 0) {
-            // must be evaluated for green
-            return Evaluation.evaluate(board, 0, depth, negamaxDepth);
+        if (win != 0 || depth == 0) {
+            return Evaluation.evaluate(board, turn, depth, negamaxDepth);
         }
 
         double bestScore = Double.NEGATIVE_INFINITY;

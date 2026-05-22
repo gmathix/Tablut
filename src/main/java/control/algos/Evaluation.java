@@ -51,11 +51,11 @@ public class Evaluation {
             /** green won : if we are green this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
              */
-            return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (VIRTUAL_INF + depthDiff);
+            return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
         if (win == Integer.MIN_VALUE) {
             // yellow won : if we are yellow this is good otherwise it's terrible
-            return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (VIRTUAL_INF + depthDiff);
+            return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
 
 
@@ -121,9 +121,7 @@ public class Evaluation {
                 int piece = board.board[y][x];
 
                 if (j == 0) {
-                    if (board.isMoscovite(piece)) {
-                        surroundingMoscovites++;
-                    } else if (x == 4 && y == 4) {
+                    if (board.isMoscovite(piece) || (x == 4 && y == 4)) {
                         surroundingMoscovites++;
                     }
                 }
@@ -144,12 +142,14 @@ public class Evaluation {
             }
         }
 
+
         if (kingOnThrone && surroundingMoscovites == 4) {
             kingSurrounded = true;
-        } else if (!kingOnThrone && board.kingX >= 3 && board.kingX <= 5 && board.kingY >= 3 && board.kingY <= 5) {
+        } else if (!kingOnThrone && (board.kingX == 4 && (board.kingY == 3 || board.kingY == 5))
+                || (board.kingY == 4 && (board.kingX == 3 || board.kingX == 5))) {
             if (surroundingMoscovites >= 3) kingSurrounded = true;
         } else {
-            if (surroundingMoscovites >= 2) kingSurrounded = true;
+            if (surroundingMoscovites >= 4) kingSurrounded = true;
         }
 
 
@@ -161,10 +161,9 @@ public class Evaluation {
         }
 
 
-
-        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5) + (surroundingMoscovites * (turn == 1 ? 5.0 : -5.0));
+        // return relative to green
+        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5) + (surroundingMoscovites * -5.0);
     }
-
 
     /**
      * Evaluate the king encerclement relative to Green (always negative) :
@@ -220,8 +219,8 @@ public class Evaluation {
             }
         }
 
-        // normalize between -5 and 5
-        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 500;
+        // normalize between -10 and 10
+        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 10;
     }
 
 
