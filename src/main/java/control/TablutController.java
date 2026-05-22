@@ -22,10 +22,12 @@ public class TablutController extends Controller {
 
     BufferedReader consoleIn;
     boolean firstPlayer;
+    String inputFile;
 
-    public TablutController(Model model, View view) {
+    public TablutController(Model model, View view, String inputFile) {
         super(model, view);
         firstPlayer = true;
+        this.inputFile = inputFile;
     }
 
 
@@ -33,13 +35,10 @@ public class TablutController extends Controller {
      *Implementing a file reader to read the entry file
      * Defines what to do within the single stage of the single party
      * It is pretty straight forward to write :
-     * calling the stageLoop() method twice to
      */
+
     public void stageLoop() {
-        stageLoop(null);
-    }
-    public void stageLoop(String inputFile) {
-        if (inputFile!= null){
+        if (!inputFile.equals("")) {
             try {
                 consoleIn =new BufferedReader(new FileReader(inputFile));
                 System.out.println("game scenario based on the entry file  : " + inputFile);
@@ -50,16 +49,18 @@ public class TablutController extends Controller {
             }
 
         } else {
-                consoleIn = new BufferedReader(new InputStreamReader(System.in));
-            }
+            consoleIn = new BufferedReader(new InputStreamReader(System.in));
+        }
         update();
         while (!model.isEndStage()) {
+
             playTurn();
             endOfTurn();
             update();
+
         }
         endGame();
-        }
+    }
 
 
 

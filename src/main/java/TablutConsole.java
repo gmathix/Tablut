@@ -9,7 +9,7 @@ public class TablutConsole {
     public static void main(String[] args) {
 
         int mode = 0;
-        String inputFile = null;
+        String inputFile = "";
         if (args.length == 1) {
             try {
                 mode = Integer.parseInt(args[0]);
@@ -38,7 +38,7 @@ public class TablutConsole {
 
         StageFactory.registerModelAndView("tablut", "model.TablutStageModel", "view.TablutStageView");
         View holeView = new View(model);
-        TablutController control = new TablutController(model,holeView);
+        TablutController control = new TablutController(model,holeView,inputFile);
         control.setFirstStageName("tablut");
         try {
             control.startGame();
@@ -47,7 +47,7 @@ public class TablutConsole {
             model.setIdPlayer(first);
             System.out.printf("%s makes the first move\n", first == 0 ? "Green" : "Yellow");
 
-            control.stageLoop(inputFile);
+            control.stageLoop();
         }
         catch(GameException e) {
             System.out.println("error while starting the game");
