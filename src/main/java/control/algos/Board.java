@@ -109,6 +109,12 @@ public class Board {
     public List<Move> getLegalMoves(int turn) {
         List<Move> legalMoves = new ArrayList<>();
 
+        List<Move> captures = new ArrayList<>();
+        List<Move> kingMoves = new ArrayList<>();
+        List<Move> otherMoves = new ArrayList<>();
+
+        Move currMove;
+
         int[] dy_vals = {-1, 0, 1, 0};
         int[] dx_vals = {0, 1, 0, -1};
 
@@ -121,58 +127,47 @@ public class Board {
                         for (int i = 0; i < 9; i++) {
                             currY += dy_vals[d];
                             currX += dx_vals[d];
+                            currMove = new Move(x, y, currX, currY);
+
                             if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break;
                             if (currY == 4 && currX == 4 && !isKing(board[y][x])) break;
                             if (!isEmpty(board[currY][currX])) break;
-                            legalMoves.add(new Move(x, y, currX, currY));
+
+                            if (checkCapture(currMove) != -1) {
+                                captures.add(currMove);
+                            } else if (isKing(board[y][x])) {
+                                kingMoves.add(currMove);
+                            } else {
+                                otherMoves.add(currMove);
+                            }
                         }
                     }
                 }
             }
         }
 
+        // move ordering : captures first, then king moves, then other moves0
+        // in order to cut the branching factor in negamax
+        legalMoves.addAll(captures);
+        legalMoves.addAll(kingMoves);
+        legalMoves.addAll(otherMoves);
+
         return legalMoves;
     }
 
-
-    public void makeMove(Move move) {
-        // assume the move is valid
-
+    // return the piece index in flat array
+    public int checkCapture(Move move) {
         int dstY = move.dstY();
         int dstX = move.dstX();
         int srcY = move.srcY();
         int srcX = move.srcX();
 
         int selPiece = board[srcY][srcX];
-        board[dstY][dstX] = selPiece;
-        board[srcY][srcX] = EMPTY;
-
-        
-        if (isKing(board[dstY][dstX])) {
-            kingY = dstY;
-            kingX = dstX;
-        }
-
 
         // check capture
-        int horizontalDirection = 0;
-        int verticalDirection = 0;
-
-        if (srcX - dstX != 0)
-            horizontalDirection = dstX - srcX > 0 ? 1 : -1; // 1 for right, -1 for left
-        if (srcY - dstY != 0)
-            verticalDirection = dstY - srcY > 0 ? 1 : -1;   // 1 for down, -1 for up
-
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, -1, 0, 1};
-
         for (int i = 0; i < 4; i++) {
-            int dy = dy_vals[i];
-            int dx = dx_vals[i];
-
-            // do not check the squares on the path the pawn came from
-            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-            if (dy == -verticalDirection && verticalDirection != 0) continue;
+            int dy = DY_VALS[i];
+            int dx = DX_VALS[i];
 
             // check bounds for pawn 2 squares away
             if (dstY + 2*dy < 0 || dstY + 2*dy >= 9) continue;
@@ -184,17 +179,44 @@ public class Board {
             boolean centerCapturing = dstY + 2 * dy == 4 && dstX + 2 * dx == 4;
             if (isMoscovite(selPiece)) {
                 if ((isSoldier(n) && (isMoscovite(n2) || centerCapturing))) {
-                    board[dstY + dy][dstX + dx] = EMPTY;
+                    return (dstY + dy) * 9 + (dstX + dx);
                 }
             } else {
                 // either the piece 2 squares apart is a green one or it is the center (which is hostile too for captures)
                 if (isMoscovite(n) && (isGreen(n2) || centerCapturing)) {
-                    board[dstY + dy][dstX + dx] = EMPTY;
+                    return (dstY + dy) * 9 + (dstX + dx);
                 }
             }
         }
+
+        return -1;
+    }
+
+    public void makeMove(Move move) {
+        // assume the move is valid
+
+        int dstY = move.dstY();
+        int dstX = move.dstX();
+        int srcY = move.srcY();
+        int srcX = move.srcX();
+
+        int selPiece = board[srcY][srcX];
+
+
+        int capture = checkCapture(move);
+        if (capture != -1) {
+            board[capture/9][capture%9] = EMPTY;
+        }
+
+
+        board[dstY][dstX] = selPiece;
+        board[srcY][srcX] = EMPTY;
+
         
-        
+        if (isKing(board[dstY][dstX])) {
+            kingY = dstY;
+            kingX = dstX;
+        }
     }
 
 
