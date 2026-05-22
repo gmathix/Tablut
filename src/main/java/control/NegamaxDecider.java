@@ -22,6 +22,16 @@ public class NegamaxDecider extends Decider {
         if (depth > 10) depth = 10;
     }
 
+    public NegamaxDecider(Model model, Controller controller) {
+        this(model, controller, 5);
+    }
+
+    public void setLevel(int level) {
+        this.depth = level;
+        if (depth < 0) depth = 0;
+        if (depth > 10) depth = 10;
+    }
+
 
 
 

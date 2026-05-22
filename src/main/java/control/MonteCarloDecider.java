@@ -22,6 +22,15 @@ public class MonteCarloDecider extends Decider  {
         this.level = level;
     }
 
+    public MonteCarloDecider(Model model, Controller controller) {
+        this(model, controller, 5);
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+        if (level < 0) level = 0;
+        if (level > 10) level = 10;
+    }
 
 
 

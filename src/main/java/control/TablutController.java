@@ -3,32 +3,102 @@ package control;
 import boardifier.control.ActionFactory;
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
+import boardifier.control.Decider;
 import boardifier.model.GameElement;
-import boardifier.model.ContainerElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.model.action.ActionList;
 import boardifier.view.View;
+import com.sun.java.accessibility.util.SwingEventMonitor;
 import model.Pawn;
 import model.TablutStageModel;
 
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class TablutController extends Controller {
 
+    public static final int NEGAMAX_PLAYER = 0;
+    public static final int MONTECARLO_PLAYER = 1;
+    public static final int NEGAMONTECARLO_PLAYER = 2;
+
+    public static final String[] botSentences = {
+            "is thinking...",
+
+            "tries to penetrate your mind...",
+            "might be about to crush you...",
+            "is pretending this was part of the strategy...",
+            "is calculating several bad moves per second...",
+            ""
+    };
+
+    public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
+
+
+    public static final Map<Integer, BotSelection> availableBots[] = new Map[2];
+
+
+
+    int gameMode;
+    int botPlayers[];
+
     BufferedReader consoleIn;
-    boolean firstPlayer;
     String inputFile;
 
-    public TablutController(Model model, View view, String inputFile) {
+    public TablutController(Model model, View view, int gameMode, String inputFile,
+                            int greenBotPlayer, int yellowBotPlayer, int botLevels[]) {
         super(model, view);
-        firstPlayer = true;
+        this.gameMode = gameMode;
         this.inputFile = inputFile;
+        this.botPlayers = new int[]{
+            NEGAMAX_PLAYER,
+            NEGAMAX_PLAYER,
+        };
+
+        availableBots[0] = new HashMap<>();
+        availableBots[1] = new HashMap<>();
+
+        setBotLevel(0, botLevels[0]);
+        setBotLevel(1, botLevels[1]);
+
     }
+
+    public TablutController(Model model, View view, int gameMode, String inputFile) {
+        this(model, view, gameMode, inputFile, NEGAMAX_PLAYER, NEGAMAX_PLAYER, new int[]{5, 5});
+    }
+
+
+    // 0 for green, 0 for yellow
+    public void setBotLevel(int color, int level) {
+        availableBots[color].clear();
+        availableBots[color].put(NEGAMAX_PLAYER, new BotSelection(NEGAMAX_PLAYER, "Negamax",
+                () -> new NegamaxDecider(model, this, level)));
+        availableBots[color].put(MONTECARLO_PLAYER, new BotSelection(MONTECARLO_PLAYER, "Monte-Carlo",
+                () -> new MonteCarloDecider(model, this, level)));
+        availableBots[color].put(NEGAMONTECARLO_PLAYER, new BotSelection(NEGAMONTECARLO_PLAYER, "Nega-Monte-Carlo",
+                () -> new NegaMonteCarloDecider(model, this, level)));
+    }
+
+
+
+
+    public void setBotPlayer(int color, int botPlayer) {
+        if (botPlayer < 0 || botPlayer > availableBots[color].size()) return;
+        this.botPlayers[color] = botPlayer;
+    }
+
+    public Map<Integer, BotSelection>[] getAvailableBots() {
+        return availableBots;
+    }
+
+
 
 
     /**
@@ -36,11 +106,10 @@ public class TablutController extends Controller {
      * Defines what to do within the single stage of the single party
      * It is pretty straight forward to write :
      */
-
     public void stageLoop() {
-        if (!inputFile.equals("")) {
+        if (!inputFile.isEmpty() && gameMode == 0) {
             try {
-                consoleIn =new BufferedReader(new FileReader(inputFile));
+                consoleIn = new BufferedReader(new FileReader(inputFile));
                 System.out.println("game scenario based on the entry file  : " + inputFile);
             } catch (IOException e) {
                 System.out.println("Error: \"" + inputFile + " not found. fallback to player vs player\". ");
@@ -53,11 +122,9 @@ public class TablutController extends Controller {
         }
         update();
         while (!model.isEndStage()) {
-
             playTurn();
             endOfTurn();
             update();
-
         }
         endGame();
     }
@@ -68,8 +135,11 @@ public class TablutController extends Controller {
         // get the new player
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
-            TablutDecider decider = new TablutDecider(model,this);
+            int turn = model.getIdPlayer();
+            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
+            Decider decider = selection.supplier.get();
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
+
             play.start();
         }
         else {
