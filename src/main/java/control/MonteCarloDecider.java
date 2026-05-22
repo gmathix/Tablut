@@ -53,7 +53,12 @@ public class MonteCarloDecider extends Decider  {
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
+
         stage.checkCapture(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+        if (board.isKing(board.board[bestMove.srcY()][bestMove.srcX()])) {
+            tablutBoard.setKingY(bestMove.dstY());
+            tablutBoard.setKingX(bestMove.dstX());
+        }
 
 
 

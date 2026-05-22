@@ -7,6 +7,8 @@ import java.util.List;
 public class NegamaxSearch {
     private int depth;
 
+    public static int nbEvals = 0;
+
     public NegamaxSearch(int depth) {
         this.depth = depth;
         if (this.depth < 0) this.depth = 0;
@@ -27,6 +29,8 @@ public class NegamaxSearch {
         double bestScore = Double.NEGATIVE_INFINITY;
         int nextTurn = (turn+1) % 2;
 
+        nbEvals = 0;
+
         for (Move m : board.getLegalMoves(turn)) {
             Board newBoard = new Board(board);
             newBoard.makeMove(m);
@@ -41,12 +45,15 @@ public class NegamaxSearch {
             alpha = Math.max(alpha, score);
         }
 
+        System.out.printf("evaluated %d positions (negamax)\n", nbEvals);
+
         return bestMove;
     }
 
-    private double negamax(Board board, int depth, int turn, double alpha, double beta) {
+    public double negamax(Board board, int depth, int turn, double alpha, double beta) {
         double win = board.checkWin();
         if (win != 0 || depth == 0) {
+            nbEvals++;
             return Evaluation.evaluate(board, turn, depth, this.depth);
         }
 
@@ -57,14 +64,13 @@ public class NegamaxSearch {
             return Double.NEGATIVE_INFINITY - depth;
         }
 
-        int nextTurn = (turn+1) % 2;
 
         for (Move move : legalMoves) {
             Board newBoard = new Board(board);
             newBoard.makeMove(move);
 
             // negamax core trick: negative sign and swapped alpha/beta
-            double score = -negamax(newBoard, depth-1, nextTurn, -beta, -alpha);
+            double score = -negamax(newBoard, depth-1, (turn+1) % 2, -beta, -alpha);
 
             if (score > maxScore) {
                 maxScore = score;
