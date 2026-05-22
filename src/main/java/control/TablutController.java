@@ -14,6 +14,7 @@ import model.TablutStageModel;
 
 import javax.swing.*;
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -21,37 +22,53 @@ public class TablutController extends Controller {
 
     BufferedReader consoleIn;
     boolean firstPlayer;
+    String inputFile;
 
-    public TablutController(Model model, View view) {
+    public TablutController(Model model, View view, String inputFile) {
         super(model, view);
         firstPlayer = true;
+        this.inputFile = inputFile;
     }
 
 
     /**
+     *Implementing a file reader to read the entry file
      * Defines what to do within the single stage of the single party
      * It is pretty straight forward to write :
      */
+
     public void stageLoop() {
-        consoleIn = new BufferedReader(new InputStreamReader(System.in));
+        if (!inputFile.equals("")) {
+            try {
+                consoleIn =new BufferedReader(new FileReader(inputFile));
+                System.out.println("game scenario based on the entry file  : " + inputFile);
+            } catch (IOException e) {
+                System.out.println("Error: \"" + inputFile + " not found. fallback to player vs player\". ");
+                consoleIn = new BufferedReader(new InputStreamReader(System.in));
+
+            }
+
+        } else {
+            consoleIn = new BufferedReader(new InputStreamReader(System.in));
+        }
         update();
-        while(! model.isEndStage()) {
+        while (!model.isEndStage()) {
+
             playTurn();
             endOfTurn();
             update();
+
         }
         endGame();
     }
+
+
 
     private void playTurn() {
         // get the new player
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
-            System.out.println("COMPUTER PLAYS");
-//            TablutNegamaxDecider decider = new TablutNegamaxDecider(model, this, 10);
-//            MonteCarloDecider decider = new MonteCarloDecider(model, this, 10);
-            NegaMonteCarloDecider decider = new NegaMonteCarloDecider(model, this, 8);
-//            TablutDecider decider = new TablutDecider(model,this);
+            TablutDecider decider = new TablutDecider(model,this);
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
         }
@@ -130,7 +147,7 @@ public class TablutController extends Controller {
         if (!gameStage.getBoard().canReachCell(rowDest, colDest)) return false;
 
 
-        
+
         // update the board's king coordinates if we just moved the king
         if (currPawn.getColor() == Pawn.PAWN_KING) {
             gameStage.getBoard().setKingX(colDest);
@@ -139,50 +156,49 @@ public class TablutController extends Controller {
 
 
 
-        gameStage.checkCapture(isYellow, colSrc, colDest, rowSrc, rowDest);
 
-//        // check capture
-//        int horizontalDirection = 0;
-//        int verticalDirection = 0;
-//
-//        if (colSrc - colDest != 0)
-//            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
-//        if (rowSrc - rowDest != 0)
-//            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
-//
-//        int[] dy_vals = {-1, 0, 1, 0};
-//        int[] dx_vals = {0, -1, 0, 1};
-//
-//        for (int i = 0; i < 4; i++) {
-//            int dy = dy_vals[i];
-//            int dx = dx_vals[i];
-//
-//            // do not check the squares on the path the pawn came from
-//            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-//            if (dy == -verticalDirection && verticalDirection != 0) continue;
-//
-//            // check bounds for pawn 2 squares away
-//            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
-//            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
-//
-//
-//            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
-//            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
-//
-//            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-//                if (isYellow) {
-//                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-//                        gameStage.getBoard().removeElement(sideEl);
-//                        gameStage.removeElement(sideEl);
-//                    }
-//                } else {
-//                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-//                        gameStage.getBoard().removeElement(sideEl);
-//                        gameStage.removeElement(sideEl);
-//                    }
-//                }
-//            }
-//        }
+        // check capture
+        int horizontalDirection = 0;
+        int verticalDirection = 0;
+
+        if (colSrc - colDest != 0)
+            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
+        if (rowSrc - rowDest != 0)
+            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
+
+        int[] dy_vals = {-1, 0, 1, 0};
+        int[] dx_vals = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            int dy = dy_vals[i];
+            int dx = dx_vals[i];
+
+            // do not check the squares on the path the pawn came from
+            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
+            if (dy == -verticalDirection && verticalDirection != 0) continue;
+
+            // check bounds for pawn 2 squares away
+            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
+            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+
+
+            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
+            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+
+            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
+                if (isYellow) {
+                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        gameStage.getBoard().removeElement(sideEl);
+                        gameStage.removeElement(sideEl);
+                    }
+                } else {
+                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() == Pawn.PAWN_SOLDIER) {
+                        gameStage.getBoard().removeElement(sideEl);
+                        gameStage.removeElement(sideEl);
+                    }
+                }
+            }
+        }
 
 
 
@@ -192,8 +208,6 @@ public class TablutController extends Controller {
         actions.setDoEndOfTurn(true);
         ActionPlayer play = new ActionPlayer(model, this, actions);
         play.start();
-
-
 
 
 

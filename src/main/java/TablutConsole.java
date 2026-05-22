@@ -9,6 +9,7 @@ public class TablutConsole {
     public static void main(String[] args) {
 
         int mode = 0;
+        String inputFile = "";
         if (args.length == 1) {
             try {
                 mode = Integer.parseInt(args[0]);
@@ -17,6 +18,9 @@ public class TablutConsole {
             catch(NumberFormatException e) {
                 mode = 0;
             }
+        }
+        if (args.length >= 2 && mode == 0) {
+            inputFile = args[1];
         }
 
 
@@ -34,7 +38,7 @@ public class TablutConsole {
 
         StageFactory.registerModelAndView("tablut", "model.TablutStageModel", "view.TablutStageView");
         View holeView = new View(model);
-        TablutController control = new TablutController(model,holeView);
+        TablutController control = new TablutController(model,holeView,inputFile);
         control.setFirstStageName("tablut");
         try {
             control.startGame();
