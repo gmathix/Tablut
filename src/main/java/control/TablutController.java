@@ -29,16 +29,6 @@ public class TablutController extends Controller {
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
-    public static final String[] botSentences = {
-            "is thinking...",
-
-            "tries to penetrate your mind...",
-            "might be about to crush you...",
-            "is pretending this was part of the strategy...",
-            "is calculating several bad moves per second...",
-            ""
-    };
-
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
 
 
