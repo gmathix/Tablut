@@ -9,10 +9,19 @@ public class NegamaxSearch {
 
     public static int nbEvals = 0;
 
-    public NegamaxSearch(int depth) {
-        this.depth = depth;
-        if (this.depth < 0) this.depth = 0;
-        if (this.depth > 10) this.depth = 10;
+    public NegamaxSearch(int level) {
+        this.depth = level;
+
+        this.depth = switch (level) {
+            case 0, 1 -> 1;
+            case 2 -> 2;
+            case 3,4 -> 3;
+            case 5 -> 4;
+            case 6,7 -> 5;
+            case 8,9 -> 6;
+            case 10 -> 7;
+            default -> 4;
+        };
     }
 
 

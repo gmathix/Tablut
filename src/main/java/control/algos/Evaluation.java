@@ -256,4 +256,24 @@ public class Evaluation {
         }
         return score;
     }
+
+
+    /**
+     * Counts the number of moscovites present in the same 5x5 outer region as the king
+     */
+    public static int countMoscovitesIn5x5Region(RecurBoard recurBoard) {
+        int regionStartX = (recurBoard.getKingX() <= 4) ? 0 : 4;
+        int regionStartY = (recurBoard.getKingY() <= 4) ? 0 : 4;
+
+        int nbMoscovites = 0;
+        for (int y = regionStartY; y < regionStartY + 5; y++) {
+            for (int x = regionStartX; x < regionStartX + 5; x++) {
+                if (recurBoard.isMoscovite(recurBoard.getBoard()[y][x])) {
+                    nbMoscovites++;
+                }
+            }
+        }
+
+        return nbMoscovites;
+    }
 }

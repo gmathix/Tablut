@@ -50,6 +50,11 @@ public class NegaMonteCarlo {
     // constant that balances exploitation vs exploration (win/visits ratio vs visits/parent visits "ratio")
     public static final double C = Math.sqrt(2);
 
+    // constant that balances (exploitation and exploration) vs prior score (which children look more promising)
+    public static final double W = 0.5;
+
+
+
     private long timeLimitMs;
     private int negamaxDepth;
 
@@ -131,9 +136,21 @@ public class NegaMonteCarlo {
     }
 
 
-    private double UCB(Node node) {
+    private double UCB(Node node, double priorScore) {
         if (node.visits == 0) return Double.POSITIVE_INFINITY; // should be impossible but let's avoid having to debug a NaN
-        return ((double) node.wins / (double) node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
+
+        /** W add a prior policy score like AlphaZero does :
+         *  a light score that biases which children get selected
+         *  it can be sth cheap :
+         *     - does the move threaten capture ? (for both sides)
+         *     - does the move open an escape path ? (for green)
+         *     - does the move close an escape path ? (for yellow)
+         *     - etc
+         *  calculated fast (preferably O(1)) and applied at every selection step in the loop
+         */
+        return (node.wins / (double) node.visits)
+                + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
+//                + W * (priorScore / (1 + node.visits));
     }
 
     public Move findBestMove(RecurBoard recurBoard, int turn) {
@@ -158,8 +175,15 @@ public class NegaMonteCarlo {
             while (currentNode.isFullyExpanded() && !currentNode.isTerminal()) {
                 double bestScore = Double.NEGATIVE_INFINITY;
                 Node bestNode = null;
-                for (Node child : currentNode.children.values()) {
-                    double score = UCB(child);
+                for (Map.Entry<Move, Node> entry : currentNode.children.entrySet()) {
+                    Move move = entry.getKey();
+                    Node child = entry.getValue();
+
+                    double priorScore = 0;
+                    if (currentNode.recurBoard.checkCapture(move) != -1) priorScore += 0.5;
+                    if (currentNode.turn != turn) priorScore *= -1;
+
+                    double score = UCB(child, priorScore);
                     if (score > bestScore) {
                         bestScore = score;
                         bestNode = child;
@@ -189,10 +213,34 @@ public class NegaMonteCarlo {
 
             /**
              * 3. Simulation (replaced with low depth negamax)
+             * all nodes run a search at depth a least two
+             * when green is playing :
+             *    - if there are 4 or 5 moscovites in the same 5x5 region as the king, run at depth 3
+             *    - there are less than 4 moscovites in the same 5x5 region, run at depth 4
+             *    because those situations are more promising.
+             * when yellow is playing :
+             *    depending on the king encerclement score :
+             *    - when it is lower than -20 (~2 moscovites surrounding the king orthogonally), increment depth by 1
+             *    - when it is lower than -30 (~3 moscovites surrounding the king orthogonally), increment depth by 1
              */
             double score;
-            double negamaxScore = negamaxSearch.negamax(currentNode.recurBoard, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
-//            double negamaxScore = smallNegamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+
+            int depthBonus = 0;
+            if (turn == 0) {
+                int nbMoscovitesIn5x5Region = Evaluation.countMoscovitesIn5x5Region(currentNode.recurBoard);
+                if (nbMoscovitesIn5x5Region == 4 || nbMoscovitesIn5x5Region == 5) depthBonus += 1;
+                if (nbMoscovitesIn5x5Region < 4) depthBonus += 2;
+            } else if (turn == 1) {
+                double kingEncerclement = Evaluation.countKingEncerclement(currentNode.recurBoard);
+                if (kingEncerclement <= -20) depthBonus += 1;
+                if (kingEncerclement <= -30) depthBonus += 1;
+            }
+
+            double negamaxScore = negamaxSearch.negamax(currentNode.recurBoard, this.negamaxDepth + depthBonus, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+
+            // green needs one escape path, yellow needs full encerclement.
+            // the value of the score means different stuff depending on who's playing, so we use different "temperatures"
+            double temp = currentNode.turn == 0 ? 80 : 120;
             score = 1 / (1 + Math.exp(-negamaxScore / 100));
             nbEvals++;
 
