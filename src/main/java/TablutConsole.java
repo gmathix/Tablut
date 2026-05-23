@@ -5,6 +5,7 @@ import boardifier.model.Model;
 import boardifier.view.View;
 import control.TablutController;
 import control.TablutController.BotSelection;
+import model.RuleSets;
 
 
 import java.util.*;
@@ -48,6 +49,56 @@ public class TablutConsole {
 
 
 
+        // ---- RULESET SELECTION ----
+        record RuleOption(int bit, String description) {}
+
+        List<RuleOption> ruleOptions = List.of(
+                new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_SQUARES, "King cannot land on starting Moscovite squares"),
+                new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_MOVES,   "King cannot move more than 4 squares"),
+                new RuleOption(RuleSets.RULESET_CORNER_KING_ESCAPES,      "King must reach a corner to win")
+        );
+
+        System.out.printf("-----------------------------------\n");
+        System.out.printf("|         RULESET SELECTION       |\n");
+        System.out.printf("-----------------------------------\n");
+        System.out.printf("| Base rules are always active.   |\n");
+        System.out.printf("| Toggle optional rules below.    |\n");
+        System.out.printf("-----------------------------------\n");
+        for (int i = 0; i < ruleOptions.size(); i++) {
+            System.out.printf("-----\n");
+            System.out.printf("| %d | %s\n", i + 1, ruleOptions.get(i).description());
+            System.out.printf("-----\n");
+        }
+        System.out.printf("-----\n");
+        System.out.printf("| 0 | Done - start with current ruleset\n");
+        System.out.printf("-----\n");
+
+        int ruleSelection;
+        do {
+            // print active ruleset state
+            System.out.printf("\nActive rules : [ NORMAL");
+            for (int i = 0; i < ruleOptions.size(); i++) {
+                if ((RuleSets.currentRuleset & ruleOptions.get(i).bit()) > 0) {
+                    System.out.printf(", %d", i + 1);
+                }
+            }
+            System.out.printf(" ]\n");
+
+            System.out.printf("* Toggle a rule (1-%d) or 0 to start --> ", ruleOptions.size());
+            try {
+                ruleSelection = Integer.parseInt(sc.next());
+            } catch (NumberFormatException e) {
+                ruleSelection = -1;
+            }
+
+            if (ruleSelection >= 1 && ruleSelection <= ruleOptions.size()) {
+                RuleSets.currentRuleset ^= ruleOptions.get(ruleSelection - 1).bit(); // toggle
+            } else if (ruleSelection != 0) {
+                System.out.printf(" Invalid input.\n");
+            }
+        } while (ruleSelection != 0);
+        System.out.printf("\n");
+
 
 
 
@@ -58,6 +109,7 @@ public class TablutConsole {
         control.setFirstStageName("tablut");
 
 
+        // ---- BOT SELECTION ----
         if (mode > 0) {
             for (int i = 0; i <= 1; i++) {
                 if (mode == 1 && i == 0) continue;
