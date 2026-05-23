@@ -1,6 +1,7 @@
 package control.algos;
 
-import javax.swing.plaf.ViewportUI;
+import model.RuleSets;
+
 
 public class Evaluation {
 
@@ -106,6 +107,11 @@ public class Evaluation {
 
         boolean kingOnThrone = (board.kingX == 4 && board.kingY == 4);
 
+        int maxDistance = 8;
+        if (RuleSets.isConstrainedKingMoves()) {
+            maxDistance = 4;
+        }
+
         for (int i = 0; i < 4; i++) {
             int dy = Board.DY_VALS[i];
             int dx = Board.DX_VALS[i];
@@ -113,14 +119,14 @@ public class Evaluation {
             int y = board.kingY;
             boolean edgeReachable = true;
 
-            for (int j = 0; j < 9; j++) {
+            for (int j = 1; j <= maxDistance; j++) {
                 x += dx;
                 y += dy;
                 if (x < 0 || x > 8 || y < 0 || y > 8) break;
 
                 int piece = board.board[y][x];
 
-                if (j == 0) {
+                if (j == 1) {
                     if (board.isMoscovite(piece) || (x == 4 && y == 4)) {
                         surroundingMoscovites++;
                     }
@@ -135,6 +141,15 @@ public class Evaluation {
                     }
                     break;
                 }
+
+                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
+                    if (RuleSets.isConstrainedKingSquares() && Board.constrainedKingSquares.contains(y * 9 + x)) {
+                        edgeReachable = false;
+                    } else if (RuleSets.isCornerKingEscapes() && !Board.cornerSquares.contains(y * 9 + x)) {
+                        edgeReachable = false;
+                    }
+                }
+
             }
 
             if (edgeReachable) {

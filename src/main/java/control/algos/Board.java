@@ -2,6 +2,7 @@ package control.algos;
 
 import model.Move;
 import model.Pawn;
+import model.RuleSets;
 import model.TablutBoard;
 
 import java.util.ArrayList;
@@ -21,6 +22,22 @@ public class Board {
     // utils for clockwise rotation
     public static final int[] DY_VALS = {-1, 0, 1, 0};
     public static final int[] DX_VALS = {0, 1, 0, -1};
+
+    // list of square unreachable by the king in the RULESET_CONSTRAINED_KING_SQUARES rule (flat order index)
+    public static final List<Integer> constrainedKingSquares = List.of(
+            3, 4, 5, 13, // D1, E1, F1, E2
+            27, 36, 45, 37, // A4, A5, A6, B5
+            35, 44, 53, 43, // I4, I5, I6, H5
+            75, 76, 77, 68  // D9, E9, F9, E8
+    );
+
+    // list of corner squares (flat order index)
+    public static final List<Integer> cornerSquares = List.of(
+            0, // A1
+            8, // I1
+            72, // A9,
+            80 //I9
+    );
 
 
     public int[][] board;
@@ -121,17 +138,26 @@ public class Board {
         for (int y = 0; y < 9; y++) {
             for (int x = 0; x < 9; x++) {
                 if (((turn == 0 && isGreen(board[y][x])) || (turn == 1 && isMoscovite(board[y][x])))) {
+                    int maxDistance = 8;
+                    if (isKing(board[y][x]) && RuleSets.isConstrainedKingMoves()) {
+                        maxDistance = 4;
+                    }
                     for (int d = 0; d < 4; d++) {
                         int currY = y;
                         int currX = x;
-                        for (int i = 0; i < 9; i++) {
+                        for (int i = 0; i <= maxDistance; i++) {
                             currY += dy_vals[d];
                             currX += dx_vals[d];
                             currMove = new Move(x, y, currX, currY);
 
-                            if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break;
-                            if (currY == 4 && currX == 4 && !isKing(board[y][x])) break;
-                            if (!isEmpty(board[currY][currX])) break;
+                            if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break; // prevent out of bounds
+                            if (!isEmpty(board[currY][currX])) break; // stop when path is obstructed
+                            if (currY == 4 && currX == 4) continue; // skip center square
+                            if (RuleSets.isConstrainedKingSquares()) {
+                                if (isKing(board[y][x]) && constrainedKingSquares.contains(currY * 9 + currX))
+                                    continue; // skip constrained king squares
+                            }
+
 
                             if (checkCapture(currMove) != -1) {
                                 captures.add(currMove);
@@ -228,7 +254,20 @@ public class Board {
 
         // check king position on edges
         if (kingX == 0 || kingX == 8 || kingY == 0 || kingY == 8) {
+            if (RuleSets.isCornerKingEscapes() || RuleSets.isConstrainedKingSquares()) {
+                if (RuleSets.isCornerKingEscapes()) {
+                    if (cornerSquares.contains(kingY * 9 + kingX)) {
+                        return Integer.MAX_VALUE;
+                    }
+                }
+                if (RuleSets.isConstrainedKingSquares()) {
+                    if (!constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                        return Integer.MAX_VALUE;
+                    }
+                }
+            } else {
                 return (double) Integer.MAX_VALUE;
+            }
         }
 
 

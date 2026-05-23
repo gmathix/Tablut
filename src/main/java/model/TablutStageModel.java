@@ -1,6 +1,8 @@
 package model;
 
 import boardifier.model.*;
+import control.algos.Board;
+import model.RuleSets;
 
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
@@ -183,17 +185,28 @@ public class TablutStageModel extends GameStageModel {
 
         // check if the king can reach one edge or two
         int nbEdgesRechable = 0;
+        int maxDistance = 8;
+        if (RuleSets.isConstrainedKingMoves()) {
+            maxDistance = 4;
+        }
         for (int i = 0; i < 4; i++) {
             int y = kingY;
             int x = kingX;
             boolean isFreeWay = true;
 
-            for (int j = 0; j < 9; j++) {
+            for (int j = 1; j <= maxDistance; j++) {
                 y += dy_vals[i];
                 x += dx_vals[i];
                 if (y < 0 || y > 8 || x < 0 || x > 8) break;
                 if (getBoard().getElement(y, x) instanceof Pawn) {
                     isFreeWay = false;
+                }
+                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
+                    if (RuleSets.isConstrainedKingSquares() && Board.constrainedKingSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                    } else if (RuleSets.isCornerKingEscapes() && !Board.cornerSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                    }
                 }
             }
 
@@ -210,10 +223,20 @@ public class TablutStageModel extends GameStageModel {
 
         // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
-            // exclude starting moscovite squares
-            if (((kingY == 0 || kingY == 8) && (kingX <= 2 || kingX >= 6)) ||
-                ((kingX == 0 || kingX == 8) && (kingY <= 2 || kingY >= 6))) {
-
+            if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
+                if (RuleSets.isConstrainedKingSquares()) {
+                    if (!Board.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                        idWinner = 0;
+                        winMessage = "king reached an edge";
+                    }
+                }
+                if (RuleSets.isCornerKingEscapes()) {
+                    if (Board.cornerSquares.contains(kingY * 9 + kingX)) {
+                        idWinner = 0;
+                        winMessage = "king reached an edge";
+                    }
+                }
+            } else {
                 idWinner = 0;
                 winMessage = "king reached an edge";
             }
