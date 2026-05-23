@@ -64,7 +64,7 @@ public class TablutBoard extends ContainerElement {
         List<Point> lst = new ArrayList<>();
 
 
-        Pawn pawn;
+        Pawn pawn = null;
         int pawnY = 0, pawnX = 0;
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
@@ -78,9 +78,13 @@ public class TablutBoard extends ContainerElement {
             }
         }
 
-
+        int distanceCount = 8;
+        if (pawn.getColor() == Pawn.PAWN_KING) {
+            distanceCount = 4;
+        }
         // check horizontal empty squares to the left
         for (int x = pawnX-1; x >= 0; x--) {
+            if (distanceCount == 0) break;
             if (!(getElement(pawnY, x) instanceof Pawn)) {
                 if (!(x == 4 && pawnY == 4)) {
                     lst.add(new Point(x, pawnY));
@@ -89,9 +93,16 @@ public class TablutBoard extends ContainerElement {
                 // there is a pawn here, can't go further
                 break;
             }
+            distanceCount--;
+        }
+
+        distanceCount = 8;
+        if (pawn.getColor() == Pawn.PAWN_KING) {
+            distanceCount = 4;
         }
         // check horizontal empty squares to the right
         for (int x = pawnX+1; x < BOARD_SIZE; x++) {
+            if (distanceCount == 0) break;
             if (!(getElement(pawnY, x) instanceof Pawn)) {
                 if (!(x == 4 && pawnY == 4)) {
                     lst.add(new Point(x, pawnY));
@@ -100,9 +111,16 @@ public class TablutBoard extends ContainerElement {
                 // there is a pawn here, can't go further
                 break;
             }
+            distanceCount--;
+        }
+
+        distanceCount = 8;
+        if (pawn.getColor() == Pawn.PAWN_KING) {
+            distanceCount = 4;
         }
         // check vertical empty squares up
         for (int y = pawnY-1; y >= 0; y--) {
+            if (distanceCount == 0) break;
             if (!(getElement(y, pawnX) instanceof Pawn)) {
                 if (!(x == 4 && pawnY == 4)) {
                     lst.add(new Point(pawnX, y));
@@ -111,9 +129,16 @@ public class TablutBoard extends ContainerElement {
                 // there is a pawn here, can't go further
                 break;
             }
+            distanceCount--;
+        }
+
+        distanceCount = 8;
+        if (pawn.getColor() == Pawn.PAWN_KING) {
+            distanceCount = 4;
         }
         // check vertical empty squares down
         for (int y = pawnY+1; y < BOARD_SIZE; y++) {
+            if (distanceCount == 0) break;
             if (!(getElement(y, pawnX) instanceof Pawn)) {
                 if (!(x == 4 && pawnY == 4)) {
                     lst.add(new Point(pawnX, y));
@@ -122,6 +147,7 @@ public class TablutBoard extends ContainerElement {
                 // there is a pawn here, can't go further
                 break;
             }
+            distanceCount--;
         }
 
 
