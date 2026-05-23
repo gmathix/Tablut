@@ -1,15 +1,27 @@
+import boardifier.control.Decider;
 import boardifier.control.StageFactory;
 import boardifier.model.GameException;
 import boardifier.model.Model;
 import boardifier.view.View;
 import control.TablutController;
+import control.TablutController.BotSelection;
+import model.RuleSets;
+
+
+import java.util.*;
+import java.util.Map.*;
+
+
 
 public class TablutConsole {
+
+    public static final Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) {
 
         int mode = 0;
-        if (args.length == 1) {
+        String inputFile = "";
+        if (args.length >= 1) {
             try {
                 mode = Integer.parseInt(args[0]);
                 if ((mode <0) || (mode>2)) mode = 0;
@@ -17,6 +29,9 @@ public class TablutConsole {
             catch(NumberFormatException e) {
                 mode = 0;
             }
+        }
+        if (args.length >= 2) {
+            inputFile = args[1];
         }
 
 
@@ -32,10 +47,111 @@ public class TablutConsole {
             model.addComputerPlayer("computer2");
         }
 
+
+
+        // ---- RULESET SELECTION ----
+        record RuleOption(int bit, String description) {}
+
+        List<RuleOption> ruleOptions = List.of(
+                new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_SQUARES, "King cannot land on starting Moscovite squares"),
+                new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_MOVES,   "King cannot move more than 4 squares"),
+                new RuleOption(RuleSets.RULESET_CORNER_KING_ESCAPES,      "King must reach a corner to win")
+        );
+
+        System.out.printf("-----------------------------------\n");
+        System.out.printf("|         RULESET SELECTION       |\n");
+        System.out.printf("-----------------------------------\n");
+        System.out.printf("| Base rules are always active.   |\n");
+        System.out.printf("| Toggle optional rules below.    |\n");
+        System.out.printf("-----------------------------------\n");
+        for (int i = 0; i < ruleOptions.size(); i++) {
+            System.out.printf("-----\n");
+            System.out.printf("| %d | %s\n", i + 1, ruleOptions.get(i).description());
+            System.out.printf("-----\n");
+        }
+        System.out.printf("-----\n");
+        System.out.printf("| 0 | Done - start with current ruleset\n");
+        System.out.printf("-----\n");
+
+        int ruleSelection;
+        do {
+            // print active ruleset state
+            System.out.printf("\nActive rules : [ NORMAL");
+            for (int i = 0; i < ruleOptions.size(); i++) {
+                if ((RuleSets.currentRuleset & ruleOptions.get(i).bit()) > 0) {
+                    System.out.printf(", %d", i + 1);
+                }
+            }
+            System.out.printf(" ]\n");
+
+            System.out.printf("* Toggle a rule (1-%d) or 0 to start --> ", ruleOptions.size());
+            try {
+                ruleSelection = Integer.parseInt(sc.next());
+            } catch (NumberFormatException e) {
+                ruleSelection = -1;
+            }
+
+            if (ruleSelection >= 1 && ruleSelection <= ruleOptions.size()) {
+                RuleSets.currentRuleset ^= ruleOptions.get(ruleSelection - 1).bit(); // toggle
+            } else if (ruleSelection != 0) {
+                System.out.printf(" Invalid input.\n");
+            }
+        } while (ruleSelection != 0);
+        System.out.printf("\n");
+
+
+
+
+
         StageFactory.registerModelAndView("tablut", "model.TablutStageModel", "view.TablutStageView");
         View holeView = new View(model);
-        TablutController control = new TablutController(model,holeView);
+        TablutController control = new TablutController(model,holeView,mode,inputFile);
         control.setFirstStageName("tablut");
+
+
+        // ---- BOT SELECTION ----
+        if (mode > 0) {
+            for (int i = 0; i <= 1; i++) {
+                if (mode == 1 && i == 0) continue;
+                System.out.printf("-----------------------------------\n");
+                System.out.printf("|     BOT SELECTION FOR %s    |\n", i == 0 ? "GREEN " : "YELLOW");
+                System.out.printf("-----------------------------------\n");
+
+                List<Integer> validValues = new ArrayList<>();
+                for (Entry<Integer, BotSelection> entry : control.getAvailableBots()[i].entrySet()) {
+                    validValues.add(entry.getKey());
+                    System.out.printf("-----\n");
+                    System.out.printf("| %d | %s\n", entry.getKey(), entry.getValue().name());
+                    System.out.printf("-----\n");
+                }
+
+                int selection = -1;
+                do {
+                    System.out.printf("\n* Enter your selection --> ");
+                    selection = Integer.parseInt(sc.next());
+                    if (!validValues.contains(selection)) {
+                        System.out.printf("\n Invalid input.\n");
+                    }
+                } while (!validValues.contains(selection));
+
+                control.setBotPlayer(i, selection);
+
+
+                int level = -1;
+                do {
+                    System.out.printf("\n* Enter the bot level (between 0 and 10) --> ");
+                    level = Integer.parseInt(sc.next());
+                    if (level < 0 || level > 10) {
+                        System.out.printf("\n Invalid input.\n");
+                    }
+                } while (level < 0 || level > 10);
+                System.out.printf("\n\n");
+
+                control.setBotLevel(i, level);
+            }
+        }
+
+
         try {
             control.startGame();
 

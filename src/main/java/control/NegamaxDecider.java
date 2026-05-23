@@ -11,12 +11,25 @@ import control.algos.Board;
 import control.algos.NegamaxSearch;
 import model.*;
 
-import java.util.List;
+public class NegamaxDecider extends Decider {
+    private int depth;
 
-public class TablutNegamaxDecider extends Decider {
 
-    public TablutNegamaxDecider(Model model, Controller control, int level) {
+    public NegamaxDecider(Model model, Controller control, int level) {
         super(model, control);
+        this.depth = level;
+        if (depth < 0) depth = 0;
+        if (depth > 10) depth = 10;
+    }
+
+    public NegamaxDecider(Model model, Controller controller) {
+        this(model, controller, 5);
+    }
+
+    public void setLevel(int level) {
+        this.depth = level;
+        if (depth < 0) depth = 0;
+        if (depth > 10) depth = 10;
     }
 
 
@@ -32,7 +45,7 @@ public class TablutNegamaxDecider extends Decider {
 
         int turn = model.getIdPlayer();
 
-        NegamaxSearch negamaxSearch = new NegamaxSearch(5);
+        NegamaxSearch negamaxSearch = new NegamaxSearch(depth);
 
 
 
@@ -42,7 +55,12 @@ public class TablutNegamaxDecider extends Decider {
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
+
         stage.checkCapture(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+        if (board.isKing(board.board[bestMove.srcY()][bestMove.srcX()])) {
+            tablutBoard.setKingY(bestMove.dstY());
+            tablutBoard.setKingX(bestMove.dstX());
+        }
 
 
 

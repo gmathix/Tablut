@@ -1,11 +1,19 @@
 package control.algos;
 
+import model.RuleSets;
+
+
 public class Evaluation {
 
+    // virtual inf boundary that doesn't break floating point math of exp functions (unlike damn Double.NEGATIVE_INFINITY)
+    public static final double VIRTUAL_INF = 10000;
 
     // weights for each evaluation criteria
-    public static final double ENCERCLEMENT_WEIGHT = 0.7;
-    public static final double MATERIAL_WEIGHT     = 0.3;
+    public static final double ESCAPE_PATH_WEIGHT  = 40;
+    public static final double ENCERCLEMENT_WEIGHT = 25;
+    public static final double MATERIAL_WEIGHT     = 15;
+    public static final double POSITION_WEIGHT     = 10;
+
 
     
     /**
@@ -44,38 +52,42 @@ public class Evaluation {
             /** green won : if we are green this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
              */
-            return (turn == 0) ? (Double.MAX_VALUE - depthDiff) : (Double.MIN_VALUE + depthDiff);
+            return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
         if (win == Integer.MIN_VALUE) {
             // yellow won : if we are yellow this is good otherwise it's terrible
-            return (turn == 1) ? (Double.MAX_VALUE - depthDiff) : (Double.MIN_VALUE + depthDiff);
+            return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
 
 
         // 2. check delayed wins
-        double delayedWin = checkDelayedWin(board, turn, depthDiff);
-        if (delayedWin != 0) return delayedWin;
+        double delayedWin = checkDelayedWinAndPaths(board, turn, depthDiff);
+        if (Math.abs(delayedWin) >= VIRTUAL_INF - 100)
+            return delayedWin;
 
 
 
 
 
-        // 3. check king encerclement
+        // 3. positional evaluation
         double encerclement = countKingEncerclement(board);
-
 
         // 4. count material difference
         double materialDiff = countMaterialDiff(board);
 
+        double boardControl = evaluateBoardControl(board);
 
-        double greenScore = ENCERCLEMENT_WEIGHT * encerclement +
-                            MATERIAL_WEIGHT * materialDiff;
+
+        double greenScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
+                            (encerclement * ENCERCLEMENT_WEIGHT) +
+                            (materialDiff * MATERIAL_WEIGHT) +
+                            (boardControl * POSITION_WEIGHT);
 
 
         return (turn == 0) ? greenScore : -greenScore;
     }
 
-    public static double checkDelayedWin(Board board, int turn, int depthDiff) {
+    public static double checkDelayedWinAndPaths(Board board, int turn, int depthDiff) {
 
 
         /**
@@ -88,8 +100,18 @@ public class Evaluation {
          */
 
         int nbEdgesReachable = 0;
-        int nbSurrounding = 0;
+        int surroundingMoscovites = 0;
         boolean kingSurrounded = false;
+        int kingObstructions = 0;
+
+
+        boolean kingOnThrone = (board.kingX == 4 && board.kingY == 4);
+
+        int maxDistance = 8;
+        if (RuleSets.isConstrainedKingMoves()) {
+            maxDistance = 4;
+        }
+
         for (int i = 0; i < 4; i++) {
             int dy = Board.DY_VALS[i];
             int dx = Board.DX_VALS[i];
@@ -97,29 +119,37 @@ public class Evaluation {
             int y = board.kingY;
             boolean edgeReachable = true;
 
-            for (int j = 0; j < 9; j++) {
+            for (int j = 1; j <= maxDistance; j++) {
                 x += dx;
                 y += dy;
                 if (x < 0 || x > 8 || y < 0 || y > 8) break;
 
-                // count surrounding moscovites
-                if (j == 0 && (board.isMoscovite(board.board[i][j]) || (x==4 && y==4))) {
-                    nbSurrounding++;
-                    if (nbSurrounding == 4) {
-                        kingSurrounded = true;
+                int piece = board.board[y][x];
+
+                if (j == 1) {
+                    if (board.isMoscovite(piece) || (x == 4 && y == 4)) {
+                        surroundingMoscovites++;
                     }
                 }
 
-                // check if a moscovite can move next to the king and surround it
-                if (j > 0 && nbSurrounding == 3 && board.isMoscovite(board.board[i][j])) {
-                    kingSurrounded = true;
-                }
-
-                // check if there is something else in the way
-                if (!board.isEmpty(board.board[y][x])) {
+                if (!board.isEmpty(piece)) {
                     edgeReachable = false;
+                    if (board.isMoscovite(piece) && j > 0) {
+                        kingObstructions++;
+                    } else if (board.isSoldier(piece)) {
+                        kingObstructions++;
+                    }
                     break;
                 }
+
+                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
+                    if (RuleSets.isConstrainedKingSquares() && Board.constrainedKingSquares.contains(y * 9 + x)) {
+                        edgeReachable = false;
+                    } else if (RuleSets.isCornerKingEscapes() && !Board.cornerSquares.contains(y * 9 + x)) {
+                        edgeReachable = false;
+                    }
+                }
+
             }
 
             if (edgeReachable) {
@@ -127,37 +157,35 @@ public class Evaluation {
             }
         }
 
-        /**
-         * green wins if :
-         * - it is green to play and the king can reach at least one edge
-         * - or it is yellow to play and the king can reach at least two edges
-         */
-        if ((turn == 0 && nbEdgesReachable >= 1) ||
-                (turn == 1 && nbEdgesReachable >= 2)) {
 
-            // closer to the root (=higher depth value) means a faster win
-            return (turn == 0) ? (Double.MAX_VALUE - depthDiff) : (Double.MIN_VALUE + depthDiff);
-        }
-
-        /**
-         * yellow wins if the king can be surrounded
-         */
-        if (turn == 1 && kingSurrounded) {
-            return Double.MAX_VALUE - depthDiff;
+        if (kingOnThrone && surroundingMoscovites == 4) {
+            kingSurrounded = true;
+        } else if (!kingOnThrone && (board.kingX == 4 && (board.kingY == 3 || board.kingY == 5))
+                || (board.kingY == 4 && (board.kingX == 3 || board.kingX == 5))) {
+            if (surroundingMoscovites >= 3) kingSurrounded = true;
+        } else {
+            if (surroundingMoscovites >= 4) kingSurrounded = true;
         }
 
 
+        if ((turn == 0 && nbEdgesReachable >= 1) || (turn == 1 && nbEdgesReachable >= 2)) {
+            return turn == 0 ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+        }
+        if (kingSurrounded) {
+            return turn == 1 ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+        }
 
 
-        return 0;
+        // return relative to green
+        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5) + (surroundingMoscovites * -5.0);
     }
-
 
     /**
      * Evaluate the king encerclement relative to Green (always negative) :
-     *    - Vertically or horizontally, surrounding pieces receive a +5 score
-     *    - Diagonally, they receive a +2.5 score
+     *    - Vertically or horizontally, surrounding pieces receive a +1 score
+     *    - Diagonally, they receive a +0.5 score
      *    - Moscovites (yellow pieces) receive a x3 multiplier
+     *    - Soldiers (green pieces) receive a -1 multiplier because they protect the king
      */
     public static double countKingEncerclement(Board board) {
         double encerclement = 0;
@@ -169,13 +197,16 @@ public class Evaluation {
                 if (dy == 0 && dx == 0) continue;
                 if (y < 0 || y > 8 || x < 0 || x > 8) continue;
 
-                if (!board.isEmpty(board.board[y][x])) {
+                int piece = board.board[y][x];
+                if (!board.isEmpty(piece)) {
                     double score;
-                    if (Math.abs(dy - dx) == 1) score = 5; // vertical or horizontal
-                    else                        score = 2.5; // diagonal
+                    if (Math.abs(dy - dx) == 1) score = 1; // vertical or horizontal
+                    else                        score = 0.5; // diagonal
 
-                    if (board.isMoscovite(board.board[y][x])) {
+                    if (board.isMoscovite(piece)) {
                         score *= 3;
+                    } else {
+                        score *= -1;
                     }
 
                     encerclement += score;
@@ -203,7 +234,24 @@ public class Evaluation {
             }
         }
 
-        // normalize between -5 and 5
-        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 500;
+        // normalize between -10 and 10
+        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 10;
+    }
+
+
+    public static double evaluateBoardControl(Board board) {
+        double score = 0;
+        for (int i = 2; i <= 6; i++) {
+            for (int j = 2; j <= 6; j++) {
+                if (i == 4 && j == 4) continue;
+                int piece = board.board[i][j];
+                if (board.isSoldier(piece)) {
+                    score += 0.2;
+                } else if (board.isMoscovite(piece)) {
+                    score -= 0.2;
+                }
+            }
+        }
+        return score;
     }
 }
