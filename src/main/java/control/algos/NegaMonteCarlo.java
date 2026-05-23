@@ -50,8 +50,8 @@ public class NegaMonteCarlo {
     // constant that balances exploitation vs exploration (win/visits ratio vs visits/parent visits "ratio")
     public static final double C = Math.sqrt(2);
 
-    private final long timeLimitMs;
-    private final int negamaxDepth = 2;
+    private long timeLimitMs;
+    private int negamaxDepth;
 
     private NegamaxSearch negamaxSearch;
 
@@ -63,7 +63,7 @@ public class NegaMonteCarlo {
         public Map<Move, Node> children;
 
         public int turn;
-        public Board board;
+        public RecurBoard recurBoard;
         public List<Move> unvisitedMoves;
         public int nbTotalLegalMoves;
 
@@ -71,18 +71,18 @@ public class NegaMonteCarlo {
         public double wins; // double to support fractional scores from negamax
         public int visits;  // n
 
-        public Node(boolean isRoot, Node parent, Board board, int turn) {
+        public Node(boolean isRoot, Node parent, RecurBoard recurBoard, int turn) {
             this.isRoot = isRoot;
             this.parent = parent;
             this.children = new HashMap<>();
-            this.board = board;
+            this.recurBoard = recurBoard;
             this.turn = turn;
 
             // check if board is already terminal before getting moves over there
-            if (board.checkWin() != 0) {
+            if (recurBoard.checkWin() != 0) {
                 this.unvisitedMoves = new ArrayList<>();
             } else {
-                this.unvisitedMoves = this.board.getLegalMoves(this.turn);
+                this.unvisitedMoves = this.recurBoard.getLegalMoves(this.turn);
             }
             this.nbTotalLegalMoves = this.unvisitedMoves.size();
 
@@ -94,7 +94,7 @@ public class NegaMonteCarlo {
             return nbTotalLegalMoves == children.size();
         }
         public boolean isTerminal() {
-            return board.checkWin() != 0 || (nbTotalLegalMoves == 0 && !isRoot);
+            return recurBoard.checkWin() != 0 || (nbTotalLegalMoves == 0 && !isRoot);
         }
     }
 
@@ -118,6 +118,15 @@ public class NegaMonteCarlo {
             default ->  5000;
         };
 
+        /** going from depth 2 -> 3 gives much better information to the backprop
+         *  the tradeoff is that we do less iterations but high-quality ones beat shallow evaluations in a tactical game like tablut
+         */
+        this.negamaxDepth = switch (level) {
+            case 1,2,3,4,5 -> 2;
+            case 6,7,8,9,10 -> 2;
+            default -> 2;
+        };
+
         this.negamaxSearch = new NegamaxSearch(this.negamaxDepth);
     }
 
@@ -127,11 +136,11 @@ public class NegaMonteCarlo {
         return ((double) node.wins / (double) node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
     }
 
-    public Move findBestMove(Board board, int turn) {
-        Move bestMove = board.getLegalMoves(turn).getFirst();
+    public Move findBestMove(RecurBoard recurBoard, int turn) {
+        Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
-        Node root = new Node(true, null, board, turn);
+        Node root = new Node(true, null, recurBoard, turn);
         root.parent = root; // just to avoid null pointer errors
 
         Node currentNode;
@@ -168,10 +177,10 @@ public class NegaMonteCarlo {
                 int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
                 Move randomMove = currentNode.unvisitedMoves.get(moveIndex);
 
-                Board childBoard = new Board(currentNode.board);
-                childBoard.makeMove(randomMove);
+                RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
+                childRecurBoard.makeMove(randomMove);
 
-                Node childNode = new Node(false, currentNode, childBoard, (currentNode.turn + 1) % 2);
+                Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
                 currentNode.children.put(randomMove, childNode);
                 currentNode.unvisitedMoves.remove(moveIndex);
                 currentNode = childNode;
@@ -182,9 +191,10 @@ public class NegaMonteCarlo {
              * 3. Simulation (replaced with low depth negamax)
              */
             double score;
-            double negamaxScore = negamaxSearch.negamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+            double negamaxScore = negamaxSearch.negamax(currentNode.recurBoard, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 //            double negamaxScore = smallNegamax(currentNode.board, this.negamaxDepth, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
             score = 1 / (1 + Math.exp(-negamaxScore / 100));
+            nbEvals++;
 
 
 
@@ -229,20 +239,20 @@ public class NegaMonteCarlo {
     /**
      * helper low-depth negamax tailored for MCTS leaf tracking
      */
-    private double smallNegamax(Board board, int depth, int turn, double alpha, double beta) {
-        double win = board.checkWin();
+    private double smallNegamax(RecurBoard recurBoard, int depth, int turn, double alpha, double beta) {
+        double win = recurBoard.checkWin();
         if (win != 0 || depth == 0) {
-            return Evaluation.evaluate(board, turn, depth, negamaxDepth);
+            return Evaluation.evaluate(recurBoard, turn, depth, negamaxDepth);
         }
 
         double bestScore = Double.NEGATIVE_INFINITY;
-        List<Move> moves = board.getLegalMoves(turn);
+        List<Move> moves = recurBoard.getLegalMoves(turn);
         if (moves.isEmpty()) return turn == 0 ? -1000 : 1000;
 
         for (Move m : moves) {
-            Board newBoard = new Board(board);
-            newBoard.makeMove(m);
-            double score = -smallNegamax(newBoard, depth-1, (turn+1) % 2, -beta, -alpha);
+            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
+            newRecurBoard.makeMove(m);
+            double score = -smallNegamax(newRecurBoard, depth-1, (turn+1) % 2, -beta, -alpha);
             bestScore = Math.max(bestScore, score);
             alpha = Math.max(alpha, score);
             if (alpha >= beta) break;

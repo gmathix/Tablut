@@ -62,7 +62,7 @@ public class MonteCarlo {
         public Map<Move, Node> children;
 
         public int turn;
-        public Board board;
+        public RecurBoard recurBoard;
         public List<Move> unvisitedMoves;
         public int nbTotalLegalMoves;
 
@@ -71,13 +71,13 @@ public class MonteCarlo {
         public int visits; // n
         // N = parent.visits
 
-        public Node(boolean isRoot, Node parent, Board board, int turn) {
+        public Node(boolean isRoot, Node parent, RecurBoard recurBoard, int turn) {
             this.isRoot = isRoot;
             this.parent = parent;
             this.children = new HashMap<>();
-            this.board = board;
+            this.recurBoard = recurBoard;
             this.turn = turn;
-            this.unvisitedMoves = this.board.getLegalMoves(this.turn);
+            this.unvisitedMoves = this.recurBoard.getLegalMoves(this.turn);
             this.nbTotalLegalMoves = this.unvisitedMoves.size();
 
             this.wins = 0;
@@ -115,11 +115,11 @@ public class MonteCarlo {
         return ((double) node.wins / node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
     }
 
-    public Move findBestMove(Board board, int turn) {
-        Move bestMove = board.getLegalMoves(turn).getFirst();
+    public Move findBestMove(RecurBoard recurBoard, int turn) {
+        Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
-        Node root = new Node(true, null, board, turn);
+        Node root = new Node(true, null, recurBoard, turn);
         root.parent = root; // just to avoid null pointer errors
 
         Node currentNode;
@@ -152,9 +152,9 @@ public class MonteCarlo {
              */
             int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
             Move randomMove = currentNode.unvisitedMoves.get(moveIndex);
-            Board childBoard = new Board(currentNode.board);
-            childBoard.makeMove(randomMove);
-            Node childNode = new Node(false, currentNode, childBoard, (currentNode.turn + 1) % 2);
+            RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
+            childRecurBoard.makeMove(randomMove);
+            Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
 
             currentNode.children.put(randomMove, childNode);
             currentNode.unvisitedMoves.remove(moveIndex);
@@ -166,18 +166,18 @@ public class MonteCarlo {
              * 3. Simulation
              */
             int playoutTurn = currentNode.turn;
-            Board playoutBoard = new Board(currentNode.board);
+            RecurBoard playoutRecurBoard = new RecurBoard(currentNode.recurBoard);
             List<Move> legalMoves;
             double winScore = 0;
 
             while (winScore == 0) { // play a fast, random game until the game is over
-                legalMoves = playoutBoard.getLegalMoves(playoutTurn);
+                legalMoves = playoutRecurBoard.getLegalMoves(playoutTurn);
                 moveIndex = (int) (Math.random() * legalMoves.size());
 
-                playoutBoard.makeMove(legalMoves.get(moveIndex));
+                playoutRecurBoard.makeMove(legalMoves.get(moveIndex));
                 playoutTurn = (playoutTurn + 1) % 2;
 
-                winScore = playoutBoard.checkWin();
+                winScore = playoutRecurBoard.checkWin();
             }
 
 

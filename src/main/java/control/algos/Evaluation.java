@@ -9,10 +9,10 @@ public class Evaluation {
     public static final double VIRTUAL_INF = 10000;
 
     // weights for each evaluation criteria
-    public static final double ESCAPE_PATH_WEIGHT  = 40;
-    public static final double ENCERCLEMENT_WEIGHT = 25;
-    public static final double MATERIAL_WEIGHT     = 15;
-    public static final double POSITION_WEIGHT     = 10;
+    public static final double ESCAPE_PATH_WEIGHT  = 15;
+    public static final double ENCERCLEMENT_WEIGHT = 20;
+    public static final double MATERIAL_WEIGHT     = 30;
+    public static final double POSITION_WEIGHT     = 5;
 
 
     
@@ -41,13 +41,13 @@ public class Evaluation {
      * @param baseDepth the total depth of the whole tree
      * @return
      */
-    public static double evaluate(Board board, int turn, int currDepth, int baseDepth) {
+    public static double evaluate(RecurBoard recurBoard, int turn, int currDepth, int baseDepth) {
         int depthDiff = baseDepth - currDepth;
 
         double score = 0;
 
         // 1. check win conditions immediately
-        double win = board.checkWin();
+        double win = recurBoard.checkWin();
         if (win == (double) Integer.MAX_VALUE) {
             /** green won : if we are green this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
@@ -61,7 +61,7 @@ public class Evaluation {
 
 
         // 2. check delayed wins
-        double delayedWin = checkDelayedWinAndPaths(board, turn, depthDiff);
+        double delayedWin = checkDelayedWinAndPaths(recurBoard, turn, depthDiff);
         if (Math.abs(delayedWin) >= VIRTUAL_INF - 100)
             return delayedWin;
 
@@ -70,12 +70,12 @@ public class Evaluation {
 
 
         // 3. positional evaluation
-        double encerclement = countKingEncerclement(board);
+        double encerclement = countKingEncerclement(recurBoard);
 
         // 4. count material difference
-        double materialDiff = countMaterialDiff(board);
+        double materialDiff = countMaterialDiff(recurBoard);
 
-        double boardControl = evaluateBoardControl(board);
+        double boardControl = evaluateBoardControl(recurBoard);
 
 
         double greenScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
@@ -87,8 +87,10 @@ public class Evaluation {
         return (turn == 0) ? greenScore : -greenScore;
     }
 
-    public static double checkDelayedWinAndPaths(Board board, int turn, int depthDiff) {
+    public static double checkDelayedWinAndPaths(RecurBoard recurBoard, int turn, int depthDiff) {
 
+        int kingY = recurBoard.getKingY();
+        int kingX = recurBoard.getKingX();
 
         /**
          * check king escape and encerclement simultaneously.
@@ -105,7 +107,7 @@ public class Evaluation {
         int kingObstructions = 0;
 
 
-        boolean kingOnThrone = (board.kingX == 4 && board.kingY == 4);
+        boolean kingOnThrone = (kingX == 4 && kingY == 4);
 
         int maxDistance = 8;
         if (RuleSets.isConstrainedKingMoves()) {
@@ -113,10 +115,10 @@ public class Evaluation {
         }
 
         for (int i = 0; i < 4; i++) {
-            int dy = Board.DY_VALS[i];
-            int dx = Board.DX_VALS[i];
-            int x = board.kingX;
-            int y = board.kingY;
+            int dy = RecurBoard.DY_VALS[i];
+            int dx = RecurBoard.DX_VALS[i];
+            int x = kingX;
+            int y = kingY;
             boolean edgeReachable = true;
 
             for (int j = 1; j <= maxDistance; j++) {
@@ -124,28 +126,28 @@ public class Evaluation {
                 y += dy;
                 if (x < 0 || x > 8 || y < 0 || y > 8) break;
 
-                int piece = board.board[y][x];
+                int piece = recurBoard.getBoard()[y][x];
 
                 if (j == 1) {
-                    if (board.isMoscovite(piece) || (x == 4 && y == 4)) {
+                    if (recurBoard.isMoscovite(piece) || (x == 4 && y == 4)) {
                         surroundingMoscovites++;
                     }
                 }
 
-                if (!board.isEmpty(piece)) {
+                if (!recurBoard.isEmpty(piece)) {
                     edgeReachable = false;
-                    if (board.isMoscovite(piece) && j > 0) {
+                    if (recurBoard.isMoscovite(piece) && j > 0) {
                         kingObstructions++;
-                    } else if (board.isSoldier(piece)) {
+                    } else if (recurBoard.isSoldier(piece)) {
                         kingObstructions++;
                     }
                     break;
                 }
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares() && Board.constrainedKingSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
-                    } else if (RuleSets.isCornerKingEscapes() && !Board.cornerSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
                     }
                 }
@@ -160,8 +162,8 @@ public class Evaluation {
 
         if (kingOnThrone && surroundingMoscovites == 4) {
             kingSurrounded = true;
-        } else if (!kingOnThrone && (board.kingX == 4 && (board.kingY == 3 || board.kingY == 5))
-                || (board.kingY == 4 && (board.kingX == 3 || board.kingX == 5))) {
+        } else if (!kingOnThrone && (kingX == 4 && (kingY == 3 || kingY == 5))
+                || (kingY == 4 && (kingX == 3 || kingX == 5))) {
             if (surroundingMoscovites >= 3) kingSurrounded = true;
         } else {
             if (surroundingMoscovites >= 4) kingSurrounded = true;
@@ -177,7 +179,7 @@ public class Evaluation {
 
 
         // return relative to green
-        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5) + (surroundingMoscovites * -5.0);
+        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5);
     }
 
     /**
@@ -187,23 +189,23 @@ public class Evaluation {
      *    - Moscovites (yellow pieces) receive a x3 multiplier
      *    - Soldiers (green pieces) receive a -1 multiplier because they protect the king
      */
-    public static double countKingEncerclement(Board board) {
+    public static double countKingEncerclement(RecurBoard recurBoard) {
         double encerclement = 0;
 
         for (int dy = -1; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
-                int y = board.kingY + dy;
-                int x = board.kingX + dx;
+                int y = recurBoard.getKingY() + dy;
+                int x = recurBoard.getKingX() + dx;
                 if (dy == 0 && dx == 0) continue;
                 if (y < 0 || y > 8 || x < 0 || x > 8) continue;
 
-                int piece = board.board[y][x];
-                if (!board.isEmpty(piece)) {
+                int piece = recurBoard.getBoard()[y][x];
+                if (!recurBoard.isEmpty(piece)) {
                     double score;
                     if (Math.abs(dy - dx) == 1) score = 1; // vertical or horizontal
                     else                        score = 0.5; // diagonal
 
-                    if (board.isMoscovite(piece)) {
+                    if (recurBoard.isMoscovite(piece)) {
                         score *= 3;
                     } else {
                         score *= -1;
@@ -221,33 +223,33 @@ public class Evaluation {
     /**
      * Returns the material difference (king excluded) relative to Green
      */
-    public static double countMaterialDiff(Board board) {
+    public static double countMaterialDiff(RecurBoard recurBoard) {
         double nbYellowPawns = 0;
         double nbGreenPawns = 0;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
-                if (board.board[i][j] == Board.MOSCOVITE) {
+                if (recurBoard.getBoard()[i][j] == RecurBoard.MOSCOVITE) {
                     nbYellowPawns++;
-                } else if (board.board[i][j] == Board.SOLDIER) {
+                } else if (recurBoard.getBoard()[i][j] == RecurBoard.SOLDIER) {
                     nbGreenPawns++;
                 }
             }
         }
 
-        // normalize between -10 and 10
-        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 10;
+        // normalize between -30 and 30
+        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 30;
     }
 
 
-    public static double evaluateBoardControl(Board board) {
+    public static double evaluateBoardControl(RecurBoard recurBoard) {
         double score = 0;
         for (int i = 2; i <= 6; i++) {
             for (int j = 2; j <= 6; j++) {
                 if (i == 4 && j == 4) continue;
-                int piece = board.board[i][j];
-                if (board.isSoldier(piece)) {
+                int piece = recurBoard.getBoard()[i][j];
+                if (recurBoard.isSoldier(piece)) {
                     score += 0.2;
-                } else if (board.isMoscovite(piece)) {
+                } else if (recurBoard.isMoscovite(piece)) {
                     score -= 0.2;
                 }
             }

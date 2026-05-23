@@ -1,8 +1,7 @@
 package model;
 
 import boardifier.model.*;
-import control.algos.Board;
-import model.RuleSets;
+import control.algos.RecurBoard;
 
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
@@ -202,9 +201,9 @@ public class TablutStageModel extends GameStageModel {
                     isFreeWay = false;
                 }
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares() && Board.constrainedKingSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
-                    } else if (RuleSets.isCornerKingEscapes() && !Board.cornerSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                     }
                 }
@@ -225,13 +224,13 @@ public class TablutStageModel extends GameStageModel {
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
                 if (RuleSets.isConstrainedKingSquares()) {
-                    if (!Board.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                         winMessage = "king reached an edge";
                     }
                 }
                 if (RuleSets.isCornerKingEscapes()) {
-                    if (Board.cornerSquares.contains(kingY * 9 + kingX)) {
+                    if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                         winMessage = "king reached an edge";
                     }

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Convenience board wrapper with minimal information in memory compared to TablutBoard
  */
-public class Board {
+public class RecurBoard {
     public static final int EMPTY     = 0;
     public static final int MOSCOVITE = 1;
     public static final int SOLDIER   = 2;
@@ -40,12 +40,19 @@ public class Board {
     );
 
 
-    public int[][] board;
-    public int kingX;
-    public int kingY;
+    private int[][] board;
+    private int kingX;
+    private int kingY;
 
 
-    public Board(TablutBoard tablutBoard) {
+    // those values will have to be collected by the negamax search after every makeMove()
+    // in order to pass them to undoMove() right after
+    private int lastCaptureX;
+    private int lastCaptureY;
+    private int lastCapturePiece;
+
+
+    public RecurBoard(TablutBoard tablutBoard) {
         board = new int[9][9];
 
         // make a smaller board (in memory) from the huge TablutBoard class
@@ -68,7 +75,7 @@ public class Board {
         }
     }
 
-    public Board(Board board) {
+    public RecurBoard(RecurBoard board) {
         this.board = new int[9][9];
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
@@ -78,6 +85,15 @@ public class Board {
         this.kingY = board.kingY;
         this.kingX = board.kingX;
     }
+
+
+    public int getKingX() { return kingX; }
+    public int getKingY() { return kingY; }
+    public int[][] getBoard() { return board; }
+    public int getLastCaptureX() { return lastCaptureX; }
+    public int getLastCaptureY() { return lastCaptureY; }
+    public int getLastCapturePiece() { return lastCapturePiece; }
+
 
     public boolean isMoscovite(int piece) {
         return piece == MOSCOVITE;
@@ -158,7 +174,6 @@ public class Board {
                                     continue; // skip constrained king squares
                             }
 
-
                             if (checkCapture(currMove) != -1) {
                                 captures.add(currMove);
                             } else if (isKing(board[y][x])) {
@@ -208,7 +223,6 @@ public class Board {
                     return (dstY + dy) * 9 + (dstX + dx);
                 }
             } else {
-                // either the piece 2 squares apart is a green one or it is the center (which is hostile too for captures)
                 if (isMoscovite(n) && (isGreen(n2) || centerCapturing)) {
                     return (dstY + dy) * 9 + (dstX + dx);
                 }
@@ -231,17 +245,37 @@ public class Board {
 
         int capture = checkCapture(move);
         if (capture != -1) {
-            board[capture/9][capture%9] = EMPTY;
-        }
+            lastCapturePiece = board[capture/9][capture%9];
+            lastCaptureY = capture / 9;
+            lastCaptureX = capture % 9;
 
+            board[capture/9][capture%9] = EMPTY;
+        } else {
+            lastCaptureY = -1;
+            lastCaptureX = -1;
+            lastCapturePiece = EMPTY;
+        }
 
         board[dstY][dstX] = selPiece;
         board[srcY][srcX] = EMPTY;
 
-        
         if (isKing(board[dstY][dstX])) {
             kingY = dstY;
             kingX = dstX;
+        }
+    }
+
+    public void undoMove(Move move, int lastCaptureX, int lastCaptureY, int lastCapturePiece, int prevKingX, int prevKingY) {
+        // assumes that this move corresponds to the last move played on this board
+
+        board[move.srcY()][move.srcX()] = board[move.dstY()][move.dstX()];
+        board[move.dstY()][move.dstX()] = EMPTY;
+
+        this.kingX = prevKingX;
+        this.kingY = prevKingY;
+
+        if (lastCaptureX != -1 && lastCaptureY != -1){
+            board[lastCaptureY][lastCaptureX] = lastCapturePiece;
         }
     }
 

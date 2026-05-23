@@ -79,7 +79,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         int distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
             distanceCount = 4;
         }
         // check horizontal empty squares to the left
@@ -97,7 +97,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
             distanceCount = 4;
         }
         // check horizontal empty squares to the right
@@ -115,7 +115,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
             distanceCount = 4;
         }
         // check vertical empty squares up
@@ -133,7 +133,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
             distanceCount = 4;
         }
         // check vertical empty squares down

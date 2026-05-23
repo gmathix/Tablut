@@ -7,9 +7,8 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import control.algos.Board;
+import control.algos.RecurBoard;
 import control.algos.NegaMonteCarlo;
-import control.algos.NegamaxSearch;
 import model.Move;
 import model.TablutBoard;
 import model.TablutStageModel;
@@ -41,7 +40,7 @@ public class NegaMonteCarloDecider extends Decider {
         // do a cast get a variable of the real type to get access to the attributes of HoleStageModel
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        Board board = new Board(tablutBoard);
+        RecurBoard recurBoard = new RecurBoard(tablutBoard);
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();
@@ -50,12 +49,12 @@ public class NegaMonteCarloDecider extends Decider {
 
 
 
-        Move bestMove = negaMonteCarlo.findBestMove(board, turn);
+        Move bestMove = negaMonteCarlo.findBestMove(recurBoard, turn);
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
         stage.checkCapture(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
-        if (board.isKing(board.board[bestMove.srcY()][bestMove.srcX()])) {
+        if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
             tablutBoard.setKingY(bestMove.dstY());
             tablutBoard.setKingX(bestMove.dstX());
         }
