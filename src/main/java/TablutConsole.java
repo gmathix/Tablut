@@ -24,24 +24,77 @@ public class TablutConsole {
         if (args.length >= 1) {
             try {
                 mode = Integer.parseInt(args[0]);
-                if ((mode <0) || (mode>2)) mode = 0;
-            }
-            catch(NumberFormatException e) {
+                if ((mode < 0) || (mode > 2)) mode = 0;
+            } catch (NumberFormatException e) {
                 mode = 0;
             }
+        } else {
+            System.out.printf("-----------------------------------\n");
+            System.out.printf("|         MODE SELECTION          |\n");
+            System.out.printf("-----------------------------------\n");
+            System.out.printf("-----\n");
+            System.out.printf("| 0 | Human vs Human\n");
+            System.out.printf("-----\n");
+            System.out.printf("| 1 | Human vs Bot\n");
+            System.out.printf("-----\n");
+            System.out.printf("| 2 | Bot vs Bot\n");
+            System.out.printf("-----\n");
+
+            do {
+                System.out.printf("\n* Enter your selection (0, 1 or 2) --> ");
+                try {
+                    mode = Integer.parseInt(sc.next());
+                } catch (NumberFormatException e) {
+                    mode = -1;
+                }
+                if (mode < 0 || mode > 2) {
+                    System.out.printf(" Invalid input.\n");
+                }
+            } while (mode < 0 || mode > 2);
+            System.out.printf("\n");
         }
         if (args.length >= 2) {
             inputFile = args[1];
         }
 
 
+        int playerSide = -1;
+
         Model model = new Model();
         if (mode == 0) {
             model.addHumanPlayer("player1");
             model.addHumanPlayer("player2");
         } else if (mode == 1) {
-            model.addHumanPlayer("player");
-            model.addComputerPlayer("computer");
+            System.out.printf("-----------------------------------\n");
+            System.out.printf("|         SIDE SELECTION          |\n");
+            System.out.printf("-----------------------------------\n");
+            System.out.printf("-----\n");
+            System.out.printf("| 1 | Green  (Swedish / Defenders)\n");
+            System.out.printf("-----\n");
+            System.out.printf("| 2 | Yellow (Moscovites / Attackers)\n");
+            System.out.printf("-----\n");
+
+            do {
+                System.out.printf("\n* Pick your side (1 or 2) --> ");
+                try {
+                    playerSide = Integer.parseInt(sc.next());
+                } catch (NumberFormatException e) {
+                    playerSide = -1;
+                }
+                if (playerSide != 1 && playerSide != 2) {
+                    System.out.printf(" Invalid input.\n");
+                }
+            } while (playerSide != 1 && playerSide != 2);
+            System.out.printf("\n");
+
+            if (playerSide == 1) {
+                model.addHumanPlayer("player");
+                model.addComputerPlayer("computer");
+            } else {
+                model.addComputerPlayer("computer");
+                model.addHumanPlayer("player");
+            }
+
         } else if (mode == 2) {
             model.addComputerPlayer("computer1");
             model.addComputerPlayer("computer2");
@@ -112,7 +165,7 @@ public class TablutConsole {
         // ---- BOT SELECTION ----
         if (mode > 0) {
             for (int i = 0; i <= 1; i++) {
-                if (mode == 1 && i == 0) continue;
+                if (mode == 1 && i == playerSide - 1) continue;
                 System.out.printf("-----------------------------------\n");
                 System.out.printf("|     BOT SELECTION FOR %s    |\n", i == 0 ? "GREEN " : "YELLOW");
                 System.out.printf("-----------------------------------\n");
