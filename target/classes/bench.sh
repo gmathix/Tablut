@@ -105,6 +105,7 @@ MATRIX=(
 "0  10  2  10   10  7  NM10_vs_NMC10"
 # NegaMonteCarlo vs Negamax
 "2  10  2  0    10  7  NMC10_vs_NM10"
+)
 
 # Total: 16 matchups, 160 games
 #
