@@ -26,11 +26,8 @@ public class NegaMonteCarloDecider extends Decider {
         this(model, controller, 5);
     }
 
-    public void setLevel(int level) {
-        this.level = level;
-        if (level < 0) level = 0;
-        if (level > 10) level = 10;
-    }
+
+    public int getLevel() { return level; }
 
 
 
