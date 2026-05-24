@@ -1,0 +1,122 @@
+nohup: les entrées sont ignorées
+
+════════════════════════════════════════════════════════════════
+ Tablut Benchmark (PARALLEL) — Machine B   dim. 24 mai 2026 14:46:17 CEST
+════════════════════════════════════════════════════════════════
+ Output CSV  : ./results_b.csv
+ Log dir     : ./logs
+ Parallel jobs: 16
+ Resume      : false
+────────────────────────────────────────────────────────────────
+ Matchup                           Games   RS  Est.(serial)
+────────────────────────────────────────────────────────────────
+ NMC10_vs_NM10                        10    0        3h 20m
+ NMC10_vs_NM10                        10    1        3h 20m
+ NMC10_vs_NM10                        10    2        3h 20m
+ NMC10_vs_NM10                        10    3        3h 20m
+ NMC10_vs_NM10                        10    4        3h 20m
+ NMC10_vs_NM10                        10    5        3h 20m
+ NMC10_vs_NM10                        10    6        3h 20m
+ NMC10_vs_NM10                        10    7        3h 20m
+────────────────────────────────────────────────────────────────
+ TOTAL                                80            26h 40m  (serial)
+                                      80             1h 40m  (with --jobs 16)
+════════════════════════════════════════════════════════════════
+
+[14:46:17] Dispatching 80 games across 16 parallel slots…
+
+[14:47:21] (1/80) NMC10_vs_NM10  winner=green    g_1779626777863_14135
+[14:47:21] (2/80) NMC10_vs_NM10  winner=green    g_1779626777858_14100
+[14:47:36] (3/80) NMC10_vs_NM10  winner=green    g_1779626777863_14157
+[14:47:36] (4/80) NMC10_vs_NM10  winner=green    g_1779626777860_14103
+[14:47:36] (5/80) NMC10_vs_NM10  winner=green    g_1779626777858_14097
+[14:47:36] (6/80) NMC10_vs_NM10  winner=green    g_1779626777857_14092
+[14:47:52] (7/80) NMC10_vs_NM10  winner=green    g_1779626777857_14094
+[14:47:52] (8/80) NMC10_vs_NM10  winner=green    g_1779626777857_14088
+[14:47:52] (9/80) NMC10_vs_NM10  winner=green    g_1779626777861_14112
+[14:47:52] (10/80) NMC10_vs_NM10  winner=green    g_1779626777864_14127
+[14:48:08] (11/80) NMC10_vs_NM10  winner=green    g_1779626777865_14178
+[14:48:23] (12/80) NMC10_vs_NM10  winner=green    g_1779626777860_14123
+[14:48:38] (13/80) NMC10_vs_NM10  winner=green    g_1779626777864_14162
+[14:48:54] (14/80) NMC10_vs_NM10  winner=green    g_1779626777861_14108
+[14:49:10] (15/80) NMC10_vs_NM10  winner=green    g_1779626777861_14115
+[14:49:26] (16/80) NMC10_vs_NM10  winner=green    g_1779626872263_15348
+[14:49:26] (17/80) NMC10_vs_NM10  winner=green    g_1779626872262_15352
+[14:49:27] (18/80) NMC10_vs_NM10  winner=green    g_1779626872263_15357
+[14:49:42] (19/80) NMC10_vs_NM10  winner=green    g_1779626872268_15340
+[14:49:58] (20/80) NMC10_vs_NM10  winner=green    g_1779626872264_15343
+[14:49:58] (21/80) NMC10_vs_NM10  winner=green    g_1779626934631_15912
+[14:50:44] (22/80) NMC10_vs_NM10  winner=green    g_1779626872263_15346
+[14:51:00] (23/80) NMC10_vs_NM10  winner=green    g_1779626777862_14149
+[14:51:16] (24/80) NMC10_vs_NM10  winner=green    g_1779626950883_16208
+[14:51:31] (25/80) NMC10_vs_NM10  winner=green    g_1779626934634_15915
+[14:51:31] (26/80) NMC10_vs_NM10  winner=green    g_1779626934632_15901
+[14:51:46] (27/80) NMC10_vs_NM10  winner=green    g_1779626934631_15904
+[14:51:46] (28/80) NMC10_vs_NM10  winner=green    g_1779626872262_15337
+[14:52:34] (29/80) NMC10_vs_NM10  winner=green    g_1779627060385_16481
+[14:52:35] (30/80) NMC10_vs_NM10  winner=green    g_1779627060385_16489
+[14:52:35] (31/80) NMC10_vs_NM10  winner=green    g_1779627060387_16487
+[14:52:48] (32/80) NMC10_vs_NM10  winner=green    g_1779626934631_15911
+[14:52:50] (33/80) NMC10_vs_NM10  winner=green    g_1779627060388_16478
+[14:53:21] (34/80) NMC10_vs_NM10  winner=green    g_1779627060386_16484
+[14:53:21] (35/80) NMC10_vs_NM10  winner=green    g_1779627060387_16498
+[14:53:36] (36/80) NMC10_vs_NM10  winner=green    g_1779627106987_17004
+[14:53:36] (37/80) NMC10_vs_NM10  winner=green    g_1779627060387_16493
+[14:53:36] (38/80) NMC10_vs_NM10  winner=green    g_1779627106986_17005
+[14:53:50] (39/80) NMC10_vs_NM10  winner=green    g_1779626872264_15355
+[14:53:52] (40/80) NMC10_vs_NM10  winner=green    g_1779627060389_16496
+[14:53:53] (41/80) NMC10_vs_NM10  winner=green    g_1779627106984_16994
+[14:54:37] (42/80) NMC10_vs_NM10  winner=green    g_1779626934633_15907
+[14:55:25] (43/80) NMC10_vs_NM10  winner=green    g_1779627230660_17606
+[14:56:44] (44/80) NMC10_vs_NM10  winner=green    g_1779627277777_18226
+[14:57:46] (45/80) NMC10_vs_NM10  winner=green    g_1779627106986_16997
+[15:00:05] (46/80) NMC10_vs_NM10  winner=green    g_1779627230660_17624
+[15:00:37] (47/80) NMC10_vs_NM10  winner=green    g_1779627106985_16999
+[15:02:29] (48/80) NMC10_vs_NM10  winner=green    g_1779627466532_18571
+[15:03:22] (49/80) NMC10_vs_NM10  winner=green    g_1779627230661_17615
+[15:04:14] (50/80) NMC10_vs_NM10  winner=green    g_1779627230660_17600
+[15:04:15] (51/80) NMC10_vs_NM10  winner=green    g_1779627230660_17621
+[15:04:30] (52/80) NMC10_vs_NM10  winner=green    g_1779627230660_17603
+[15:04:32] (53/80) NMC10_vs_NM10  winner=green    g_1779627466529_18574
+[15:04:49] (54/80) NMC10_vs_NM10  winner=green    g_1779627277778_18222
+[15:04:58] (55/80) NMC10_vs_NM10  winner=green    g_1779627277791_18227
+[15:05:08] (56/80) NMC10_vs_NM10  winner=green    g_1779627466532_18568
+[15:06:03] (57/80) NMC10_vs_NM10  winner=green    g_1779627230660_17612
+[15:06:35] (58/80) NMC10_vs_NM10  winner=green    g_1779627637449_18976
+[15:06:54] (59/80) NMC10_vs_NM10  winner=green    g_1779627230660_17597
+[15:08:39] (60/80) NMC10_vs_NM10  winner=green    g_1779627230660_17609
+[15:09:31] (61/80) NMC10_vs_NM10  winner=green    g_1779628014713_19692
+[15:12:03] (62/80) NMC10_vs_NM10  winner=green    g_1779627230662_17618
+[15:14:27] (63/80) NMC10_vs_NM10  winner=green    g_1779628014712_19695
+[15:15:13] (64/80) NMC10_vs_NM10  winner=green    g_1779628014713_19700
+[15:15:29] (65/80) NMC10_vs_NM10  winner=green    g_1779628014712_19680
+[15:16:00] (66/80) NMC10_vs_NM10  winner=green    g_1779628014712_19701
+[15:16:04] (67/80) NMC10_vs_NM10  winner=green    g_1779627230660_17626
+
+[15:16:04] All games dispatched — waiting for last 13 to finish…
+[15:16:13] (68/80) NMC10_vs_NM10  winner=green    g_1779628323075_20723
+[15:16:28] (69/80) NMC10_vs_NM10  winner=green    g_1779627637450_18973
+[15:18:03] (70/80) NMC10_vs_NM10  winner=green    g_1779628014713_19707
+[15:18:50] (71/80) NMC10_vs_NM10  winner=green    g_1779628014712_19683
+[15:19:06] (72/80) NMC10_vs_NM10  winner=green    g_1779628014712_19704
+[15:19:34] (73/80) NMC10_vs_NM10  winner=green    g_1779628119647_20375
+[15:25:07] (74/80) NMC10_vs_NM10  winner=yellow   g_1779628564075_21046
+[15:26:36] (75/80) NMC10_vs_NM10  winner=green    g_1779628014713_19689
+[15:28:11] (76/80) NMC10_vs_NM10  winner=yellow   g_1779628014713_19686
+[15:32:02] (77/80) NMC10_vs_NM10  winner=green    g_1779628014713_19712
+[15:35:21] (78/80) NMC10_vs_NM10  winner=green    g_1779628323077_20722
+[15:36:54] (79/80) NMC10_vs_NM10  winner=timeout  g_1779628014713_19710
+[15:46:04] (80/80) NMC10_vs_NM10  winner=timeout  g_1779628564076_21043
+
+════════════════════════════════════════════════════════════════
+ Machine B finished at dim. 24 mai 2026 15:46:04 CEST
+ Wall time   : 0h 59m  (serial estimate was 26h 40m)
+./bench.sh: ligne 358 : printf: ?: nombre non valable
+ Speedup     : ~0,0x
+ Results     : ./results_b.csv
+
+ To merge results from both machines:
+   head -1 results_a.csv > results.csv
+   tail -n +2 results_a.csv >> results.csv
+   tail -n +2 results_b.csv >> results.csv
+════════════════════════════════════════════════════════════════
