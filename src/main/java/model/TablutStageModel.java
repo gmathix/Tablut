@@ -196,16 +196,22 @@ public class TablutStageModel extends GameStageModel {
             for (int j = 1; j <= maxDistance; j++) {
                 y += dy_vals[i];
                 x += dx_vals[i];
+
+                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
+                    if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                        break;
+                    } else if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                        break;
+                    }
+                }
+
                 if (y < 0 || y > 8 || x < 0 || x > 8) break;
+
                 if (getBoard().getElement(y, x) instanceof Pawn) {
                     isFreeWay = false;
-                }
-                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
-                        isFreeWay = false;
-                    } else if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
-                        isFreeWay = false;
-                    }
+                    break;
                 }
             }
 
@@ -223,14 +229,13 @@ public class TablutStageModel extends GameStageModel {
         // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
-                if (RuleSets.isConstrainedKingSquares()) {
-                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
-                        idWinner = 0;
-                        winMessage = "king reached an edge";
-                    }
-                }
                 if (RuleSets.isCornerKingEscapes()) {
                     if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
+                        idWinner = 0;
+                        winMessage = "king reached a corner";
+                    }
+                } else if (RuleSets.isConstrainedKingSquares()) {
+                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                         winMessage = "king reached an edge";
                     }

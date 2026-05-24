@@ -1,6 +1,8 @@
 package model;
 
 
+import java.util.List;
+
 /**
  * List of modular game variants/rules, which can be added on top of each other
  */
@@ -41,6 +43,16 @@ public class RuleSets {
     // but here, we know that it will only be modified at the start of the program, then won't be reused
     // until the program is relaunched
     public static int currentRuleset = RULESET_NORMAL;
+
+
+
+    public record RuleOption(int bit, String description) {}
+
+    public static List<RuleOption> ruleOptions = List.of(
+            new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_SQUARES, "King cannot land on starting Moscovite squares"),
+            new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_MOVES,   "King cannot move more than 4 squares"),
+            new RuleOption(RuleSets.RULESET_CORNER_KING_ESCAPES,      "King must reach a corner to win")
+    );
 
 
 

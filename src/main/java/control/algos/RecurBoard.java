@@ -293,8 +293,7 @@ public class RecurBoard {
                     if (cornerSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }
-                }
-                if (RuleSets.isConstrainedKingSquares()) {
+                } else if (RuleSets.isConstrainedKingSquares()) {
                     if (!constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }

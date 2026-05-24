@@ -11,6 +11,7 @@ import boardifier.model.action.ActionList;
 import boardifier.view.View;
 import com.sun.java.accessibility.util.SwingEventMonitor;
 import model.Pawn;
+import model.RuleSets;
 import model.TablutBoard;
 import model.TablutStageModel;
 
@@ -115,6 +116,30 @@ public class TablutController extends Controller {
             try {
                 consoleIn = new BufferedReader(new FileReader(inputFile));
                 System.out.println("game scenario based on the entry file  : " + inputFile);
+
+
+                // read starting side from entry file
+                String startingSide = consoleIn.readLine().toLowerCase();
+                if (startingSide.equals("yellow")) {
+                    model.setIdPlayer(1);
+                } else if (startingSide.equals("green")) {
+                    model.setIdPlayer(0);
+                } else {
+                    System.out.printf("Invalid starting side in entry file : got %s, expected 'yellow' or 'green'\n");
+                }
+
+                // read rulesets from entry file
+                int ruleset;
+                do {
+                    ruleset = Integer.parseInt(consoleIn.readLine());
+                    if (ruleset < 0 || ruleset > RuleSets.ruleOptions.size()) {
+                        System.out.printf("Invalid ruleset %d, expected 0 <= ruleset <= %d\n",
+                                ruleset, RuleSets.ruleOptions.size());
+                    } else if (ruleset != 0) {
+                        RuleSets.currentRuleset |= RuleSets.ruleOptions.get(ruleset-1).bit();
+                    }
+                } while (ruleset != 0);
+
             } catch (IOException e) {
                 System.out.println("Error: \"" + inputFile + " not found. fallback to player vs player\". ");
                 consoleIn = new BufferedReader(new InputStreamReader(System.in));
