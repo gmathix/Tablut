@@ -1,0 +1,37 @@
+nohup: ignoring input
+
+════════════════════════════════════════════════════════════════
+ Tablut Benchmark — Machine A   Sun May 24 01:12:14 PM CEST 2026
+════════════════════════════════════════════════════════════════
+ Output CSV : ./results_a.csv
+ Log dir    : ./logs
+ Resume     : false
+────────────────────────────────────────────────────────────────
+ Matchup                           Games   RS   Est. time
+────────────────────────────────────────────────────────────────
+ NM1_vs_NMC1                         100    0      3h 20m
+ NM5_vs_NMC5                          50    0     12h 30m
+ NM10_vs_NMC10                        30    0     60h 00m
+ NM3_vs_MC3                           70    0      9h 20m
+ NM7_vs_MC7                           60    0     30h 00m
+ NMC1_vs_MC1                         100    0      3h 20m
+ NMC5_vs_MC5                          50    0      5h 50m
+ NMC10_vs_MC10                        30    0     10h 00m
+ NMC5_vs_NM7                          50    0     25h 00m
+ MC5_vs_NM7                           50    0     25h 00m
+ MC5_vs_NMC7                          50    0      9h 10m
+ NM5_vs_NMC5_rs2                      50    2     12h 30m
+ NM5_vs_NMC5_rs4                      50    4     12h 30m
+ NM5_vs_NMC5_rs6                      50    6     12h 30m
+ NM5_vs_MC5_rs1                       50    1     12h 30m
+ NM5_vs_MC5_rs3                       50    3     12h 30m
+ NM5_vs_MC5_rs5                       50    5     12h 30m
+ NM5_vs_MC5_rs7                       50    7     12h 30m
+ NMC5_vs_MC5_rs2                      50    2      5h 50m
+ NMC5_vs_MC5_rs4                      50    4      5h 50m
+ NMC5_vs_MC5_rs6                      50    6      5h 50m
+────────────────────────────────────────────────────────────────
+ TOTAL                              1140         298h 30m
+════════════════════════════════════════════════════════════════
+
+[13:12:14] START  [1/21] NM1_vs_NMC1  (100 games, ruleset=0)

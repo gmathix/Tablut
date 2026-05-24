@@ -3,32 +3,107 @@ package control;
 import boardifier.control.ActionFactory;
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
+import boardifier.control.Decider;
 import boardifier.model.GameElement;
-import boardifier.model.ContainerElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.model.action.ActionList;
 import boardifier.view.View;
+import com.sun.java.accessibility.util.SwingEventMonitor;
 import model.Pawn;
+import model.RuleSets;
+import model.TablutBoard;
 import model.TablutStageModel;
 
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.*;
+import java.util.function.Supplier;
 
 public class TablutController extends Controller {
 
+    public static final int NEGAMAX_PLAYER = 0;
+    public static final int MONTECARLO_PLAYER = 1;
+    public static final int NEGAMONTECARLO_PLAYER = 2;
+
+    public static final int NB_BOARDS_IN_MEMORY = 15;
+
+    public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
+
+
+    public static final Map<Integer, BotSelection> availableBots[] = new Map[2];
+
+
+
+    int gameMode;
+    int botPlayers[];
+
     BufferedReader consoleIn;
-    boolean firstPlayer;
     String inputFile;
 
-    public TablutController(Model model, View view, String inputFile) {
+
+    private String lastBoardsRepresentations[];
+    private int currentBoardRepIndex;
+    private boolean boardRepeated;
+
+
+    public TablutController(Model model, View view, int gameMode, String inputFile,
+                            int greenBotPlayer, int yellowBotPlayer, int botLevels[]) {
         super(model, view);
-        firstPlayer = true;
+        this.gameMode = gameMode;
         this.inputFile = inputFile;
+        this.botPlayers = new int[]{
+            NEGAMAX_PLAYER,
+            NEGAMAX_PLAYER,
+        };
+
+        availableBots[0] = new HashMap<>();
+        availableBots[1] = new HashMap<>();
+
+        setBotLevel(0, botLevels[0]);
+        setBotLevel(1, botLevels[1]);
+
+        lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            lastBoardsRepresentations[i] = "";
+        }
+        currentBoardRepIndex = 0;
+        boardRepeated = false;
+
     }
+
+    public TablutController(Model model, View view, int gameMode, String inputFile) {
+        this(model, view, gameMode, inputFile, NEGAMAX_PLAYER, NEGAMAX_PLAYER, new int[]{5, 5});
+    }
+
+
+    // 0 for green, 0 for yellow
+    public void setBotLevel(int color, int level) {
+        availableBots[color].clear();
+        availableBots[color].put(NEGAMAX_PLAYER, new BotSelection(NEGAMAX_PLAYER, "Negamax",
+                () -> new NegamaxDecider(model, this, level)));
+        availableBots[color].put(MONTECARLO_PLAYER, new BotSelection(MONTECARLO_PLAYER, "Monte-Carlo",
+                () -> new MonteCarloDecider(model, this, level)));
+        availableBots[color].put(NEGAMONTECARLO_PLAYER, new BotSelection(NEGAMONTECARLO_PLAYER, "Nega-Monte-Carlo",
+                () -> new NegaMonteCarloDecider(model, this, level)));
+    }
+
+
+
+
+    public void setBotPlayer(int color, int botPlayer) {
+        if (botPlayer < 0 || botPlayer > availableBots[color].size()) return;
+        this.botPlayers[color] = botPlayer;
+    }
+
+    public Map<Integer, BotSelection>[] getAvailableBots() {
+        return availableBots;
+    }
+
+
+    public boolean isBoardRepeated() { return boardRepeated; }
 
 
     /**
@@ -36,14 +111,37 @@ public class TablutController extends Controller {
      * Defines what to do within the single stage of the single party
      * It is pretty straight forward to write :
      */
-
     public void stageLoop() {
-        if (!inputFile.equals("")) {
+        if (!inputFile.isEmpty() && gameMode == 0) {
             try {
-                consoleIn =new BufferedReader(new FileReader(inputFile));
+                consoleIn = new BufferedReader(new FileReader(inputFile));
                 System.out.println("game scenario based on the entry file  : " + inputFile);
+
+
+                // read starting side from entry file
+                String startingSide = consoleIn.readLine().toLowerCase();
+                if (startingSide.equals("yellow")) {
+                    model.setIdPlayer(1);
+                } else if (startingSide.equals("green")) {
+                    model.setIdPlayer(0);
+                } else {
+                    System.out.printf("Invalid starting side in entry file : got %s, expected 'yellow' or 'green'\n");
+                }
+
+                // read rulesets from entry file
+                int ruleset;
+                do {
+                    ruleset = Integer.parseInt(consoleIn.readLine());
+                    if (ruleset < 0 || ruleset > RuleSets.ruleOptions.size()) {
+                        System.out.printf("Invalid ruleset %d, expected 0 <= ruleset <= %d\n",
+                                ruleset, RuleSets.ruleOptions.size());
+                    } else if (ruleset != 0) {
+                        RuleSets.currentRuleset |= RuleSets.ruleOptions.get(ruleset-1).bit();
+                    }
+                } while (ruleset != 0);
+
             } catch (IOException e) {
-                System.out.println("Error: \"" + inputFile + " Keyboardb mode on:\". ");
+                System.out.println("Error: \"" + inputFile + " not found. fallback to player vs player\". ");
                 consoleIn = new BufferedReader(new InputStreamReader(System.in));
 
             }
@@ -53,24 +151,48 @@ public class TablutController extends Controller {
         }
         update();
         while (!model.isEndStage()) {
-
             playTurn();
             endOfTurn();
             update();
 
+            processBoardRepetition();
         }
         endGame();
     }
 
+
+    private void processBoardRepetition() {
+        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
+
+        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
+
+        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
+
+        int nbFound = 0;
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            if (i == currentBoardRepIndex) continue;
+            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
+                nbFound++;
+            }
+        }
+
+        if (nbFound >= 3) {
+            boardRepeated = true;
+        } else {
+            boardRepeated = false;
+        }
+    }
 
 
     private void playTurn() {
         // get the new player
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
-            System.out.println("COMPUTER PLAYS");
-            TablutDecider decider = new TablutDecider(model,this);
+            int turn = model.getIdPlayer();
+            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
+            Decider decider = selection.supplier.get();
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
+
             play.start();
         }
         else {
@@ -148,7 +270,7 @@ public class TablutController extends Controller {
         if (!gameStage.getBoard().canReachCell(rowDest, colDest)) return false;
 
 
-        
+
         // update the board's king coordinates if we just moved the king
         if (currPawn.getColor() == Pawn.PAWN_KING) {
             gameStage.getBoard().setKingX(colDest);
@@ -159,47 +281,7 @@ public class TablutController extends Controller {
 
 
         // check capture
-        int horizontalDirection = 0;
-        int verticalDirection = 0;
-
-        if (colSrc - colDest != 0)
-            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
-        if (rowSrc - rowDest != 0)
-            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
-
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, -1, 0, 1};
-
-        for (int i = 0; i < 4; i++) {
-            int dy = dy_vals[i];
-            int dx = dx_vals[i];
-
-            // do not check the squares on the path the pawn came from
-            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-            if (dy == -verticalDirection && verticalDirection != 0) continue;
-
-            // check bounds for pawn 2 squares away
-            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
-            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
-
-
-            GameElement sideEl = gameStage.getBoard().getElement(rowDest + dy, colDest + dx);
-            GameElement sideEl2 = gameStage.getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
-
-            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-                if (isYellow) {
-                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        gameStage.getBoard().removeElement(sideEl);
-                        gameStage.removeElement(sideEl);
-                    }
-                } else {
-                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() == Pawn.PAWN_SOLDIER) {
-                        gameStage.getBoard().removeElement(sideEl);
-                        gameStage.removeElement(sideEl);
-                    }
-                }
-            }
-        }
+        gameStage.checkCapture(isYellow, colSrc, colDest, rowSrc, rowDest);
 
 
 

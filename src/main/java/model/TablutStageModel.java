@@ -1,6 +1,7 @@
 package model;
 
 import boardifier.model.*;
+import control.algos.RecurBoard;
 
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
@@ -121,6 +122,51 @@ public class TablutStageModel extends GameStageModel {
         });
     }
 
+    public void checkCapture(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+        // check capture
+        int horizontalDirection = 0;
+        int verticalDirection = 0;
+
+        if (colSrc - colDest != 0)
+            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
+        if (rowSrc - rowDest != 0)
+            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
+
+        int[] dy_vals = {-1, 0, 1, 0};
+        int[] dx_vals = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            int dy = dy_vals[i];
+            int dx = dx_vals[i];
+
+            // do not check the squares on the path the pawn came from
+            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
+            if (dy == -verticalDirection && verticalDirection != 0) continue;
+
+            // check bounds for pawn 2 squares away
+            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
+            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+
+
+            GameElement sideEl = getBoard().getElement(rowDest + dy, colDest + dx);
+            GameElement sideEl2 = getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+
+            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
+                if (isYellow) {
+                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        getBoard().removeElement(sideEl);
+                        removeElement(sideEl);
+                    }
+                } else {
+                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
+                        getBoard().removeElement(sideEl);
+                        removeElement(sideEl);
+                    }
+                }
+            }
+        }
+    }
+
     private void computePartyResult() {
         int idWinner = -1;
         String winMessage = "";
@@ -138,17 +184,34 @@ public class TablutStageModel extends GameStageModel {
 
         // check if the king can reach one edge or two
         int nbEdgesRechable = 0;
+        int maxDistance = 8;
+        if (RuleSets.isConstrainedKingMoves()) {
+            maxDistance = 4;
+        }
         for (int i = 0; i < 4; i++) {
             int y = kingY;
             int x = kingX;
             boolean isFreeWay = true;
 
-            for (int j = 0; j < 9; j++) {
+            for (int j = 1; j <= maxDistance; j++) {
                 y += dy_vals[i];
                 x += dx_vals[i];
+
+                if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
+                    if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                        break;
+                    } else if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                        isFreeWay = false;
+                        break;
+                    }
+                }
+
                 if (y < 0 || y > 8 || x < 0 || x > 8) break;
+
                 if (getBoard().getElement(y, x) instanceof Pawn) {
                     isFreeWay = false;
+                    break;
                 }
             }
 
@@ -165,7 +228,19 @@ public class TablutStageModel extends GameStageModel {
 
         // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
-            if (model.getIdPlayer() == 0) {
+            if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
+                if (RuleSets.isCornerKingEscapes()) {
+                    if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
+                        idWinner = 0;
+                        winMessage = "king reached a corner";
+                    }
+                } else if (RuleSets.isConstrainedKingSquares()) {
+                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                        idWinner = 0;
+                        winMessage = "king reached an edge";
+                    }
+                }
+            } else {
                 idWinner = 0;
                 winMessage = "king reached an edge";
             }
@@ -191,14 +266,12 @@ public class TablutStageModel extends GameStageModel {
 
         /* either the king is next to the center square and is surrounded by 3 moscovites,
          * or it is surrounded by 4 moscovites.
-         * in both cases, current turn must yellow
          */
-        if (model.getIdPlayer() == 1) {
-            if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
-                idWinner = 1;
-                winMessage = "yellow surrounded the king";
-            }
+        if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
+            idWinner = 1;
+            winMessage = "yellow surrounded the king";
         }
+
 
 
         if (idWinner != -1) {
