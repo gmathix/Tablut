@@ -56,34 +56,34 @@ export YELLOW_WIN_PATTERN="${YELLOW_WIN_PATTERN:-WINNER:YELLOW}"
 MATRIX=(
 # ── 1. Same-level, cross-engine, base rules ─────────────────────────────────
 # Negamax vs NegaMonteCarlo
-"0  1   2  1   100  0  NM1_vs_NMC1"
-"0  3   2  3   70  0  NM3_vs_NMC3"
-"0  5   2  5   50  0  NM5_vs_NMC5"
-"0  7   2  7    40  0  NM7_vs_NMC7"
-"0  10  2  10   30  0  NM10_vs_NMC10"
+"0  1   2  1   20  0  NM1_vs_NMC1"
+"0  3   2  3   20  0  NM3_vs_NMC3"
+"0  5   2  5   20  0  NM5_vs_NMC5"
+"0  7   2  7    20  0  NM7_vs_NMC7"
+"0  10  2  10   20  0  NM10_vs_NMC10"
 
 # Negamax vs MonteCarlo
-"0  1   1  1   100  0  NM1_vs_MC1"
-"0  3   1  3   70  0  NM3_vs_MC3"
-"0  5   1  5   50  0  NM5_vs_MC5"
-"0  7   1  7    40  0  NM7_vs_MC7"
-"0  10  1  10   30  0  NM10_vs_MC10"
+"0  1   1  1   20  0  NM1_vs_MC1"
+"0  3   1  3   20  0  NM3_vs_MC3"
+"0  5   1  5   20  0  NM5_vs_MC5"
+"0  7   1  7    20  0  NM7_vs_MC7"
+"0  10  1  10   20  0  NM10_vs_MC10"
 
 # NegaMonteCarlo vs MonteCarlo
-"2  1   1  1   100  0  NMC1_vs_MC1"
-"2  3   1  3   70  0  NMC3_vs_MC3"
-"2  5   1  5   50  0  NMC5_vs_MC5"
-"2  7   1  7    40  0  NMC7_vs_MC7"
-"2  10  1  10   30  0  NMC10_vs_MC10"
+"2  1   1  1   20  0  NMC1_vs_MC1"
+"2  3   1  3   20  0  NMC3_vs_MC3"
+"2  5   1  5   20  0  NMC5_vs_MC5"
+"2  7   1  7    20  0  NMC7_vs_MC7"
+"2  10  1  10   20  0  NMC10_vs_MC10"
 
 # ── 2. Off-diagonal: how many levels compensate for weaker engine? ───────────
 # Each pair tests: does level N+2 of the weaker engine beat level N of the stronger?
-"2  3   0  5   50  0  NMC3_vs_NM5"
-"2  5   0  7   30  0  NMC5_vs_NM7"
-"1  3   0  5   50  0  MC3_vs_NM5"
-"1  5   0  7   30  0  MC5_vs_NM7"
-"1  3   2  5   50  0  MC3_vs_NMC5"
-"1  5   2  7   30  0  MC5_vs_NMC7"
+"2  3   0  5   20  0  NMC3_vs_NM5"
+"2  5   0  7   20  0  NMC5_vs_NM7"
+"1  3   0  5   20  0  MC3_vs_NM5"
+"1  5   0  7   20  0  MC5_vs_NM7"
+"1  3   2  5   20  0  MC3_vs_NMC5"
+"1  5   2  7   20  0  MC5_vs_NMC7"
 
 # ── 3. Variant matchups: same engines at level 5, all 7 non-base rulesets ────
 # Ruleset bit meanings:
@@ -96,31 +96,31 @@ MATRIX=(
 #   7 = all three rules active
 
 # NM vs NMC, level 5, all variants
-"0  5  2  5  40  1  NM5_vs_NMC5_rs1"
-"0  5  2  5  40  2  NM5_vs_NMC5_rs2"
-"0  5  2  5  40  3  NM5_vs_NMC5_rs3"
-"0  5  2  5  40  4  NM5_vs_NMC5_rs4"
-"0  5  2  5  40  5  NM5_vs_NMC5_rs5"
-"0  5  2  5  40  6  NM5_vs_NMC5_rs6"
-"0  5  2  5  40  7  NM5_vs_NMC5_rs7"
+"0  5  2  5  20  1  NM5_vs_NMC5_rs1"
+"0  5  2  5  20  2  NM5_vs_NMC5_rs2"
+"0  5  2  5  20  3  NM5_vs_NMC5_rs3"
+"0  5  2  5  20  4  NM5_vs_NMC5_rs4"
+"0  5  2  5  20  5  NM5_vs_NMC5_rs5"
+"0  5  2  5  20  6  NM5_vs_NMC5_rs6"
+"0  5  2  5  20  7  NM5_vs_NMC5_rs7"
 
 # NM vs MC, level 5, all variants
-"0  5  1  5  40  1  NM5_vs_MC5_rs1"
-"0  5  1  5  40  2  NM5_vs_MC5_rs2"
-"0  5  1  5  40  3  NM5_vs_MC5_rs3"
-"0  5  1  5  40  4  NM5_vs_MC5_rs4"
-"0  5  1  5  40  5  NM5_vs_MC5_rs5"
-"0  5  1  5  40  6  NM5_vs_MC5_rs6"
-"0  5  1  5  40  7  NM5_vs_MC5_rs7"
+"0  5  1  5  20  1  NM5_vs_MC5_rs1"
+"0  5  1  5  20  2  NM5_vs_MC5_rs2"
+"0  5  1  5  20  3  NM5_vs_MC5_rs3"
+"0  5  1  5  20  4  NM5_vs_MC5_rs4"
+"0  5  1  5  20  5  NM5_vs_MC5_rs5"
+"0  5  1  5  20  6  NM5_vs_MC5_rs6"
+"0  5  1  5  20  7  NM5_vs_MC5_rs7"
 
 # NMC vs MC, level 5, all variants
-"2  5  1  5  40  1  NMC5_vs_MC5_rs1"
-"2  5  1  5  40  2  NMC5_vs_MC5_rs2"
-"2  5  1  5  40  3  NMC5_vs_MC5_rs3"
-"2  5  1  5  40  4  NMC5_vs_MC5_rs4"
-"2  5  1  5  40  5  NMC5_vs_MC5_rs5"
-"2  5  1  5  40  6  NMC5_vs_MC5_rs6"
-"2  5  1  5  40  7  NMC5_vs_MC5_rs7"
+"2  5  1  5  20  1  NMC5_vs_MC5_rs1"
+"2  5  1  5  20  2  NMC5_vs_MC5_rs2"
+"2  5  1  5  20  3  NMC5_vs_MC5_rs3"
+"2  5  1  5  20  4  NMC5_vs_MC5_rs4"
+"2  5  1  5  20  5  NMC5_vs_MC5_rs5"
+"2  5  1  5  20  6  NMC5_vs_MC5_rs6"
+"2  5  1  5  20  7  NMC5_vs_MC5_rs7"
 )
 # Total: 42 matchups, ~4470 games
 #
