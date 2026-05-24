@@ -45,29 +45,29 @@ export LOG_DIR="${LOG_DIR:-./logs}"
 MATRIX=(
 # ── 1. Same-level, cross-engine, base rules ─────────────────────────────────
 "0  10  2  10   10  0  NM10_vs_NMC10"
-"2  10  2  0    10  0  NMC10_vs_NM10"
+"2  10  0  10    10  0  NMC10_vs_NM10"
 
 # ── 2. Variant matchups: all 7 non-base rulesets ────────────────────────────
 "0  10  2  10   10  1  NM10_vs_NMC10"
-"2  10  2  0    10  1  NMC10_vs_NM10"
+"2  10  0  10    10  1  NMC10_vs_NM10"
 
 "0  10  2  10   10  2  NM10_vs_NMC10"
-"2  10  2  0    10  2  NMC10_vs_NM10"
+"2  10  0  10    10  2  NMC10_vs_NM10"
 
 "0  10  2  10   10  3  NM10_vs_NMC10"
-"2  10  2  0    10  3  NMC10_vs_NM10"
+"2  10  0  10    10  3  NMC10_vs_NM10"
 
 "0  10  2  10   10  4  NM10_vs_NMC10"
-"2  10  2  0    10  4  NMC10_vs_NM10"
+"2  10  0  10    10  4  NMC10_vs_NM10"
 
 "0  10  2  10   10  5  NM10_vs_NMC10"
-"2  10  2  0    10  5  NMC10_vs_NM10"
+"2  10  0  10    10  5  NMC10_vs_NM10"
 
 "0  10  2  10   10  6  NM10_vs_NMC10"
-"2  10  2  0    10  6  NMC10_vs_NM10"
+"2  10  0  10    10  6  NMC10_vs_NM10"
 
 "0  10  2  10   10  7  NM10_vs_NMC10"
-"2  10  2  0    10  7  NMC10_vs_NM10"
+"2  10  0  10    10  7  NMC10_vs_NM10"
 )
 
 

@@ -12,26 +12,21 @@ import control.algos.NegamaxSearch;
 import model.*;
 
 public class NegamaxDecider extends Decider {
-    private int depth;
+    private int level;
 
 
     public NegamaxDecider(Model model, Controller control, int level) {
         super(model, control);
-        this.depth = level;
-        if (depth < 0) depth = 0;
-        if (depth > 10) depth = 10;
+        this.level = level;
+
     }
 
     public NegamaxDecider(Model model, Controller controller) {
         this(model, controller, 5);
     }
 
-    public void setLevel(int level) {
-        this.depth = level;
-        if (depth < 0) depth = 0;
-        if (depth > 10) depth = 10;
-    }
 
+    public int getLevel() { return level; }
 
 
 
@@ -45,7 +40,7 @@ public class NegamaxDecider extends Decider {
 
         int turn = model.getIdPlayer();
 
-        NegamaxSearch negamaxSearch = new NegamaxSearch(depth);
+        NegamaxSearch negamaxSearch = new NegamaxSearch(level);
 
 
 

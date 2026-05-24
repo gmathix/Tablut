@@ -193,6 +193,31 @@ public class TablutController extends Controller {
             Decider decider = selection.supplier.get();
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
 
+
+            int botLevel;
+            if (decider instanceof NegamaxDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof MonteCarloDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof NegaMonteCarloDecider d) {
+                botLevel = d.getLevel();
+            } else {
+                botLevel = 5;
+            }
+            String[] sentenceArray;
+            if (botLevel <= 4) {
+                sentenceArray = BotSentences.SENTENCES_LOSING;
+            } else if (botLevel <= 8) {
+                sentenceArray = BotSentences.SENTENCES_WINNING;
+            } else {
+                sentenceArray = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
+            }
+
+            int sentenceIndex = (int) (Math.random() * sentenceArray.length);
+            String sentence = sentenceArray[sentenceIndex];
+
+            System.out.printf("%s %s\n", selection.name, sentence);
+
             play.start();
         }
         else {

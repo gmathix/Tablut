@@ -146,8 +146,8 @@ public class NegaMonteCarlo {
          *  calculated fast (preferably O(1)) and applied at every selection step in the loop
          */
         return (node.wins / (double) node.visits)
-                + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
-//                + W * (priorScore / (1 + node.visits));
+                + C * Math.sqrt(Math.log(node.parent.visits) / node.visits)
+                + W * (priorScore / (1 + node.visits));
     }
 
     public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
@@ -238,7 +238,7 @@ public class NegaMonteCarlo {
             // green needs one escape path, yellow needs full encerclement.
             // the value of the score means different stuff depending on who's playing, so we use different "temperatures"
             double temp = currentNode.turn == 0 ? 80 : 120;
-            score = 1 / (1 + Math.exp(-negamaxScore / 100));
+            score = 1 / (1 + Math.exp(-negamaxScore / temp));
             nbEvals++;
 
 
@@ -272,21 +272,11 @@ public class NegaMonteCarlo {
                         )
                 ).toList();
 
+
         bestMove = sorted.getFirst().getKey();
         if (findAlternativeMove && sorted.size() > 1) {
             bestMove = sorted.get(1).getKey();
         }
-
-        // now, look at the root node's first children and choose the move with the highest visit count
-//        int highestVisits = -1;
-//        for (Map.Entry<Move, Node> item : root.children.entrySet()) {
-//            Move currMove = item.getKey();
-//            Node currNode = item.getValue();
-//            if (currNode.visits > highestVisits) {
-//                highestVisits = currNode.visits;
-//                bestMove = currMove;
-//            }
-//        }
 
 //        System.out.printf("evaluated %d positions\n", nbEvals);
 

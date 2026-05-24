@@ -61,10 +61,7 @@ public class TablutConsole {
         int playerSide = -1;
 
         Model model = new Model();
-        if (mode == 0) {
-            model.addHumanPlayer("player1");
-            model.addHumanPlayer("player2");
-        } else if (mode == 1) {
+        if (mode == 1) {
             System.out.printf("-----------------------------------\n");
             System.out.printf("|         SIDE SELECTION          |\n");
             System.out.printf("-----------------------------------\n");
@@ -87,17 +84,6 @@ public class TablutConsole {
             } while (playerSide != 1 && playerSide != 2);
             System.out.printf("\n");
 
-            if (playerSide == 1) {
-                model.addHumanPlayer("player");
-                model.addComputerPlayer("computer");
-            } else {
-                model.addComputerPlayer("computer");
-                model.addHumanPlayer("player");
-            }
-
-        } else if (mode == 2) {
-            model.addComputerPlayer("computer1");
-            model.addComputerPlayer("computer2");
         }
 
 
@@ -157,6 +143,14 @@ public class TablutConsole {
         control.setFirstStageName("tablut");
 
 
+        if (mode == 0) {
+            model.addHumanPlayer("player1");
+            model.addHumanPlayer("player2");
+        }
+        else if (mode == 1 && playerSide == 1) {
+            model.addHumanPlayer("player1");
+        }
+
         // ---- BOT SELECTION ----
         if (mode > 0) {
             for (int i = 0; i <= 1; i++) {
@@ -183,6 +177,11 @@ public class TablutConsole {
                 } while (!validValues.contains(selection));
 
                 control.setBotPlayer(i, selection);
+                if (i == 0) {
+                    model.addComputerPlayer(control.getAvailableBots()[i].get(selection).name());
+                } else {
+                    model.addComputerPlayer(control.getAvailableBots()[i].get(selection).name());
+                }
 
 
                 int level = -1;
@@ -198,6 +197,12 @@ public class TablutConsole {
                 control.setBotLevel(i, level);
             }
         }
+
+        if (mode == 1 && playerSide == 2) {
+            model.addHumanPlayer("player2");
+        }
+
+
 
 
         try {

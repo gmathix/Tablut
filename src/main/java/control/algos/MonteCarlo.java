@@ -215,17 +215,6 @@ public class MonteCarlo {
             bestMove = sorted.get(1).getKey();
         }
 
-//        // now, look at the root node's first children and choose the move with the highest visit count
-//        int highestVisits = 0;
-//        for (Entry<Move, Node> item : root.children.entrySet()) {
-//            Move currMove = item.getKey();
-//            Node currNode = item.getValue();
-//            if (currNode.visits > highestVisits) {
-//                highestVisits = currNode.visits;
-//                bestMove = currMove;
-//            }
-//        }
-
 
         return bestMove;
     }
