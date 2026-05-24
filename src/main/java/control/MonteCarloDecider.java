@@ -47,7 +47,7 @@ public class MonteCarloDecider extends Decider  {
 
 
 
-        Move bestMove = monteCarlo.findBestMove(recurBoard, turn);
+        Move bestMove = monteCarlo.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
 
 
 

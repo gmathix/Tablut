@@ -2,12 +2,18 @@ package control.algos;
 
 import model.Move;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NegamaxSearch {
     private int depth;
 
     public static int nbEvals = 0;
+
+
+    private record BestMove(Move move, double score) {}
+
 
     public NegamaxSearch(int level) {
         this.depth = level;
@@ -25,7 +31,7 @@ public class NegamaxSearch {
     }
 
 
-    public Move findBestMove(RecurBoard recurBoard, int turn) {
+    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMode) {
         double alpha = Double.NEGATIVE_INFINITY;
         double beta = Double.POSITIVE_INFINITY;
 
@@ -34,11 +40,11 @@ public class NegamaxSearch {
             return null;
         }
 
-        Move bestMove = legalMoves.getFirst();
-        double bestScore = Double.NEGATIVE_INFINITY;
         int nextTurn = (turn+1) % 2;
 
         nbEvals = 0;
+
+        List<BestMove> bestMoves = new ArrayList<>();
 
         for (Move m : recurBoard.getLegalMoves(turn)) {
 //            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
@@ -56,14 +62,22 @@ public class NegamaxSearch {
 
             recurBoard.undoMove(m, capX, capY, capPiece, prevKingX, prevKingY);
 
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = m;
-            }
             alpha = Math.max(alpha, score);
+
+            bestMoves.add(new BestMove(m, score));
         }
 
-        System.out.printf("evaluated %d positions (negamax)\n", nbEvals);
+//        System.out.printf("evaluated %d positions (negamax)\n", nbEvals);
+
+        bestMoves = bestMoves.stream().sorted(
+                (bm1, bm2) -> Double.compare(
+                        bm2.score, bm1.score
+                )
+        ).toList();
+        Move bestMove = bestMoves.getFirst().move();
+        if (findAlternativeMode && bestMoves.size() > 1) {
+            bestMove = bestMoves.get(1).move;
+        }
 
         return bestMove;
     }

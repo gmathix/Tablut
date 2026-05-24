@@ -49,7 +49,7 @@ public class NegaMonteCarloDecider extends Decider {
 
 
 
-        Move bestMove = negaMonteCarlo.findBestMove(recurBoard, turn);
+        Move bestMove = negaMonteCarlo.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());

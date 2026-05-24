@@ -217,5 +217,11 @@ public class TablutConsole {
         catch(GameException e) {
             System.out.println("error while starting the game");
         }
+
+        System.out.printf("id winner : %d\n", model.getIdWinner());
+
+        System.exit(model.getIdWinner());
     }
+
+
 }

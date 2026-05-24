@@ -3,10 +3,7 @@ package control.algos;
 
 import model.Move;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *    The weakest thing in pure MCTS (MonteCarlo) is step 3 (simulation). as tablut has very
@@ -153,7 +150,7 @@ public class NegaMonteCarlo {
 //                + W * (priorScore / (1 + node.visits));
     }
 
-    public Move findBestMove(RecurBoard recurBoard, int turn) {
+    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
         Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
@@ -267,18 +264,31 @@ public class NegaMonteCarlo {
         }
 
 
-        // now, look at the root node's first children and choose the move with the highest visit count
-        int highestVisits = -1;
-        for (Map.Entry<Move, Node> item : root.children.entrySet()) {
-            Move currMove = item.getKey();
-            Node currNode = item.getValue();
-            if (currNode.visits > highestVisits) {
-                highestVisits = currNode.visits;
-                bestMove = currMove;
-            }
+        List<Map.Entry<Move, Node>> sorted = root.children.entrySet().stream()
+                .sorted((e1, e2) ->
+                        Integer.compare(
+                                e2.getValue().visits,
+                                e1.getValue().visits
+                        )
+                ).toList();
+
+        bestMove = sorted.getFirst().getKey();
+        if (findAlternativeMove && sorted.size() > 1) {
+            bestMove = sorted.get(1).getKey();
         }
 
-        System.out.printf("evaluated %d positions\n", nbEvals);
+        // now, look at the root node's first children and choose the move with the highest visit count
+//        int highestVisits = -1;
+//        for (Map.Entry<Move, Node> item : root.children.entrySet()) {
+//            Move currMove = item.getKey();
+//            Node currNode = item.getValue();
+//            if (currNode.visits > highestVisits) {
+//                highestVisits = currNode.visits;
+//                bestMove = currMove;
+//            }
+//        }
+
+//        System.out.printf("evaluated %d positions\n", nbEvals);
 
         return bestMove;
     }

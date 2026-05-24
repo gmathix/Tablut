@@ -56,6 +56,9 @@ public class MonteCarlo {
 
 
 
+
+
+
     private static class Node {
         boolean isRoot;
         public Node parent;
@@ -115,7 +118,7 @@ public class MonteCarlo {
         return ((double) node.wins / node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
     }
 
-    public Move findBestMove(RecurBoard recurBoard, int turn) {
+    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
         Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
@@ -199,17 +202,29 @@ public class MonteCarlo {
             root.visits++;
         }
 
+        List<Map.Entry<Move, Node>> sorted = root.children.entrySet().stream()
+                .sorted((e1, e2) ->
+                        Integer.compare(
+                                e2.getValue().visits,
+                                e1.getValue().visits
+                        )
+                ).toList();
 
-        // now, look at the root node's first children and choose the move with the highest visit count
-        int highestVisits = 0;
-        for (Entry<Move, Node> item : root.children.entrySet()) {
-            Move currMove = item.getKey();
-            Node currNode = item.getValue();
-            if (currNode.visits > highestVisits) {
-                highestVisits = currNode.visits;
-                bestMove = currMove;
-            }
+        bestMove = sorted.getFirst().getKey();
+        if (findAlternativeMove && sorted.size() > 1) {
+            bestMove = sorted.get(1).getKey();
         }
+
+//        // now, look at the root node's first children and choose the move with the highest visit count
+//        int highestVisits = 0;
+//        for (Entry<Move, Node> item : root.children.entrySet()) {
+//            Move currMove = item.getKey();
+//            Node currNode = item.getValue();
+//            if (currNode.visits > highestVisits) {
+//                highestVisits = currNode.visits;
+//                bestMove = currMove;
+//            }
+//        }
 
 
         return bestMove;

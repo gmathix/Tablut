@@ -11,16 +11,14 @@ import boardifier.model.action.ActionList;
 import boardifier.view.View;
 import com.sun.java.accessibility.util.SwingEventMonitor;
 import model.Pawn;
+import model.TablutBoard;
 import model.TablutStageModel;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class TablutController extends Controller {
@@ -28,6 +26,8 @@ public class TablutController extends Controller {
     public static final int NEGAMAX_PLAYER = 0;
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
+
+    public static final int NB_BOARDS_IN_MEMORY = 15;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
 
@@ -41,6 +41,12 @@ public class TablutController extends Controller {
 
     BufferedReader consoleIn;
     String inputFile;
+
+
+    private String lastBoardsRepresentations[];
+    private int currentBoardRepIndex;
+    private boolean boardRepeated;
+
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
                             int greenBotPlayer, int yellowBotPlayer, int botLevels[]) {
@@ -57,6 +63,13 @@ public class TablutController extends Controller {
 
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
+
+        lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            lastBoardsRepresentations[i] = "";
+        }
+        currentBoardRepIndex = 0;
+        boardRepeated = false;
 
     }
 
@@ -89,6 +102,7 @@ public class TablutController extends Controller {
     }
 
 
+    public boolean isBoardRepeated() { return boardRepeated; }
 
 
     /**
@@ -115,10 +129,34 @@ public class TablutController extends Controller {
             playTurn();
             endOfTurn();
             update();
+
+            processBoardRepetition();
         }
         endGame();
     }
 
+
+    private void processBoardRepetition() {
+        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
+
+        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
+
+        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
+
+        int nbFound = 0;
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            if (i == currentBoardRepIndex) continue;
+            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
+                nbFound++;
+            }
+        }
+
+        if (nbFound >= 3) {
+            boardRepeated = true;
+        } else {
+            boardRepeated = false;
+        }
+    }
 
 
     private void playTurn() {

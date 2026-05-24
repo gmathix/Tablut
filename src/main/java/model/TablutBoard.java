@@ -154,4 +154,26 @@ public class TablutBoard extends ContainerElement {
 
         return lst;
     }
+
+
+    public String getStringRepresentation() {
+        String rep = "";
+
+        for (int i = 0 ; i < 9; i++) {
+            for (int j =0 ; j< 9; j++) {
+                if (getElement(i, j) instanceof Pawn p) {
+                    rep += switch (p.getColor()) {
+                        case Pawn.PAWN_SOLDIER -> "S";
+                        case Pawn.PAWN_MOSCOVITE -> "M";
+                        case Pawn.PAWN_KING -> "K";
+                        default -> "E";
+                    };
+                } else {
+                    rep += "E";
+                }
+            }
+        }
+
+        return rep;
+    }
 }

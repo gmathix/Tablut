@@ -49,7 +49,7 @@ public class NegamaxDecider extends Decider {
 
 
 
-        Move bestMove = negamaxSearch.findBestMove(recurBoard, turn);
+        Move bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
         if (bestMove == null) return null;
 
 
