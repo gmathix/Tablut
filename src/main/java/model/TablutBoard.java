@@ -42,6 +42,7 @@ public class TablutBoard extends ContainerElement {
     public TablutBoard(int x, int y, GameStageModel gameStageModel) {
         // call the super-constructor to create a 9x9 grid, named "holeboard", and in x,y in space
         super("tablutboard", x, y, BOARD_SIZE , BOARD_SIZE, gameStageModel);
+        resetReachableCells(false);
         this.kingY = 4;
         this.kingX = 4;
     }
