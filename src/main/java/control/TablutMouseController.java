@@ -104,33 +104,10 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
                 pawn.setBoardY(dest[0]);
 
 
-                ActionList actions = new ActionList();
-
-                // add move animation action
-                ElementLook elementLook = control.getElementLook(element);
-                ContainerLook containerLook = (ContainerLook) control.getElementLook(board);
-                Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dest[0], dest[1]);
-                actions.addSingleAction(new MoveWithinContainerAction(
-                        model, element, dest[0], dest[1], AnimationTypes.MOVE_LINEARPROP, center.getX(), center.getY(), 10
-                ));
-
-                // if there is capture, generate remove captured piece from container after the move animation
-                int capture = stageModel.checkCapture(
-                        model.getIdPlayer() == 1, pawn.getBoardX(), dest[1], pawn.getBoardY(), dest[0]);
-                if (capture != -1) {
-                    GameElement capturedElement = board.getElement(capture / 9, capture % 9);
-                    actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
-                }
-
-                actions.setDoEndOfTurn(true);
-                stageModel.unselectAll();
-                stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
+                ActionList actions = ((TablutController)control).genMoveAnimationWithCapture(model, element, board, dest[0], dest[1]);
                 ActionPlayer play = new ActionPlayer(model, control, actions);
                 play.start();
-
             }
         }
-
-
     }
 }

@@ -1,12 +1,18 @@
 package control;
 
 import boardifier.control.*;
+import boardifier.model.Coord2D;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.model.action.ActionList;
+import boardifier.model.action.MoveWithinContainerAction;
+import boardifier.model.action.RemoveFromContainerAction;
+import boardifier.model.animation.AnimationTypes;
+import boardifier.view.ContainerLook;
+import boardifier.view.ElementLook;
 import boardifier.view.View;
-import com.sun.java.accessibility.util.SwingEventMonitor;
+
 import model.Pawn;
 import model.RuleSets;
 import model.TablutBoard;
@@ -108,6 +114,82 @@ public class TablutController extends Controller {
     public boolean isBoardRepeated() { return boardRepeated; }
 
 
+
+    private void processBoardRepetition() {
+        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
+
+        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
+
+        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
+
+        int nbFound = 0;
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            if (i == currentBoardRepIndex) continue;
+            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
+                nbFound++;
+            }
+        }
+
+        if (nbFound >= 3) {
+            boardRepeated = true;
+        } else {
+            boardRepeated = false;
+        }
+    }
+
+
+    public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
+        ActionList actions = new ActionList();
+
+        ElementLook elementLook = getElementLook(element);
+        ContainerLook containerLook = (ContainerLook) getElementLook(board);
+        Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dstY, dstX);
+        actions.addSingleAction(new MoveWithinContainerAction(
+                model, element, dstY, dstX, AnimationTypes.MOVE_LINEARPROP, center.getX(), center.getY(), 10
+        ));
+
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        Pawn pawn = (Pawn) element;
+        int capture = stageModel.checkCapture(
+                model.getIdPlayer() == 1, pawn.getBoardX(), dstX, pawn.getBoardY(), dstY
+        );
+        if (capture != -1) {
+            GameElement capturedElement = board.getElement(capture / 9, capture % 9);
+            actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
+        }
+
+        actions.setDoEndOfTurn(true);
+        stageModel.unselectAll();
+        stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
+
+        return actions;
+    }
+
+
+
+    public void endOfTurn() {
+
+        model.setNextPlayer();
+        // get the new player to display its name
+        Player p = model.getCurrentPlayer();
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        stageModel.getPlayerName().setText(p.getName());
+
+        if (p.getType() == Player.COMPUTER) {
+            int turn = model.getIdPlayer();
+            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
+            Decider decider = selection.supplier.get();
+            ActionPlayer play = new ActionPlayer(model, this, decider, null);
+            play.start();
+        }
+    }
+
+
+
+
+
+    /** maybe someone can clean those up **/
+
     /**
      *Implementing a file reader to read the entry file
      * Defines what to do within the single stage of the single party
@@ -161,30 +243,6 @@ public class TablutController extends Controller {
         }
         endGame();
     }
-
-
-    private void processBoardRepetition() {
-        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
-
-        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
-
-        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
-
-        int nbFound = 0;
-        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
-            if (i == currentBoardRepIndex) continue;
-            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
-                nbFound++;
-            }
-        }
-
-        if (nbFound >= 3) {
-            boardRepeated = true;
-        } else {
-            boardRepeated = false;
-        }
-    }
-
 
     private void playTurn() {
         // get the new player
@@ -240,20 +298,6 @@ public class TablutController extends Controller {
         }
     }
 
-    public void endOfTurn() {
-
-        model.setNextPlayer();
-        // get the new player to display its name
-        Player p = model.getCurrentPlayer();
-        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
-        stageModel.getPlayerName().setText(p.getName());
-
-        if (p.getType() == Player.COMPUTER) {
-            NegamaxDecider decider = new NegamaxDecider(model, this);
-            ActionPlayer play = new ActionPlayer(model, this, decider, null);
-            play.start();
-        }
-    }
 
     private boolean analyseAndPlay(String line) {
         TablutStageModel gameStage = (TablutStageModel) model.getGameStage();
@@ -319,13 +363,11 @@ public class TablutController extends Controller {
 
 
 
-
         // make move
 //        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
 //        actions.setDoEndOfTurn(true);
 //        ActionPlayer play = new ActionPlayer(model, this, actions);
 //        play.start();
-
 
 
 

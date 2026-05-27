@@ -25,7 +25,6 @@ public class Tablut extends Application {
     private static String inputFile;
 
     public static void main(String[] args) {
-        int mode = 0;
         inputFile = "";
         if (args.length >= 1) {
             try {
