@@ -1,37 +1,36 @@
 nohup: ignoring input
 
 ════════════════════════════════════════════════════════════════
- Tablut Benchmark — Machine A   Sun May 24 01:12:14 PM CEST 2026
+ Tablut Benchmark (PARALLEL) — Machine B   Sun May 24 09:28:28 PM CEST 2026
 ════════════════════════════════════════════════════════════════
- Output CSV : ./results_a.csv
- Log dir    : ./logs
- Resume     : false
+ Output CSV  : ./results_b.csv
+ Log dir     : ./logs
+ Parallel jobs: 8
+ Resume      : false
 ────────────────────────────────────────────────────────────────
- Matchup                           Games   RS   Est. time
+ Matchup                           Games   RS  Est.(serial)
 ────────────────────────────────────────────────────────────────
- NM1_vs_NMC1                         100    0      3h 20m
- NM5_vs_NMC5                          50    0     12h 30m
- NM10_vs_NMC10                        30    0     60h 00m
- NM3_vs_MC3                           70    0      9h 20m
- NM7_vs_MC7                           60    0     30h 00m
- NMC1_vs_MC1                         100    0      3h 20m
- NMC5_vs_MC5                          50    0      5h 50m
- NMC10_vs_MC10                        30    0     10h 00m
- NMC5_vs_NM7                          50    0     25h 00m
- MC5_vs_NM7                           50    0     25h 00m
- MC5_vs_NMC7                          50    0      9h 10m
- NM5_vs_NMC5_rs2                      50    2     12h 30m
- NM5_vs_NMC5_rs4                      50    4     12h 30m
- NM5_vs_NMC5_rs6                      50    6     12h 30m
- NM5_vs_MC5_rs1                       50    1     12h 30m
- NM5_vs_MC5_rs3                       50    3     12h 30m
- NM5_vs_MC5_rs5                       50    5     12h 30m
- NM5_vs_MC5_rs7                       50    7     12h 30m
- NMC5_vs_MC5_rs2                      50    2      5h 50m
- NMC5_vs_MC5_rs4                      50    4      5h 50m
- NMC5_vs_MC5_rs6                      50    6      5h 50m
+ NMC10_vs_NM10                        20    0       40h 00m
+ NMC8_vs_NM9                          20    0       20h 00m
+ NMC8_vs_NM9                          20    3       20h 00m
 ────────────────────────────────────────────────────────────────
- TOTAL                              1140         298h 30m
+ TOTAL                                60            80h 00m  (serial)
+                                      60            10h 00m  (with --jobs 8)
 ════════════════════════════════════════════════════════════════
 
-[13:12:14] START  [1/21] NM1_vs_NMC1  (100 games, ruleset=0)
+[21:28:29] Dispatching 60 games across 8 parallel slots…
+
+[21:39:46] (1/60) NMC10_vs_NM10  winner=yellow   g_1779650909007_260090
+[21:40:40] (2/60) NMC10_vs_NM10  winner=yellow   g_1779650909009_260105
+[21:46:00] (3/60) NMC10_vs_NM10  winner=yellow   g_1779650909008_260087
+[21:47:11] (4/60) NMC10_vs_NM10  winner=green    g_1779650909008_260099
+[21:55:48] (5/60) NMC10_vs_NM10  winner=yellow   g_1779651960817_266003
+[21:56:24] (6/60) NMC10_vs_NM10  winner=yellow   g_1779650909008_260093
+[22:04:49] (7/60) NMC10_vs_NM10  winner=green    g_1779651960818_266002
+[22:04:55] (8/60) NMC10_vs_NM10  winner=green    g_1779650909010_260102
+[22:21:09] (9/60) NMC10_vs_NM10  winner=yellow   g_1779652584792_269287
+[22:29:22] (10/60) NMC10_vs_NM10  winner=green    g_1779650909009_260110
+[22:35:56] (11/60) NMC10_vs_NM10  winner=error    g_1779650909008_260097
+[22:35:56] (12/60) NMC10_vs_NM10  winner=error    g_1779652584795_269288
+[22:35:56] (13/60) NMC10_vs_NM10  winner=error    g_1779651960817_265998
+[22:35:56] (14/60) NMC10_vs_NM10  winner=error    g_1779652584793_269283
