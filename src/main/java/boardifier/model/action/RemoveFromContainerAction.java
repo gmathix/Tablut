@@ -26,10 +26,8 @@ public class RemoveFromContainerAction extends GameAction {
 
         element.waitForContainerOpEnd();
         element.getContainer().removeElement(element);
-        if (model.getGameStage() instanceof TablutStageModel stageModel) {
-            stageModel.removeElement(element);
-        }
-        onEndCallback.execute();
+
+        model.getGameStage().removeElement(element);
     }
 
 
