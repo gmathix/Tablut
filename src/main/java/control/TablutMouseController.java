@@ -9,7 +9,12 @@ import boardifier.model.ElementTypes;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
+import boardifier.model.action.GameAction;
+import boardifier.model.action.MoveWithinContainerAction;
+import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
+import boardifier.view.ContainerLook;
+import boardifier.view.ElementLook;
 import boardifier.view.GridLook;
 import boardifier.view.View;
 import javafx.event.EventHandler;
@@ -91,16 +96,38 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
             GridLook lookBoard = (GridLook) control.getElementLook(board);
             int[] dest = lookBoard.getCellFromSceneLocation(pos);
             if (board.canReachCell(dest[0], dest[1])) {
-                if (pawn.getColor() == Pawn.PAWN_MOSCOVITE) {
-                    board.setKingX(dest[0]);
-                    board.setKingY(dest[1]);
+                if (pawn.getColor() == Pawn.PAWN_KING) {
+                    board.setKingX(dest[1]);
+                    board.setKingY(dest[0]);
                 }
-                ActionList actions = ActionFactory.generateMoveWithinContainer(control, model, element, dest[0], dest[1], AnimationTypes.MOVE_LINEARPROP, 10);
+                pawn.setBoardX(dest[1]);
+                pawn.setBoardY(dest[0]);
+
+
+                ActionList actions = new ActionList();
+
+                // add move animation action
+                ElementLook elementLook = control.getElementLook(element);
+                ContainerLook containerLook = (ContainerLook) control.getElementLook(board);
+                Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dest[0], dest[1]);
+                actions.addSingleAction(new MoveWithinContainerAction(
+                        model, element, dest[0], dest[1], AnimationTypes.MOVE_LINEARPROP, center.getX(), center.getY(), 10
+                ));
+
+                // if there is capture, generate remove captured piece from container after the move animation
+                int capture = stageModel.checkCapture(
+                        model.getIdPlayer() == 1, pawn.getBoardX(), dest[1], pawn.getBoardY(), dest[0]);
+                if (capture != -1) {
+                    GameElement capturedElement = board.getElement(capture / 9, capture % 9);
+                    actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
+                }
+
                 actions.setDoEndOfTurn(true);
                 stageModel.unselectAll();
                 stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
                 ActionPlayer play = new ActionPlayer(model, control, actions);
                 play.start();
+
             }
         }
 

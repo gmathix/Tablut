@@ -67,12 +67,18 @@ public class TablutStageFactory extends StageElementsFactory {
                 if (type != 0) {
                     if (type == Pawn.PAWN_MOSCOVITE) {
                         board.addElement(moscovitePawns[moscoviteIdx], i, j);
+                        moscovitePawns[moscoviteIdx].setBoardX(j);
+                        moscovitePawns[moscoviteIdx].setBoardY(i);
                         moscoviteIdx++;
                     } else if (type == Pawn.PAWN_SOLDIER) {
                         board.addElement(soldierPawns[soldierIdx], i, j);
+                        soldierPawns[soldierIdx].setBoardX(j);
+                        soldierPawns[soldierIdx].setBoardY(i);
                         soldierIdx++;
                     } else if (type == Pawn.PAWN_KING) {
                         board.addElement(kingPawns[0], i, j);
+                        kingPawns[0].setBoardX(j);
+                        kingPawns[0].setBoardY(i);
                     }
                 }
             }

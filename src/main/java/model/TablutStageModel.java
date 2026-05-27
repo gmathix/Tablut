@@ -112,7 +112,7 @@ public class TablutStageModel extends GameStageModel {
         });
     }
 
-    public void checkCapture(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+    public int checkCapture(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
         // check capture
         int horizontalDirection = 0;
         int verticalDirection = 0;
@@ -133,28 +133,35 @@ public class TablutStageModel extends GameStageModel {
             if (dx == -horizontalDirection && horizontalDirection != 0) continue;
             if (dy == -verticalDirection && verticalDirection != 0) continue;
 
+
+            int dstY1 = rowDest + dy;
+            int dstX1 = colDest + dx;
+
+            int dstY2 = rowDest + 2*dy;
+            int dstX2 = colDest + 2*dx;
+
             // check bounds for pawn 2 squares away
-            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
-            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+            if (dstY2 < 0 || dstY2 >= 9) continue;
+            if (dstX2 < 0 || dstX2 >= 9) continue;
 
 
-            GameElement sideEl = getBoard().getElement(rowDest + dy, colDest + dx);
-            GameElement sideEl2 = getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+            GameElement sideEl = getBoard().getElement(dstY1, dstX1);
+            GameElement sideEl2 = getBoard().getElement(dstY2, dstX2);
 
             if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
                 if (isYellow) {
                     if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        getBoard().removeElement(sideEl);
-                        removeElement(sideEl);
+                        return dstY1 * 9 + dstX1;
                     }
                 } else {
                     if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        getBoard().removeElement(sideEl);
-                        removeElement(sideEl);
+                        return dstY1 * 9 + dstX1;
                     }
                 }
             }
         }
+
+        return -1;
     }
 
     private void computePartyResult() {
