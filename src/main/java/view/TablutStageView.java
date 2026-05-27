@@ -43,15 +43,16 @@ public class TablutStageView extends GameStageView {
     public void createLooks() {
         TablutStageModel model = (TablutStageModel)gameStageModel;
 
-        addLook(new TextLook(model.getPlayerName()));
-        addLook(new ClassicBoardLook(2, 6, model.getBoard(), 1, 1, true));
+        addLook(new TablutBoardLook(600, model.getBoard()));
 
         for (int i = 0; i < 16; i++) {
-            addLook(new PawnLook(model.getMoscovitePawns()[i]));
+            addLook(new PawnLook(25, model.getMoscovitePawns()[i]));
         }
         for (int i = 0; i < 8; i++) {
-            addLook(new PawnLook(model.getSoldierPawns()[i]));
+            addLook(new PawnLook(25, model.getSoldierPawns()[i]));
         }
-        addLook(new PawnLook(model.getKingPawns()[0]));
+        addLook(new PawnLook(25, model.getKingPawns()[0]));
+
+        addLook(new TextLook(24, "0x000000", model.getPlayerName()));
     }
 }

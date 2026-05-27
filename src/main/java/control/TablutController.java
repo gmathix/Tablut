@@ -1,9 +1,6 @@
 package control;
 
-import boardifier.control.ActionFactory;
-import boardifier.control.ActionPlayer;
-import boardifier.control.Controller;
-import boardifier.control.Decider;
+import boardifier.control.*;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
@@ -71,6 +68,11 @@ public class TablutController extends Controller {
         }
         currentBoardRepIndex = 0;
         boardRepeated = false;
+
+
+        setControlKey(new TablutKeyController(model, view, this));
+        setControlMouse(new TablutMouseController(model, view, this));
+        setControlAction(new TablutActionController(model, view, this));
 
     }
 
@@ -245,7 +247,14 @@ public class TablutController extends Controller {
         Player p = model.getCurrentPlayer();
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         stageModel.getPlayerName().setText(p.getName());
+
+        if (p.getType() == Player.COMPUTER) {
+            NegamaxDecider decider = new NegamaxDecider(model, this);
+            ActionPlayer play = new ActionPlayer(model, this, decider, null);
+            play.start();
+        }
     }
+
     private boolean analyseAndPlay(String line) {
         TablutStageModel gameStage = (TablutStageModel) model.getGameStage();
 
@@ -312,10 +321,10 @@ public class TablutController extends Controller {
 
 
         // make move
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
-        actions.setDoEndOfTurn(true);
-        ActionPlayer play = new ActionPlayer(model, this, actions);
-        play.start();
+//        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
+//        actions.setDoEndOfTurn(true);
+//        ActionPlayer play = new ActionPlayer(model, this, actions);
+//        play.start();
 
 
 

@@ -1,4 +1,3 @@
-import boardifier.control.Decider;
 import boardifier.control.StageFactory;
 import boardifier.model.GameException;
 import boardifier.model.Model;
@@ -7,20 +6,27 @@ import control.TablutController;
 import control.TablutController.BotSelection;
 import model.RuleSets;
 
+import javafx.application.Application;
+import javafx.stage.Stage;
+import view.TablutRootPane;
+import view.TablutView;
 
 import java.util.*;
 import java.util.Map.*;
 
 
 
-public class TablutConsole {
+public class Tablut extends Application {
 
     public static final Scanner sc = new Scanner(System.in);
 
-    public static void main(String[] args) {
 
+    private static int mode;
+    private static String inputFile;
+
+    public static void main(String[] args) {
         int mode = 0;
-        String inputFile = "";
+        inputFile = "";
         if (args.length >= 1) {
             try {
                 mode = Integer.parseInt(args[0]);
@@ -57,6 +63,11 @@ public class TablutConsole {
             inputFile = args[1];
         }
 
+        launch(args);
+    }
+
+
+    public void start(Stage stage) throws Exception {
 
         int playerSide = -1;
 
@@ -85,7 +96,6 @@ public class TablutConsole {
             System.out.printf("\n");
 
         }
-
 
 
         // ---- RULESET SELECTION ----
@@ -134,20 +144,17 @@ public class TablutConsole {
         }
 
 
-
-
-
         StageFactory.registerModelAndView("tablut", "model.TablutStageModel", "view.TablutStageView");
-        View holeView = new View(model);
-        TablutController control = new TablutController(model,holeView,mode,inputFile);
+        TablutRootPane rootPane = new TablutRootPane();
+        View tablutView = new TablutView(model, stage, rootPane);
+        TablutController control = new TablutController(model, tablutView, mode, inputFile);
         control.setFirstStageName("tablut");
 
 
         if (mode == 0) {
             model.addHumanPlayer("player1");
             model.addHumanPlayer("player2");
-        }
-        else if (mode == 1 && playerSide == 1) {
+        } else if (mode == 1 && playerSide == 1) {
             model.addHumanPlayer("player1");
         }
 
@@ -202,26 +209,15 @@ public class TablutConsole {
             model.addHumanPlayer("player2");
         }
 
+        int first = Math.random() > 0.5 ? 1 : 0;
+        model.setIdPlayer(first);
 
 
+//        System.out.printf("id winner : %d\n", model.getIdWinner());
+//        System.exit(model.getIdWinner());
 
-        try {
-            control.startGame();
 
-            int first = Math.random() > 0.5 ? 1 : 0;
-            model.setIdPlayer(first);
-            System.out.printf("%s makes the first move\n", first == 0 ? "Green" : "Yellow");
-
-            control.stageLoop();
-        }
-        catch(GameException e) {
-            System.out.println("error while starting the game");
-        }
-
-        System.out.printf("id winner : %d\n", model.getIdWinner());
-
-        System.exit(model.getIdWinner());
+        stage.setTitle("Tablut : the fucking viking game");
+        stage.show();
     }
-
-
 }

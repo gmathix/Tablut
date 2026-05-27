@@ -35,7 +35,7 @@ public class TablutStageFactory extends StageElementsFactory {
     public void setup() {
 
         TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
-        text.setLocation(0,0);
+        text.setLocation(10,20);
         stageModel.setPlayerName(text);
 
         TablutBoard board = new TablutBoard(0, 1, stageModel);

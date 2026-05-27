@@ -30,63 +30,47 @@ import control.algos.RecurBoard;
  */
 public class TablutStageModel extends GameStageModel {
 
-    // define stage state variables
-    private int blackPawnsToPlay;
-    private int redPawnsToPlay;
+    public static final int STATE_SELECTPAWN = 1;
+    public static final int STATE_SELECTDEST = 2;
+
 
     // define stage game elements
     private TablutBoard board;
-    private TablutPawnPot blackPot;
-    private TablutPawnPot redPot;
     private Pawn[] moscovitePawns;
     private Pawn[] soldierPawns;
     private Pawn[] kingPawns;
     private TextElement playerName;
+    private int state;
     // Uncomment next line if the example with a main container is used. see end of TablutStageFactory and TablutStageView
     //private ContainerElement mainContainer;
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
+        state = STATE_SELECTPAWN;
         setupCallbacks();
     }
 
+    // GETTERS
+    public int getState() { return state; }
     public TablutBoard getBoard() {
         return board;
     }
-
-    public TablutPawnPot getBlackPot() {
-        return blackPot;
-    }
-
-    public TablutPawnPot getRedPot() {
-        return redPot;
-    }
-
     public Pawn[] getMoscovitePawns() {
         return moscovitePawns;
     }
-
     public Pawn[] getSoldierPawns() {
         return soldierPawns;
     }
-
     public Pawn[] getKingPawns() { return kingPawns; }
-
     public TextElement getPlayerName() {
         return playerName;
     }
 
+    // SETTERS
+    public void setState(int state) { this.state = state; }
     public void setBoard(TablutBoard board) {
         this.board = board;
         addContainer(board);
-    }
-    public void setBlackPot(TablutPawnPot blackPot) {
-        this.blackPot = blackPot;
-        addContainer(blackPot);
-    }
-    public void setRedPot(TablutPawnPot redPot) {
-        this.redPot = redPot;
-        addContainer(redPot);
     }
     public void setMoscovitePawns(Pawn[] moscovitePawns) {
         this.moscovitePawns = moscovitePawns;
@@ -113,12 +97,18 @@ public class TablutStageModel extends GameStageModel {
 
 
     private void setupCallbacks() {
-
-        onMoveInContainer(new ContainerOpCallback() {
-            @Override
-            public void execute(GameElement element, ContainerElement containerDest, int rowDest, int colDest) {
-                computePartyResult();
+        onSelectionChange(() -> {
+            if (selected.size() == 0) {
+                board.resetReachableCells(false);
+                return;
             }
+            Pawn pawn = (Pawn) selected.getFirst();
+            board.setValidCells(pawn.getNumber());
+        });
+
+        onMoveInContainer((el, gridDest, rowDest, colDest) -> {
+            if (gridDest != board) return;
+            computePartyResult();
         });
     }
 

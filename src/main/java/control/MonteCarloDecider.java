@@ -57,7 +57,7 @@ public class MonteCarloDecider extends Decider  {
 
 
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, bestMove.dstY(), bestMove.dstX());
+        ActionList actions = ActionFactory.generateMoveWithinContainer(control, model, pawn, bestMove.dstY(), bestMove.dstX());
         actions.setDoEndOfTurn(true);
         ActionPlayer play = new ActionPlayer(model, control, actions);
         play.start();

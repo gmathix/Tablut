@@ -3,6 +3,8 @@ package model;
 import boardifier.model.ElementTypes;
 import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
+import boardifier.model.animation.Animation;
+import boardifier.model.animation.AnimationStep;
 
 /**
  * A basic pawn element, with only 2 fixed parameters : number and color
@@ -43,5 +45,16 @@ public class Pawn extends GameElement {
         };
 
         return String.format("Pawn : %s, number %d\n", type, number);
+    }
+
+    public void update() {
+        if (animation != null) {
+            AnimationStep step = animation.next();
+            if (step == null) {
+                animation = null;
+            } else if (step != Animation.NOPStep) {
+                setLocation(step.getInt(0), step.getInt(1));
+            }
+        }
     }
 }

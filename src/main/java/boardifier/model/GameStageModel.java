@@ -189,14 +189,20 @@ public abstract class GameStageModel {
         }
     }
 
-    /* ********************************
-       Helpers methods
-    ******************************** */
+    /* *******************************
+       Trampoline methods
+    ********************************* */
+
+    public Player getCurrentPlayer() {
+        return model.getCurrentPlayer();
+    }
 
     public String getCurrentPlayerName() {
         return model.getCurrentPlayerName();
     }
-
+    /* ********************************
+       Helpers methods
+    ******************************** */
     // get the container element (if it exists) where is assigned another element
     public ContainerElement elementContainer(GameElement element) {
         for(ContainerElement container : containers) {
@@ -210,7 +216,6 @@ public abstract class GameStageModel {
         for (int i = 0; i < elements.size(); i++) {
             GameElement element = elements.get(i);
             if (element.type == type) {
-                //System.out.println("found");
                 list.add(element);
             }
         }
