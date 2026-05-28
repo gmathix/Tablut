@@ -28,7 +28,7 @@ public class RecurBoard {
             3, 4, 5, 13, // D1, E1, F1, E2
             27, 36, 45, 37, // A4, A5, A6, B5
             35, 44, 53, 43, // I4, I5, I6, H5
-            75, 76, 77, 67  // D9, E9, F9, E8
+            75, 76, 77, 68  // D9, E9, F9, E8
     );
 
     // list of corner squares (flat order index)
