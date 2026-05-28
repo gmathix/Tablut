@@ -24,6 +24,12 @@ import static model.TablutBoard.startingBoard;
  *
  */
 public class TablutStageFactory extends StageElementsFactory {
+    private static final int BOARD_BACKDROP_X = 20;
+    private static final int BOARD_BACKDROP_Y = 60;
+    private static final int PANEL_BACKDROP_X = 760;
+    private static final int PANEL_BACKDROP_Y = 40;
+
+
     private TablutStageModel stageModel;
 
     public TablutStageFactory(GameStageModel gameStageModel) {
@@ -33,31 +39,65 @@ public class TablutStageFactory extends StageElementsFactory {
 
     @Override
     public void setup() {
+        TextElement fullBackdrop = new TextElement("", stageModel);
+
+        fullBackdrop.setClickable(false);
+        fullBackdrop.setLocation(0, 0);
+        stageModel.setFullBackdrop(fullBackdrop);
+
+        TextElement boardBackdrop = new TextElement("", stageModel);
+        boardBackdrop.setClickable(false);
+        boardBackdrop.setLocation(BOARD_BACKDROP_X, BOARD_BACKDROP_Y);
+        stageModel.setBoardBackdrop(boardBackdrop);
+
+        TextElement panelBackdrop = new TextElement("", stageModel);
+        panelBackdrop.setClickable(false);
+        panelBackdrop.setLocation(PANEL_BACKDROP_X, PANEL_BACKDROP_Y);
+        stageModel.setPanelBackdrop(panelBackdrop);
+
+        TextElement title = new TextElement("TABLUT", stageModel);
+        title.setClickable(false);
+        title.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 40);
+        stageModel.setTitleText(title);
+
+        TextElement subtitle = new TextElement("Escape the king, or trap him.", stageModel);
+        subtitle.setClickable(false);
+        subtitle.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 90);
+        stageModel.setSubtitleText(subtitle);
 
         TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
-        text.setLocation(10,20);
+        text.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 165);
         stageModel.setPlayerName(text);
 
-        TablutBoard board = new TablutBoard(0, 1, stageModel);
+        TextElement help = new TextElement("Click a pawn, then a highlighted square.", stageModel);
+        help.setClickable(false);
+        help.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 250);
+        stageModel.setHelpText(help);
+
+        TextElement legend = new TextElement("Green = defenders  |  Gold = attackers", stageModel);
+        legend.setClickable(false);
+        legend.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 300);
+        stageModel.setLegendText(legend);
+
+        TablutBoard board = new TablutBoard(40, 80, stageModel);
         stageModel.setBoard(board);
+
 
         Pawn[] moscovitePawns = new Pawn[16];
         Pawn[] soldierPawns   = new Pawn[8];
         Pawn[] kingPawns      = new Pawn[1];
 
         for (int i = 0; i < 16; i++) {
-            moscovitePawns[i] = new Pawn(i+1, Pawn.PAWN_MOSCOVITE, stageModel);
+            moscovitePawns[i] = new Pawn(i + 1, Pawn.PAWN_MOSCOVITE, stageModel);
         }
         for (int i = 0; i < 8; i++) {
-            soldierPawns[i] = new Pawn(16 + i+1, Pawn.PAWN_SOLDIER, stageModel);
+            soldierPawns[i] = new Pawn(16 + i + 1, Pawn.PAWN_SOLDIER, stageModel);
         }
         kingPawns[0] = new Pawn(25, Pawn.PAWN_KING, stageModel);
 
         stageModel.setMoscovitePawns(moscovitePawns);
         stageModel.setSoldierPawns(soldierPawns);
         stageModel.setKingPawns(kingPawns);
-
-
 
         int moscoviteIdx = 0;
         int soldierIdx   = 0;

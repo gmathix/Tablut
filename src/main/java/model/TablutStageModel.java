@@ -34,15 +34,23 @@ public class TablutStageModel extends GameStageModel {
     public static final int STATE_SELECTDEST = 2;
 
 
-    // define stage game elements
+
     private TablutBoard board;
     private Pawn[] moscovitePawns;
     private Pawn[] soldierPawns;
     private Pawn[] kingPawns;
+
     private TextElement playerName;
+    private TextElement titleText;
+    private TextElement subtitleText;
+    private TextElement helpText;
+    private TextElement legendText;
+    private TextElement fullBackdrop;
+    private TextElement boardBackdrop;
+    private TextElement panelBackdrop;
+
     private int state;
-    // Uncomment next line if the example with a main container is used. see end of TablutStageFactory and TablutStageView
-    //private ContainerElement mainContainer;
+
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
@@ -52,19 +60,18 @@ public class TablutStageModel extends GameStageModel {
 
     // GETTERS
     public int getState() { return state; }
-    public TablutBoard getBoard() {
-        return board;
-    }
-    public Pawn[] getMoscovitePawns() {
-        return moscovitePawns;
-    }
-    public Pawn[] getSoldierPawns() {
-        return soldierPawns;
-    }
+    public TablutBoard getBoard() { return board; }
+    public Pawn[] getMoscovitePawns() { return moscovitePawns; }
+    public Pawn[] getSoldierPawns() { return soldierPawns; }
     public Pawn[] getKingPawns() { return kingPawns; }
-    public TextElement getPlayerName() {
-        return playerName;
-    }
+    public TextElement getPlayerName() { return playerName; }
+    public TextElement getTitleText() { return titleText; }
+    public TextElement getSubtitleText() { return subtitleText; }
+    public TextElement getHelpText() { return helpText; }
+    public TextElement getLegendText() { return legendText; }
+    public TextElement getFullBackdrop() { return fullBackdrop; }
+    public TextElement getBoardBackdrop() { return boardBackdrop; }
+    public TextElement getPanelBackdrop() { return panelBackdrop; }
 
     // SETTERS
     public void setState(int state) { this.state = state; }
@@ -93,6 +100,34 @@ public class TablutStageModel extends GameStageModel {
     public void setPlayerName(TextElement playerName) {
         this.playerName = playerName;
         addElement(playerName);
+    }
+    public void setTitleText(TextElement titleText) {
+        this.titleText = titleText;
+        addElement(titleText);
+    }
+    public void setSubtitleText(TextElement subtitleText) {
+        this.subtitleText = subtitleText;
+        addElement(subtitleText);
+    }
+    public void setHelpText(TextElement helpText) {
+        this.helpText = helpText;
+        addElement(helpText);
+    }
+    public void setLegendText(TextElement legendText) {
+        this.legendText = legendText;
+        addElement(legendText);
+    }
+    public void setFullBackdrop(TextElement fullBackdrop) {
+        this.fullBackdrop = fullBackdrop;
+        addElement(fullBackdrop);
+    }
+    public void setBoardBackdrop(TextElement boardBackdrop) {
+        this.boardBackdrop = boardBackdrop;
+        addElement(boardBackdrop);
+    }
+    public void setPanelBackdrop(TextElement panelBackdrop) {
+        this.panelBackdrop = panelBackdrop;
+        addElement(panelBackdrop);
     }
 
 
