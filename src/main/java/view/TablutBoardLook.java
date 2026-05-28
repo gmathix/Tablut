@@ -2,8 +2,10 @@ package view;
 
 import boardifier.model.ContainerElement;
 import boardifier.view.ClassicBoardLook;
+import control.algos.RecurBoard;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeType;
+import model.TablutStageModel;
 
 
 public class TablutBoardLook extends ClassicBoardLook {
@@ -25,10 +27,15 @@ public class TablutBoardLook extends ClassicBoardLook {
                 cells[i][j].setStrokeMiterLimit(10);
                 cells[i][j].setStrokeType(StrokeType.CENTERED);
                 cells[i][j].setStroke(Color.valueOf("0x333333"));
-                if (reach[i][j]) {
-                    cells[i][j].setFill(LEGAL_MOVE_SQUARE_COLOR);
+
+                if (RecurBoard.constrainedKingSquares.contains(i*9 + j)) { // darker color for moscovite starting squares
+                    cells[i][j].setFill(SQUARE_COLOR.darker());
                 } else {
                     cells[i][j].setFill(SQUARE_COLOR);
+                }
+
+                if (reach[i][j]) {
+                    cells[i][j].setFill(LEGAL_MOVE_SQUARE_COLOR);
                 }
             }
         }
