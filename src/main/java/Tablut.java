@@ -1,13 +1,16 @@
 import boardifier.control.StageFactory;
 import boardifier.model.GameException;
 import boardifier.model.Model;
+import boardifier.model.Player;
 import boardifier.view.View;
+import control.BotSentences;
 import control.TablutController;
 import control.TablutController.BotSelection;
 import model.RuleSets;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import model.TablutStageModel;
 import view.TablutRootPane;
 import view.TablutView;
 
@@ -151,10 +154,10 @@ public class Tablut extends Application {
 
 
         if (mode == 0) {
-            model.addHumanPlayer("player1");
-            model.addHumanPlayer("player2");
+            model.addHumanPlayer("Player 1");
+            model.addHumanPlayer("Player 2");
         } else if (mode == 1 && playerSide == 1) {
-            model.addHumanPlayer("player1");
+            model.addHumanPlayer("Player 1");
         }
 
         // ---- BOT SELECTION ----
@@ -205,18 +208,46 @@ public class Tablut extends Application {
         }
 
         if (mode == 1 && playerSide == 2) {
-            model.addHumanPlayer("player2");
+            model.addHumanPlayer("Player 2");
         }
 
         int first = Math.random() > 0.5 ? 1 : 0;
         model.setIdPlayer(first);
 
 
-//        System.out.printf("id winner : %d\n", model.getIdWinner());
-//        System.exit(model.getIdWinner());
+
 
 
         stage.setTitle("Tablut : the fucking viking game");
         stage.show();
+
+
+
+
+//        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+//        Player player1 = model.getPlayers().get(0);
+//        Player player2 = model.getPlayers().get(1);
+//
+//        String player1Text, player2Text;
+//
+//        if (model.getIdPlayer() == 0) {
+//            if (player1.getType() == Player.HUMAN) {
+//                player1Text = player1.getName() + " : Your Move";
+//            } else {
+//                int index = (int) (Math.random() * BotSentences.SENTENCES_LOSING.length);
+//                player1Text = BotSentences.SENTENCES_WINNING[index];
+//            }
+//            player2Text = player2.getName();
+//        } else {
+//            if (player2.getType() == Player.HUMAN) {
+//                player2Text = player2.getName() + " : Your Move";
+//            } else {
+//                int index = (int) (Math.random() * BotSentences.SENTENCES_LOSING.length);
+//                player2Text = BotSentences.SENTENCES_WINNING[index];
+//            }
+//            player1Text = player1.getName();
+//        }
+//        stageModel.getSwedishPlayerText().setText(player1Text);
+//        stageModel.getMoscovitePlayerText().setText(player2Text);
     }
 }

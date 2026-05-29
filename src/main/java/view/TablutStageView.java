@@ -17,15 +17,31 @@ public class TablutStageView extends GameStageView {
     public void createLooks() {
         TablutStageModel model = (TablutStageModel) gameStageModel;
 
-        BackgroundLook fullBg = new BackgroundLook(1180, 820, BackgroundLook.BACKGROUND_COLOR, "0x1d251d", model.getFullBackdrop());
+        BackgroundLook fullBg = new BackgroundLook(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT, BackgroundLook.BACKGROUND_COLOR, "0x" + Constants.BACKGROUND_COLOR, model.getFullBackdrop());
         fullBg.setDepth(-200);
         addLook(fullBg);
 
-        BackgroundLook boardCard = new BackgroundLook(700, 700, BackgroundLook.BACKGROUND_COLOR, "0x2a2116", model.getBoardBackdrop());
+        BackgroundLook moscovitePanelCard = new BackgroundLook(
+                Constants.PLAYER_PANEL_WIDTH, Constants.PLAYER_PANEL_HEIGHT, BackgroundLook.BACKGROUND_COLOR,
+                "0x" + Constants.MOSCOVITE_PANEL_COLOR, model.getMoscovitePanelBackdrop());
+        moscovitePanelCard.setDepth(-180);
+        addLook(moscovitePanelCard);
+
+        BackgroundLook soldierPanelCard = new BackgroundLook(
+                Constants.PLAYER_PANEL_WIDTH, Constants.PLAYER_PANEL_HEIGHT, BackgroundLook.BACKGROUND_COLOR,
+                "0x" + Constants.SWEDISH_PANEL_COLOR, model.getSoldierPanelBackdrop());
+        soldierPanelCard.setDepth(-180);
+        addLook(soldierPanelCard);
+
+        BackgroundLook boardCard = new BackgroundLook(
+                Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT, BackgroundLook.BACKGROUND_COLOR,
+                "0x" + Constants.BOARD_COLOR, model.getBoardBackdrop());
         boardCard.setDepth(-180);
         addLook(boardCard);
 
-        BackgroundLook panelCard = new BackgroundLook(360, 720, BackgroundLook.BACKGROUND_COLOR, "0x233026", model.getPanelBackdrop());
+        BackgroundLook panelCard = new BackgroundLook(
+                Constants.SIDE_PANEL_WIDTH, Constants.SIDE_PANEL_HEIGHT, BackgroundLook.BACKGROUND_COLOR,
+                "0x" + Constants.SIDE_PANEL_COLOR, model.getPanelBackdrop());
         panelCard.setDepth(-170);
         addLook(panelCard);
 
@@ -46,6 +62,14 @@ public class TablutStageView extends GameStageView {
         PawnLook kingLook = new PawnLook(25, model.getKingPawns()[0]);
         kingLook.setDepth(6);
         addLook(kingLook);
+
+        TextLook moscovitePlayerText = new TextLook((int) Constants.PLAYER_FONT.getSize(), "0x" + Constants.PLAYER_TEXT_COLOR, model.getMoscovitePlayerText());
+        moscovitePlayerText.setDepth(20);
+        addLook(moscovitePlayerText);
+
+        TextLook swedishPlayerText = new TextLook((int) Constants.PLAYER_FONT.getSize(), "0x" + Constants.PLAYER_TEXT_COLOR, model.getSwedishPlayerText());
+        swedishPlayerText.setDepth(20);
+        addLook(swedishPlayerText);
 
         TextLook title = new TextLook(40, "0xF5E7B8", model.getTitleText());
         title.setDepth(20);

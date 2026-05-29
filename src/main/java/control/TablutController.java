@@ -9,14 +9,14 @@ import boardifier.model.action.ActionList;
 import boardifier.model.action.MoveWithinContainerAction;
 import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
-import boardifier.view.ContainerLook;
-import boardifier.view.ElementLook;
-import boardifier.view.View;
+import boardifier.view.*;
 
+import javafx.scene.text.Font;
 import model.Pawn;
 import model.RuleSets;
 import model.TablutBoard;
 import model.TablutStageModel;
+import view.Constants;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -42,6 +42,7 @@ public class TablutController extends Controller {
 
     int gameMode;
     int botPlayers[];
+    int botLevels[];
 
     BufferedReader consoleIn;
     String inputFile;
@@ -65,8 +66,13 @@ public class TablutController extends Controller {
         availableBots[0] = new HashMap<>();
         availableBots[1] = new HashMap<>();
 
+
+        this.botLevels = botLevels;
+
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
+
+
 
         lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
         for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
@@ -96,6 +102,7 @@ public class TablutController extends Controller {
                 () -> new MonteCarloDecider(model, this, level)));
         availableBots[color].put(NEGAMONTECARLO_PLAYER, new BotSelection(NEGAMONTECARLO_PLAYER, "Nega-Monte-Carlo",
                 () -> new NegaMonteCarloDecider(model, this, level)));
+        this.botLevels[color] = level;
     }
 
 
@@ -175,8 +182,42 @@ public class TablutController extends Controller {
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         stageModel.getPlayerName().setText(p.getName());
 
+        GameStageView stageView = view.getGameStageView();
+
+        String player1Text, player2Text;
+        Player player1 = model.getPlayers().get(0);
+        Player player2 = model.getPlayers().get(1);
+
+        String[] chosenBotSentences;
+        int turn = model.getIdPlayer();
+        if (botLevels[turn] <= 5) chosenBotSentences = BotSentences.SENTENCES_LOSING;
+        else if (botLevels[turn] <= 8) chosenBotSentences = BotSentences.SENTENCES_WINNING;
+        else chosenBotSentences = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
+
+
+        if (model.getIdPlayer() == 0) {
+            if (player1.getType() == Player.HUMAN) {
+                player1Text = player1.getName() + " : Your Move";
+            } else {
+                int index = (int) (Math.random() * chosenBotSentences.length);
+                player1Text = player1.getName() + " " + chosenBotSentences[index];
+            }
+            player2Text = player2.getName();
+        } else {
+            if (player2.getType() == Player.HUMAN) {
+                player2Text = player2.getName() + " : Your Move";
+            } else {
+                int index = (int) (Math.random() * chosenBotSentences.length);
+                player2Text = player2.getName() + " " + chosenBotSentences[index];
+            }
+            player1Text = player1.getName();
+        }
+
+        stageModel.getSwedishPlayerText().setText(player1Text);
+        stageModel.getMoscovitePlayerText().setText(player2Text);
+
         if (p.getType() == Player.COMPUTER) {
-            int turn = model.getIdPlayer();
+            turn = model.getIdPlayer();
             BotSelection selection = availableBots[turn].get(botPlayers[turn]);
             Decider decider = selection.supplier.get();
             ActionPlayer play = new ActionPlayer(model, this, decider, null);

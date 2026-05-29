@@ -3,9 +3,7 @@ package model;
 import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
-import view.PawnLook;
-
-import static model.TablutBoard.startingBoard;
+import view.Constants;
 
 /**
  * TablutStageFactory must create the game elements that are defined in TablutStageModel
@@ -28,6 +26,10 @@ public class TablutStageFactory extends StageElementsFactory {
     private static final int BOARD_BACKDROP_Y = 60;
     private static final int PANEL_BACKDROP_X = 760;
     private static final int PANEL_BACKDROP_Y = 40;
+    private static final int MOSCOVITE_PANEL_BACKDROP_X = BOARD_BACKDROP_X;
+    private static final int MOSCOVITE_PANEL_BACKDROP_Y = 10;
+    private static final int SOLDIER_PANEL_BACKDROP_X = BOARD_BACKDROP_X;
+    private static final int SOLDIER_PANEL_BACKDROP_Y = BOARD_BACKDROP_Y + 10;
 
 
     private TablutStageModel stageModel;
@@ -40,29 +42,48 @@ public class TablutStageFactory extends StageElementsFactory {
     @Override
     public void setup() {
         TextElement fullBackdrop = new TextElement("", stageModel);
-
         fullBackdrop.setClickable(false);
         fullBackdrop.setLocation(0, 0);
         stageModel.setFullBackdrop(fullBackdrop);
 
+        TextElement moscovitePanelBackdrop = new TextElement("", stageModel);
+        moscovitePanelBackdrop.setClickable(false);
+        moscovitePanelBackdrop.setLocation(Constants.MOSCOVITE_PANEL_X, Constants.MOSCOVITE_PANEL_Y);
+        stageModel.setMoscovitePanelBackdrop(moscovitePanelBackdrop);
+
+        TextElement soldierPanelBackdrop = new TextElement("", stageModel);
+        soldierPanelBackdrop.setClickable(false);
+        soldierPanelBackdrop.setLocation(Constants.SWEDISH_PANEL_X, Constants.SWEDISH_PANEL_Y);
+        stageModel.setSoldierPanelBackdrop(soldierPanelBackdrop);
+
         TextElement boardBackdrop = new TextElement("", stageModel);
         boardBackdrop.setClickable(false);
-        boardBackdrop.setLocation(BOARD_BACKDROP_X, BOARD_BACKDROP_Y);
+        boardBackdrop.setLocation(Constants.BOARD_X, Constants.BOARD_Y);
         stageModel.setBoardBackdrop(boardBackdrop);
 
         TextElement panelBackdrop = new TextElement("", stageModel);
         panelBackdrop.setClickable(false);
-        panelBackdrop.setLocation(PANEL_BACKDROP_X, PANEL_BACKDROP_Y);
+        panelBackdrop.setLocation(Constants.SIDE_PANEL_X, Constants.SIDE_PANEL_Y);
         stageModel.setPanelBackdrop(panelBackdrop);
+
+        TextElement moscovitePlayerText = new TextElement("Player 2", stageModel);
+        moscovitePlayerText.setClickable(false);
+        moscovitePlayerText.setLocation(Constants.MOSCOVITE_PANEL_X + 5, Constants.MOSCOVITE_PANEL_Y + (Constants.PLAYER_PANEL_HEIGHT * 0.6));
+        stageModel.setMoscovitePlayerText(moscovitePlayerText);
+
+        TextElement swedishPlayerText = new TextElement("Player 1", stageModel);
+        swedishPlayerText.setClickable(false);
+        swedishPlayerText.setLocation(Constants.SWEDISH_PANEL_X + 5, Constants.SWEDISH_PANEL_Y + (Constants.PLAYER_PANEL_HEIGHT * 0.6));
+        stageModel.setSwedishPlayerText(swedishPlayerText);
 
         TextElement title = new TextElement("TABLUT", stageModel);
         title.setClickable(false);
-        title.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 40);
+        title.setLocation(Constants.TITLE_X, Constants.TITLE_Y);
         stageModel.setTitleText(title);
 
         TextElement subtitle = new TextElement("Escape the king, or trap him.", stageModel);
         subtitle.setClickable(false);
-        subtitle.setLocation(PANEL_BACKDROP_X + 35, PANEL_BACKDROP_Y + 90);
+        subtitle.setLocation(Constants.SUBTITLE_X, Constants.SUBTITLE_Y);
         stageModel.setSubtitleText(subtitle);
 
         TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);

@@ -48,6 +48,10 @@ public class TablutStageModel extends GameStageModel {
     private TextElement fullBackdrop;
     private TextElement boardBackdrop;
     private TextElement panelBackdrop;
+    private TextElement moscovitePanelBackdrop;
+    private TextElement soldierPanelBackdrop;
+    private TextElement moscovitePlayerText;
+    private TextElement swedishPlayerText;
 
     private int state;
 
@@ -72,6 +76,11 @@ public class TablutStageModel extends GameStageModel {
     public TextElement getFullBackdrop() { return fullBackdrop; }
     public TextElement getBoardBackdrop() { return boardBackdrop; }
     public TextElement getPanelBackdrop() { return panelBackdrop; }
+    public TextElement getMoscovitePanelBackdrop() { return moscovitePanelBackdrop; }
+    public TextElement getSoldierPanelBackdrop() { return soldierPanelBackdrop; }
+    public TextElement getMoscovitePlayerText() { return moscovitePlayerText; }
+    public TextElement getSwedishPlayerText() { return swedishPlayerText; }
+
 
     // SETTERS
     public void setState(int state) { this.state = state; }
@@ -128,6 +137,22 @@ public class TablutStageModel extends GameStageModel {
     public void setPanelBackdrop(TextElement panelBackdrop) {
         this.panelBackdrop = panelBackdrop;
         addElement(panelBackdrop);
+    }
+    public void setMoscovitePanelBackdrop(TextElement moscovitePanelBackdrop) {
+        this.moscovitePanelBackdrop = moscovitePanelBackdrop;
+        addElement(moscovitePanelBackdrop);
+    }
+    public void setSoldierPanelBackdrop(TextElement soldierPanelBackdrop) {
+        this.soldierPanelBackdrop = soldierPanelBackdrop;
+        addElement(soldierPanelBackdrop);
+    }
+    public void setMoscovitePlayerText(TextElement moscovitePlayerText) {
+        this.moscovitePlayerText = moscovitePlayerText;
+        addElement(moscovitePlayerText);
+    }
+    public void setSwedishPlayerText(TextElement swedishPlayerText) {
+        this.swedishPlayerText = swedishPlayerText;
+        addElement(swedishPlayerText);
     }
 
 
