@@ -18,7 +18,7 @@ import java.awt.*;
  */
 
 public class TablutBoard extends ContainerElement {
-    static final int BOARD_SIZE = 9;
+    public static final int BOARD_SIZE = 9;
 
     // current coordinates of the king
     private int kingX;

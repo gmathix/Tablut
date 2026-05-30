@@ -5,81 +5,122 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 
-/**
- * Size, position, color and font constants for view elements
- */
-public class Constants {
-    //==== SIZE CONSTANTS ====//
+public final class Constants {
 
-    // change these two and everything will change
-    public static final int WINDOW_WIDTH            = 1180;
-    public static final int WINDOW_HEIGHT           = 820;
+    private Constants() {}
 
-    public static final int BOARD_WIDTH             = (int) (WINDOW_WIDTH * 0.6);
-    public static final int BOARD_HEIGHT            = BOARD_WIDTH; // always a square board for tablut
+    // =========================================================
+    // WINDOW
+    // =========================================================
 
-    public static final int SIDE_PANEL_WIDTH        = WINDOW_WIDTH - BOARD_WIDTH;
-    public static final int SIDE_PANEL_HEIGHT       = BOARD_HEIGHT;
+    public static final double WINDOW_WIDTH = 1180;
+    public static final double WINDOW_HEIGHT = 820;
 
-    public static final int PLAYER_PANEL_WIDTH      = BOARD_WIDTH;
-    public static final int PLAYER_PANEL_HEIGHT     = (int) (BOARD_HEIGHT * 0.057);
+    // =========================================================
+    // LAYOUT RATIOS
+    // =========================================================
 
-    public static final int HEADER_LINE_WIDTH       = (int) (SIDE_PANEL_WIDTH * 0.9);
-    public static final int HEADER_LINE_HEIGHT      = 2;
+    public static final double BOARD_RATIO = 0.61;
+    public static final double PANEL_RATIO = 1.0 - BOARD_RATIO;
 
+    // =========================================================
+    // BOARD
+    // =========================================================
 
+    public static final double BOARD_SIZE = WINDOW_WIDTH * BOARD_RATIO;
 
+    public static final double BOARD_X = 22;
+    public static final double BOARD_Y = 58;
 
+    // =========================================================
+    // RIGHT PANEL
+    // =========================================================
 
-    //==== POSITION CONSTANTS ====//
+    public static final double PANEL_WIDTH = 400;
+    public static final double PANEL_HEIGHT = 760;
 
-    public static final int BOARD_X             = (WINDOW_WIDTH - (BOARD_WIDTH + SIDE_PANEL_WIDTH)) / 2;
-    public static final int BOARD_Y             = (WINDOW_HEIGHT - BOARD_HEIGHT) / 2;
+    public static final double PANEL_X = 760;
+    public static final double PANEL_Y = 40;
 
-    public static final int SIDE_PANEL_X        = BOARD_X + BOARD_WIDTH;
-    public static final int SIDE_PANEL_Y        = BOARD_Y;
+    public static final double PANEL_PADDING = 30;
 
-    public static final int MOSCOVITE_PANEL_X   = BOARD_X;
-    public static final int MOSCOVITE_PANEL_Y   = (BOARD_Y - PLAYER_PANEL_HEIGHT) / 2;
+    public static final double CONTENT_X = PANEL_X + PANEL_PADDING;
 
-    public static final int SWEDISH_PANEL_X     = BOARD_X;
-    public static final int SWEDISH_PANEL_Y     = BOARD_Y + BOARD_HEIGHT + (BOARD_Y - PLAYER_PANEL_HEIGHT) / 2;
+    public static final double CONTENT_WIDTH =
+            PANEL_WIDTH - PANEL_PADDING * 2;
 
-    public static final int HEADER_LINE_X       = SIDE_PANEL_X + (SIDE_PANEL_WIDTH - HEADER_LINE_WIDTH) / 2;
-    public static final int HEADER_LINE_Y       = SIDE_PANEL_Y + (int) (SIDE_PANEL_HEIGHT * 0.157);
+    // =========================================================
+    // TYPOGRAPHY
+    // =========================================================
 
-    public static final int TITLE_X             = SIDE_PANEL_X + SIDE_PANEL_WIDTH / 3;
-    public static final int TITLE_Y             = SIDE_PANEL_Y + (int) (SIDE_PANEL_Y * 0.05);
+    public static final String FONT_FAMILY = "System";
 
-    public static final int SUBTITLE_X          = SIDE_PANEL_X;
-    public static final int SUBTITLE_Y          = TITLE_Y * 2;
+    public static final Font TITLE_FONT =
+            Font.font(FONT_FAMILY, FontWeight.BOLD, 42);
 
+    public static final Font SUBTITLE_FONT =
+            Font.font(FONT_FAMILY, FontWeight.NORMAL, 18);
 
+    public static final Font BODY_FONT =
+            Font.font(FONT_FAMILY, FontWeight.NORMAL, 16);
 
+    public static final Font SMALL_FONT =
+            Font.font(FONT_FAMILY, FontWeight.NORMAL, 14);
 
+    public static final Font PLAYER_FONT =
+            Font.font(FONT_FAMILY, FontPosture.ITALIC, 20);
 
-    //==== COLOR CONSTANTS ====//
+    public static final Font PLAYER_ACTIVE_FONT =
+            Font.font(FONT_FAMILY,
+                    FontWeight.BOLD,
+                    FontPosture.ITALIC,
+                    27);
 
-    public static final String BACKGROUND_COLOR         = "1d251d";
-    public static final String MOSCOVITE_PANEL_COLOR    = "3a2116";
-    public static final String SWEDISH_PANEL_COLOR      = "3a2116";
-    public static final String BOARD_COLOR              = "2a2116";
-    public static final String SIDE_PANEL_COLOR         = "233026";
-    public static final String HEADER_LINE_COLOR        = "8b6d3f";
-    public static final String TITLE_COLOR              = "f5e7b8";
-    public static final String SUBTITLE_COLOR           = "d9cfaf";
-    public static final String BODY_TEXT_COLOR          = "e1e8dc";
-    public static final String PLAYER_TEXT_COLOR        = "d5e7b8";
-    public static final String PLAYER_PLAYING_TEXT_COLOR        = "f5e7b8";
+    // =========================================================
+    // COLORS
+    // =========================================================
 
+    public static final String BACKGROUND_HEX = "#182018";
+    public static final String BOARD_HEX = "#2a2116";
+    public static final String PANEL_HEX = "#212d23";
+    public static final String LINE_HEX = "#9a7a45";
 
+    public static final String TITLE_HEX = "#f5e7b8";
+    public static final String SUBTITLE_HEX = "#d9cfaf";
+    public static final String BODY_HEX = "#e1e8dc";
+    public static final String SECONDARY_TEXT_HEX = "#c8d2c3";
 
+    public static final Color BACKGROUND_COLOR =
+            Color.web(BACKGROUND_HEX);
 
-    //==== FONT CONSTANTS ====//
+    public static final Color BOARD_COLOR =
+            Color.web(BOARD_HEX);
 
-    public static final Font TITLE_FONT          = Font.font("System", FontWeight.BOLD, 42);
-    public static final Font SUBTITLE_FONT       = Font.font("System", 18);
-    public static final Font BODY_TEXT_FONT      = Font.font("System", 16);
-    public static final Font PLAYER_FONT         = Font.font("System", FontPosture.ITALIC, 20);
-    public static final Font PLAYER_PLAYING_FONT = Font.font("System", FontWeight.BOLD, FontPosture.ITALIC, 27);
+    public static final Color PANEL_COLOR =
+            Color.web(PANEL_HEX);
+
+    // =========================================================
+    // SPACING
+    // =========================================================
+
+    public static final double TITLE_Y = 110;
+    public static final double SUBTITLE_Y = 145;
+
+    public static final double HEADER_LINE_Y = 165;
+
+    public static final double SECTION_START_Y = 220;
+    public static final double SECTION_SPACING = 85;
+
+    public static final double HELP_Y = 300;
+    public static final double LEGEND_Y = 340;
+    public static final double MATERIAL_Y = 450;
+    public static final double THREAT_Y = 540;
+
+    // =========================================================
+    // BOARD / PAWNS
+    // =========================================================
+
+    public static final double BOARD_RENDER_SIZE = 600;
+
+    public static final double PAWN_SIZE = 25;
 }

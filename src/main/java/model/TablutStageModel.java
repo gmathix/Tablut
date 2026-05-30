@@ -45,13 +45,12 @@ public class TablutStageModel extends GameStageModel {
     private TextElement subtitleText;
     private TextElement helpText;
     private TextElement legendText;
+    private TextElement botSentenceText;
+    private TextElement materialText;
+    private TextElement threatText;
     private TextElement fullBackdrop;
     private TextElement boardBackdrop;
     private TextElement panelBackdrop;
-    private TextElement moscovitePanelBackdrop;
-    private TextElement soldierPanelBackdrop;
-    private TextElement moscovitePlayerText;
-    private TextElement swedishPlayerText;
 
     private int state;
 
@@ -73,14 +72,12 @@ public class TablutStageModel extends GameStageModel {
     public TextElement getSubtitleText() { return subtitleText; }
     public TextElement getHelpText() { return helpText; }
     public TextElement getLegendText() { return legendText; }
+    public TextElement getBotSentenceText() { return botSentenceText; }
+    public TextElement getMaterialText() { return materialText; }
+    public TextElement getThreatText() { return threatText; }
     public TextElement getFullBackdrop() { return fullBackdrop; }
     public TextElement getBoardBackdrop() { return boardBackdrop; }
     public TextElement getPanelBackdrop() { return panelBackdrop; }
-    public TextElement getMoscovitePanelBackdrop() { return moscovitePanelBackdrop; }
-    public TextElement getSoldierPanelBackdrop() { return soldierPanelBackdrop; }
-    public TextElement getMoscovitePlayerText() { return moscovitePlayerText; }
-    public TextElement getSwedishPlayerText() { return swedishPlayerText; }
-
 
     // SETTERS
     public void setState(int state) { this.state = state; }
@@ -126,6 +123,18 @@ public class TablutStageModel extends GameStageModel {
         this.legendText = legendText;
         addElement(legendText);
     }
+    public void setBotSentenceText(TextElement botSentenceText) {
+        this.botSentenceText = botSentenceText;
+        addElement(botSentenceText);
+    }
+    public void setMaterialText(TextElement materialText) {
+        this.materialText = materialText;
+        addElement(materialText);
+    }
+    public void setThreatText(TextElement threatText) {
+        this.threatText = threatText;
+        addElement(threatText);
+    }
     public void setFullBackdrop(TextElement fullBackdrop) {
         this.fullBackdrop = fullBackdrop;
         addElement(fullBackdrop);
@@ -137,22 +146,6 @@ public class TablutStageModel extends GameStageModel {
     public void setPanelBackdrop(TextElement panelBackdrop) {
         this.panelBackdrop = panelBackdrop;
         addElement(panelBackdrop);
-    }
-    public void setMoscovitePanelBackdrop(TextElement moscovitePanelBackdrop) {
-        this.moscovitePanelBackdrop = moscovitePanelBackdrop;
-        addElement(moscovitePanelBackdrop);
-    }
-    public void setSoldierPanelBackdrop(TextElement soldierPanelBackdrop) {
-        this.soldierPanelBackdrop = soldierPanelBackdrop;
-        addElement(soldierPanelBackdrop);
-    }
-    public void setMoscovitePlayerText(TextElement moscovitePlayerText) {
-        this.moscovitePlayerText = moscovitePlayerText;
-        addElement(moscovitePlayerText);
-    }
-    public void setSwedishPlayerText(TextElement swedishPlayerText) {
-        this.swedishPlayerText = swedishPlayerText;
-        addElement(swedishPlayerText);
     }
 
 

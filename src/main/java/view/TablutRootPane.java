@@ -2,6 +2,7 @@ package view;
 
 import boardifier.view.RootPane;
 import control.algos.RecurBoard;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -19,67 +20,107 @@ public class TablutRootPane extends RootPane {
 
     @Override
     public void createDefaultGroup() {
-        Rectangle frame = new Rectangle(WINDOW_WIDTH, WINDOW_HEIGHT, Color.web("#" + Constants.BACKGROUND_COLOR));
 
-        Rectangle moscovitePlayerPanel = new Rectangle(Constants.PLAYER_PANEL_WIDTH, Constants.PLAYER_PANEL_HEIGHT, Color.web("#" + Constants.MOSCOVITE_PANEL_COLOR));
-        moscovitePlayerPanel.setX(Constants.MOSCOVITE_PANEL_X);
-        moscovitePlayerPanel.setY(Constants.MOSCOVITE_PANEL_Y);
+        Rectangle frame = new Rectangle(
+                Constants.WINDOW_WIDTH,
+                Constants.WINDOW_HEIGHT,
+                Constants.BACKGROUND_COLOR
+        );
 
-        Rectangle swedishPlayerPanel = new Rectangle(Constants.PLAYER_PANEL_WIDTH, Constants.PLAYER_PANEL_HEIGHT, Color.web("#" + Constants.SWEDISH_PANEL_COLOR));
-        swedishPlayerPanel.setX(Constants.SWEDISH_PANEL_X);
-        swedishPlayerPanel.setY(Constants.SWEDISH_PANEL_Y);
+        Rectangle boardGlow = new Rectangle(
+                Constants.BOARD_SIZE,
+                Constants.BOARD_SIZE,
+                Constants.BOARD_COLOR
+        );
 
-        Rectangle boardGlow = new Rectangle(Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT, Color.web("#" + Constants.BOARD_COLOR));
         boardGlow.setX(Constants.BOARD_X);
         boardGlow.setY(Constants.BOARD_Y);
 
-        Rectangle panel = new Rectangle(Constants.SIDE_PANEL_WIDTH, Constants.SIDE_PANEL_HEIGHT, Color.web("#" + Constants.SIDE_PANEL_COLOR));
-        panel.setX(Constants.SIDE_PANEL_X);
-        panel.setY(Constants.SIDE_PANEL_Y);
+        Rectangle panel = new Rectangle(
+                Constants.PANEL_WIDTH,
+                Constants.PANEL_HEIGHT,
+                Constants.PANEL_COLOR
+        );
 
-        Rectangle headerLine = new Rectangle(Constants.HEADER_LINE_WIDTH, Constants.HEADER_LINE_HEIGHT, Color.web("#" + Constants.HEADER_LINE_COLOR));
-        headerLine.setX(Constants.HEADER_LINE_X);
+        panel.setX(Constants.PANEL_X);
+        panel.setY(Constants.PANEL_Y);
+
+        Rectangle headerLine = new Rectangle(
+                Constants.CONTENT_WIDTH,
+                2,
+                Color.web(Constants.LINE_HEX)
+        );
+
+        headerLine.setX(Constants.CONTENT_X);
         headerLine.setY(Constants.HEADER_LINE_Y);
-
-        Text moscovitePlayerText = new Text("Player 2");
-        moscovitePlayerText.setFont(Constants.PLAYER_FONT);
-        moscovitePlayerText.setFill(Color.web( "#" + Constants.PLAYER_TEXT_COLOR));
-        moscovitePlayerText.setX(Constants.MOSCOVITE_PANEL_X + 5);
-        moscovitePlayerText.setY(Constants.MOSCOVITE_PANEL_Y + (Constants.PLAYER_PANEL_HEIGHT * 0.1));
-
-        Text swedishPlayerText = new Text("Player 1");
-        swedishPlayerText.setFont(Constants.PLAYER_FONT);
-        swedishPlayerText.setFill(Color.web( "#" + Constants.PLAYER_TEXT_COLOR));
-        swedishPlayerText.setX(Constants.SWEDISH_PANEL_X + 5);
-        swedishPlayerText.setY(Constants.SWEDISH_PANEL_Y + (Constants.PLAYER_PANEL_HEIGHT * 0.1));
 
         Text title = new Text("TABLUT");
         title.setFont(Constants.TITLE_FONT);
-        title.setFill(Color.web("#" + Constants.TITLE_COLOR));
-        title.setX(790);
-        title.setY(110);
+        title.setFill(Color.web(Constants.TITLE_HEX));
+        title.setX(Constants.CONTENT_X);
+        title.setY(Constants.TITLE_Y);
 
-        Text subtitle = new Text("A clean board, not an sub 10 looking one.");
+
+        Text subtitle = new Text(
+                "A king, eight defenders, sixteen attackers."
+        );
+
         subtitle.setFont(Constants.SUBTITLE_FONT);
-        subtitle.setFill(Color.web("#" + Constants.SUBTITLE_COLOR));
-        subtitle.setX(790);
-        subtitle.setY(145);
+        subtitle.setFill(Color.web(Constants.SUBTITLE_HEX));
+        subtitle.setX(Constants.CONTENT_X);
+        subtitle.setY(Constants.SUBTITLE_Y);
 
-        Text body1 = new Text("Use the menu to start a game.");
-        body1.setFont(Constants.BODY_TEXT_FONT);
-        body1.setFill(Color.web("#" + Constants.BODY_TEXT_COLOR));
-        body1.setX(790);
-        body1.setY(220);
+        Label body1 = createBodyLabel(
+                "New Game opens the board and the right-hand panel.",
+                Constants.SECTION_START_Y
+        );
 
-        Text body2 = new Text("The board panel appears once the match begins.");
-        body2.setFont(Constants.BODY_TEXT_FONT);
-        body2.setFill(Color.web("#" + Constants.BODY_TEXT_COLOR));
-        body2.setX(790);
-        body2.setY(250);
+        Label body2 = createBodyLabel(
+                "The king escapes by reaching a legal exit square.",
+                Constants.SECTION_START_Y + Constants.SECTION_SPACING
+        );
 
+        Label body3 = createBodyLabel(
+                "Raichi means one escape lane. Tuichi means two or more.",
+                Constants.SECTION_START_Y + Constants.SECTION_SPACING * 2
+        );
+
+        Label body4 = createBodyLabel(
+                "The material line counts remaining defenders and attackers.",
+                Constants.SECTION_START_Y + Constants.SECTION_SPACING * 3
+        );
 
         group.getChildren().clear();
-        group.getChildren().addAll(frame, moscovitePlayerPanel, swedishPlayerPanel,
-                boardGlow, panel, headerLine, title, subtitle, body1, body2);
+
+        group.getChildren().addAll(
+                frame,
+                boardGlow,
+                panel,
+                headerLine,
+                title,
+                subtitle,
+                body1,
+                body2,
+                body3,
+                body4
+        );
+    }
+
+    private Label createBodyLabel(String text, double y) {
+
+        Label label = new Label(text);
+
+        label.setWrapText(true);
+        label.setMaxWidth(Constants.CONTENT_WIDTH);
+        label.setPrefWidth(Constants.CONTENT_WIDTH);
+
+        label.setLayoutX(Constants.CONTENT_X);
+        label.setLayoutY(y);
+
+        label.setFont(Constants.BODY_FONT);
+
+        label.setTextFill(Color.web(Constants.BODY_HEX));
+
+        return label;
     }
 }

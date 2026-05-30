@@ -31,7 +31,7 @@ public class TablutController extends Controller {
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
-    public static final int NB_BOARDS_IN_MEMORY = 15;
+    public static final int NB_BOARDS_IN_MEMORY = 50;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
 
@@ -71,8 +71,6 @@ public class TablutController extends Controller {
 
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
-
-
 
         lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
         for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
@@ -173,6 +171,87 @@ public class TablutController extends Controller {
     }
 
 
+    private int[] countMaterial(TablutStageModel stageModel) {
+        int defenders = 0;
+        int attackers = 0;
+        TablutBoard board = stageModel.getBoard();
+        for (int y = 0; y < TablutBoard.BOARD_SIZE; y++) {
+            for (int x = 0; x < TablutBoard.BOARD_SIZE; x++) {
+                if (board.getElement(y, x) instanceof Pawn pawn) {
+                    if (pawn.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        attackers++;
+                    } else {
+                        defenders++;
+                    }
+                }
+            }
+        }
+        return new int[]{defenders, attackers};
+    }
+
+    private String buildKingThreatMessage(TablutStageModel stageModel) {
+        TablutBoard board = stageModel.getBoard();
+        int kingX = board.getKingX();
+        int kingY = board.getKingY();
+
+        int nbEdgesReachable = 0;
+        int[] dy = {-1, 0, 1, 0};
+        int[] dx = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            boolean freeWay = true;
+            int y = kingY;
+            int x = kingX;
+            for (int step = 0; step < 8; step++) {
+                y += dy[i];
+                x += dx[i];
+                if (y < 0 || y > 8 || x < 0 || x > 8) {
+                    break;
+                }
+                if (board.getElement(y, x) instanceof Pawn) {
+                    freeWay = false;
+                    break;
+                }
+            }
+            if (freeWay) {
+                nbEdgesReachable++;
+            }
+        }
+
+        if (nbEdgesReachable == 1) {
+            return "Threat: Raichi - the king has one escape lane.";
+        }
+        if (nbEdgesReachable >= 2) {
+            return "Threat: Tuichi - the king has two escape lanes.";
+        }
+        return "Threat: no Raichi or Tuichi yet.";
+    }
+
+    private void updateStatusPanel() {
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        if (stageModel == null) return;
+
+        int[] material = countMaterial(stageModel);
+        stageModel.getMaterialText().setText(String.format("Material: Green %d  |  Gold %d", material[0], material[1]));
+        stageModel.getThreatText().setText(buildKingThreatMessage(stageModel));
+
+        TextLook nameLook = (TextLook) view.getElementLook(stageModel.getPlayerName());
+        TextLook botLook = (TextLook) view.getElementLook(stageModel.getBotSentenceText());
+
+        if (nameLook != null) {
+            nameLook.setColor(model.getIdPlayer() == 0 ? "0x8BCB8F" : "0xE3C36A");
+        }
+        if (botLook != null) {
+            botLook.setColor("0xC8D2C3");
+        }
+        if (nameLook != null && stageModel.getBotSentenceText() != null) {
+            double gap = 12.0;
+            double x = stageModel.getPlayerName().getX() + nameLook.getTextWidth() + gap;
+            double y = stageModel.getPlayerName().getY() + 3.0;
+            stageModel.getBotSentenceText().setLocation(x, y);
+        }
+    }
+
 
     public void endOfTurn() {
 
@@ -182,46 +261,42 @@ public class TablutController extends Controller {
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         stageModel.getPlayerName().setText(p.getName());
 
-        GameStageView stageView = view.getGameStageView();
-
-        String player1Text, player2Text;
-        Player player1 = model.getPlayers().get(0);
-        Player player2 = model.getPlayers().get(1);
-
-        String[] chosenBotSentences;
-        int turn = model.getIdPlayer();
-        if (botLevels[turn] <= 5) chosenBotSentences = BotSentences.SENTENCES_LOSING;
-        else if (botLevels[turn] <= 8) chosenBotSentences = BotSentences.SENTENCES_WINNING;
-        else chosenBotSentences = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
-
-
-        if (model.getIdPlayer() == 0) {
-            if (player1.getType() == Player.HUMAN) {
-                player1Text = player1.getName() + " : Your Move";
-            } else {
-                int index = (int) (Math.random() * chosenBotSentences.length);
-                player1Text = player1.getName() + " " + chosenBotSentences[index];
-            }
-            player2Text = player2.getName();
-        } else {
-            if (player2.getType() == Player.HUMAN) {
-                player2Text = player2.getName() + " : Your Move";
-            } else {
-                int index = (int) (Math.random() * chosenBotSentences.length);
-                player2Text = player2.getName() + " " + chosenBotSentences[index];
-            }
-            player1Text = player1.getName();
-        }
-
-        stageModel.getSwedishPlayerText().setText(player1Text);
-        stageModel.getMoscovitePlayerText().setText(player2Text);
-
         if (p.getType() == Player.COMPUTER) {
-            turn = model.getIdPlayer();
+            int turn = model.getIdPlayer();
             BotSelection selection = availableBots[turn].get(botPlayers[turn]);
             Decider decider = selection.supplier.get();
+
+            int botLevel = 5;
+            if (decider instanceof NegamaxDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof MonteCarloDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof NegaMonteCarloDecider d) {
+                botLevel = d.getLevel();
+            }
+
+            String[] sentenceArray;
+            if (botLevel <= 4) {
+                sentenceArray = BotSentences.SENTENCES_LOSING;
+            } else if (botLevel <= 8) {
+                sentenceArray = BotSentences.SENTENCES_WINNING;
+            } else {
+                sentenceArray = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
+            }
+
+            int sentenceIndex = (int) (Math.random() * sentenceArray.length);
+            String sentence = sentenceArray[sentenceIndex];
+            stageModel.getBotSentenceText().setText(sentence);
+            System.out.printf("%s %s\n", selection.name, sentence);
+
+            updateStatusPanel();
+
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
+        }
+        else {
+            stageModel.getBotSentenceText().setText("Your Move.");
+            updateStatusPanel();
         }
     }
 
