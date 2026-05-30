@@ -7,6 +7,7 @@ import boardifier.model.Model;
 import boardifier.view.View;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import model.TablutStageFactory;
 import view.TablutView;
 
 public class TablutActionController extends ControllerAction implements EventHandler<ActionEvent> {
@@ -23,6 +24,14 @@ public class TablutActionController extends ControllerAction implements EventHan
     private void setMenuHandlers() {
         tablutView.getMenuStart().setOnAction(e -> {
             try {
+                boolean configured = TablutStageFactory.configureNewGame(
+                        tablutView.getStage(),
+                        model,
+                        ((TablutController) control)
+                );
+                if (!configured) {
+                    return;
+                }
                 control.startGame();
             } catch (GameException err) {
                 System.err.println(err.getMessage());

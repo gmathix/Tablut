@@ -1,10 +1,7 @@
 package control;
 
 import boardifier.control.*;
-import boardifier.model.Coord2D;
-import boardifier.model.GameElement;
-import boardifier.model.Model;
-import boardifier.model.Player;
+import boardifier.model.*;
 import boardifier.model.action.ActionList;
 import boardifier.model.action.MoveWithinContainerAction;
 import boardifier.model.action.RemoveFromContainerAction;
@@ -46,6 +43,7 @@ public class TablutController extends Controller {
 
     BufferedReader consoleIn;
     String inputFile;
+    private int startingPlayerId = 0;
 
 
     private String lastBoardsRepresentations[];
@@ -59,8 +57,8 @@ public class TablutController extends Controller {
         this.gameMode = gameMode;
         this.inputFile = inputFile;
         this.botPlayers = new int[]{
-            NEGAMAX_PLAYER,
-            NEGAMAX_PLAYER,
+                NEGAMAX_PLAYER,
+                NEGAMAX_PLAYER,
         };
 
         availableBots[0] = new HashMap<>();
@@ -88,6 +86,34 @@ public class TablutController extends Controller {
 
     public TablutController(Model model, View view, int gameMode, String inputFile) {
         this(model, view, gameMode, inputFile, NEGAMAX_PLAYER, NEGAMAX_PLAYER, new int[]{5, 5});
+    }
+
+    public int getGameMode() {
+        return gameMode;
+    }
+
+    public void setGameMode(int gameMode) {
+        this.gameMode = gameMode;
+    }
+
+    public String getInputFile() {
+        return inputFile;
+    }
+
+    public void setInputFile(String inputFile) {
+        this.inputFile = inputFile == null ? "" : inputFile;
+    }
+
+    public int getStartingPlayerId() {
+        return startingPlayerId;
+    }
+
+    public void setStartingPlayerId(int startingPlayerId) {
+        this.startingPlayerId = startingPlayerId;
+    }
+
+    public int getBotLevel(int color) {
+        return botLevels[color];
     }
 
 
@@ -142,6 +168,30 @@ public class TablutController extends Controller {
         }
     }
 
+
+    @Override
+    protected void startStage(String stageName) throws GameException {
+        if (model.isStageStarted()) stopGame();
+
+        GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
+        gameStageModel.createElements(gameStageModel.getDefaultElementFactory());
+
+        GameStageView gameStageView = StageFactory.createStageView(stageName, gameStageModel);
+        gameStageView.createLooks();
+
+        mapElementLook = new HashMap<>();
+        for (GameElement element : gameStageModel.getElements()) {
+            ElementLook look = gameStageView.getElementLook(element);
+            mapElementLook.put(element, look);
+        }
+
+        model.startGame(gameStageModel);
+        model.setIdPlayer(startingPlayerId);
+        view.setView(gameStageView);
+        view.getRootPane().setFocusTraversable(true);
+        view.getRootPane().requestFocus();
+        controlAnimation.startAnimation();
+    }
 
     public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
         ActionList actions = new ActionList();
@@ -351,7 +401,7 @@ public class TablutController extends Controller {
         }
         update();
         while (!model.isEndStage()) {
-            playTurn();
+//            playTurn();
             endOfTurn();
             update();
 
@@ -360,133 +410,5 @@ public class TablutController extends Controller {
         endGame();
     }
 
-    private void playTurn() {
-        // get the new player
-        Player p = model.getCurrentPlayer();
-        if (p.getType() == Player.COMPUTER) {
-            int turn = model.getIdPlayer();
-            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
-            Decider decider = selection.supplier.get();
-            ActionPlayer play = new ActionPlayer(model, this, decider, null);
 
-
-            int botLevel;
-            if (decider instanceof NegamaxDecider d) {
-                botLevel = d.getLevel();
-            } else if (decider instanceof MonteCarloDecider d) {
-                botLevel = d.getLevel();
-            } else if (decider instanceof NegaMonteCarloDecider d) {
-                botLevel = d.getLevel();
-            } else {
-                botLevel = 5;
-            }
-            String[] sentenceArray;
-            if (botLevel <= 4) {
-                sentenceArray = BotSentences.SENTENCES_LOSING;
-            } else if (botLevel <= 8) {
-                sentenceArray = BotSentences.SENTENCES_WINNING;
-            } else {
-                sentenceArray = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
-            }
-
-            int sentenceIndex = (int) (Math.random() * sentenceArray.length);
-            String sentence = sentenceArray[sentenceIndex];
-
-            System.out.printf("%s %s\n", selection.name, sentence);
-
-            play.start();
-        }
-        else {
-            boolean ok = false;
-            while (!ok) {
-                System.out.print(p.getName()+ " > ");
-                try {
-                    String line = consoleIn.readLine();
-                    if (line.length() == 4) {
-                        ok = analyseAndPlay(line);
-                    }
-                    if (!ok) {
-                        System.out.println("incorrect instruction. retry !");
-                    }
-                }
-                catch(IOException e) {}
-            }
-        }
-    }
-
-
-    private boolean analyseAndPlay(String line) {
-        TablutStageModel gameStage = (TablutStageModel) model.getGameStage();
-
-        line = line.toUpperCase();
-        boolean isYellow = model.getIdPlayer() == 1;
-
-
-        if (line.contains("STOP")) {
-            stopStage();
-        }
-
-
-        int colSrc = line.charAt(0) - 'A';
-        int rowSrc = line.charAt(1) - '1';
-        int colDest = line.charAt(2) - 'A';
-        int rowDest = line.charAt(3) - '1';
-
-        if (colSrc<0 || rowSrc<0 || colDest>8 || rowDest>8) return false;
-
-
-        GameElement elementSrc = gameStage.getBoard().getElement(rowSrc, colSrc);
-        Pawn currPawn;
-        // check that the selected square contains a pawn
-        if (!(elementSrc instanceof Pawn)) {
-            return false;
-        } else {
-            currPawn = (Pawn) elementSrc;
-        }
-
-        // check that the destination square is empty
-        GameElement elementDst = gameStage.getBoard().getElement(rowDest, colDest);
-        if (elementDst instanceof Pawn p) {
-            return false;
-        }
-
-
-        // check if selected pawn does not belong to the current player
-        if (model.getIdPlayer() == 0 && currPawn.getColor() == Pawn.PAWN_MOSCOVITE) {
-            return false;
-        }
-        else if (model.getIdPlayer() == 1 && currPawn.getColor() != Pawn.PAWN_MOSCOVITE) {
-            return false;
-        }
-
-        // check that this is a legal move
-        gameStage.getBoard().setValidCells(currPawn.getNumber());
-        if (!gameStage.getBoard().canReachCell(rowDest, colDest)) return false;
-
-
-
-        // update the board's king coordinates if we just moved the king
-        if (currPawn.getColor() == Pawn.PAWN_KING) {
-            gameStage.getBoard().setKingX(colDest);
-            gameStage.getBoard().setKingY(rowDest);
-        }
-
-
-
-
-        // check capture
-        gameStage.checkCapture(isYellow, colSrc, colDest, rowSrc, rowDest);
-
-
-
-        // make move
-//        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
-//        actions.setDoEndOfTurn(true);
-//        ActionPlayer play = new ActionPlayer(model, this, actions);
-//        play.start();
-
-
-
-        return true;
-    }
 }

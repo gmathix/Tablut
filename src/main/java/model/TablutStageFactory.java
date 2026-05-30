@@ -3,9 +3,11 @@ package model;
 import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
+import control.TablutController;
 import view.Constants;
+import view.TablutNewGameMenus;
 
-import java.util.concurrent.SubmissionPublisher;
+import javafx.stage.Stage;
 
 
 /**
@@ -28,6 +30,11 @@ public class TablutStageFactory extends StageElementsFactory {
 
 
     private TablutStageModel stageModel;
+
+    public static boolean configureNewGame(Stage owner, boardifier.model.Model model, TablutController controller) {
+        return TablutNewGameMenus.configureNewGame(owner, model, controller);
+    }
+
 
     public TablutStageFactory(GameStageModel gameStageModel) {
         super(gameStageModel);
