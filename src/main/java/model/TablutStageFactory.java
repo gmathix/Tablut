@@ -4,10 +4,13 @@ import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
 import control.TablutController;
+import javafx.scene.control.TextArea;
 import view.Constants;
 import view.TablutNewGameMenus;
 
 import javafx.stage.Stage;
+
+import java.awt.*;
 
 
 /**
@@ -96,6 +99,7 @@ public class TablutStageFactory extends StageElementsFactory {
         threat.setClickable(false);
         threat.setLocation(Constants.CONTENT_X, Constants.THREAT_Y);
         stageModel.setThreatText(threat);
+
 
         TablutBoard board = new TablutBoard(40, 80, stageModel);
         stageModel.setBoard(board);

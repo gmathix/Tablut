@@ -1,6 +1,6 @@
 package control;
 
-import boardifier.control.ActionFactory;
+
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
 import boardifier.control.ControllerMouse;
@@ -9,16 +9,11 @@ import boardifier.model.ElementTypes;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import boardifier.model.action.GameAction;
-import boardifier.model.action.MoveWithinContainerAction;
-import boardifier.model.action.RemoveFromContainerAction;
-import boardifier.model.animation.AnimationTypes;
-import boardifier.view.ContainerLook;
-import boardifier.view.ElementLook;
 import boardifier.view.GridLook;
 import boardifier.view.View;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
+import model.Move;
 import model.Pawn;
 import model.TablutBoard;
 import model.TablutStageModel;
@@ -33,6 +28,9 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
     }
 
     public void handle(MouseEvent event) {
+        TablutController tablutControl = (TablutController) control;
+
+
         if (!model.isCaptureMouseEvent()) return;
 
         Coord2D pos = new Coord2D(event.getSceneX(), event.getSceneY());
@@ -95,7 +93,11 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
 
             GridLook lookBoard = (GridLook) control.getElementLook(board);
             int[] dest = lookBoard.getCellFromSceneLocation(pos);
-            if (board.canReachCell(dest[0], dest[1])) {
+            if (dest != null && board.canReachCell(dest[0], dest[1])) {
+
+                tablutControl.getMoveHistory().addMove(new Move(pawn.getBoardX(), pawn.getBoardY(), dest[1], dest[0]));
+
+
                 if (pawn.getColor() == Pawn.PAWN_KING) {
                     board.setKingX(dest[1]);
                     board.setKingY(dest[0]);
@@ -104,7 +106,7 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
                 pawn.setBoardY(dest[0]);
 
 
-                ActionList actions = ((TablutController)control).genMoveAnimationWithCapture(model, element, board, dest[0], dest[1]);
+                ActionList actions = tablutControl.genMoveAnimationWithCapture(model, element, board, dest[0], dest[1]);
                 ActionPlayer play = new ActionPlayer(model, control, actions);
                 play.start();
             }

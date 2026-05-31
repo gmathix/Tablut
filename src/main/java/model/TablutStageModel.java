@@ -288,17 +288,14 @@ public class TablutStageModel extends GameStageModel {
                 if (RuleSets.isCornerKingEscapes()) {
                     if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
-                        winMessage = "king reached a corner";
                     }
                 } else if (RuleSets.isConstrainedKingSquares()) {
                     if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
-                        winMessage = "king reached an edge";
                     }
                 }
             } else {
                 idWinner = 0;
-                winMessage = "king reached an edge";
             }
         }
 
@@ -325,15 +322,12 @@ public class TablutStageModel extends GameStageModel {
          */
         if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
             idWinner = 1;
-            winMessage = "yellow surrounded the king";
         }
 
 
 
         if (idWinner != -1) {
-            System.out.printf("Winner is player %d : %s\n", idWinner+1, winMessage);
             model.setIdWinner(idWinner);
-            model.stopStage();
         }
     }
 

@@ -9,10 +9,13 @@ import boardifier.model.animation.AnimationTypes;
 import boardifier.view.*;
 
 import javafx.application.Platform;
-import model.Pawn;
-import model.RuleSets;
-import model.TablutBoard;
-import model.TablutStageModel;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import model.*;
+import view.Constants;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -36,6 +39,7 @@ public class TablutController extends Controller {
 
 
 
+
     int gameMode;
     int botPlayers[];
     int botLevels[];
@@ -48,6 +52,11 @@ public class TablutController extends Controller {
     private String lastBoardsRepresentations[];
     private int currentBoardRepIndex;
     private boolean boardRepeated;
+
+    private MoveHistory moveHistory;
+    private VBox gameOverExportPanel;
+    private TextArea gameOverPgnArea;
+    private boolean gameoverExportPanelShown;
 
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
@@ -83,6 +92,10 @@ public class TablutController extends Controller {
         setControlMouse(new TablutMouseController(model, view, this));
         setControlAction(new TablutActionController(model, view, this));
 
+
+        gameOverExportPanel = null;
+        gameOverPgnArea = null;
+        gameoverExportPanelShown = false;
     }
 
     public TablutController(Model model, View view, int gameMode, String inputFile) {
@@ -119,6 +132,10 @@ public class TablutController extends Controller {
 
     public int getBotPlayer(int color) {
         return botPlayers[color];
+    }
+
+    public MoveHistory getMoveHistory() {
+        return moveHistory;
     }
 
 
@@ -189,6 +206,13 @@ public class TablutController extends Controller {
             ElementLook look = gameStageView.getElementLook(element);
             mapElementLook.put(element, look);
         }
+
+        moveHistory = new MoveHistory(
+                model.getPlayers().get(0).getName(),
+                model.getPlayers().get(1).getName(),
+                startingPlayerId,
+                RuleSets.currentRuleset
+        );
 
         model.startGame(gameStageModel);
         model.setIdPlayer(startingPlayerId);
@@ -361,13 +385,122 @@ public class TablutController extends Controller {
     }
 
 
-    public void endOfTurn() {
+    private void removeGamePGN() {
+        if (gameOverExportPanel == null) return;
+        if (view != null && view.getRootPane() != null) {
+            view.getRootPane().getChildren().remove(gameOverExportPanel);
+        }
+        gameOverExportPanel = null;
+        gameOverPgnArea = null;
+        gameoverExportPanelShown = false;
+    }
 
-        model.setNextPlayer();
-        triggerCurrentPlayerTurn();
+    private void showGamePGN(String pgnText) {
+        if (gameoverExportPanelShown) {
+            if (gameOverPgnArea != null) {
+                gameOverPgnArea.setText(pgnText);
+            }
+            return;
+        }
+
+        removeGamePGN();
+
+        gameOverPgnArea = new TextArea(pgnText);
+        gameOverPgnArea.setEditable(false);
+        gameOverPgnArea.setWrapText(false);
+        gameOverPgnArea.setPrefWidth(Constants.CONTENT_WIDTH);
+        gameOverPgnArea.setPrefHeight(120);
+        gameOverPgnArea.setStyle(
+                "-fx-control-inner-background: #152016;" +
+                        "-fx-text-fill: #e9f0e6;" +
+                        "-fx-highlight-fill: #7f9c7e;" +
+                        "-fx-highlight-text-fill: #152016;" +
+                        "-fx-font-family: 'Monospaced';" +
+                        "-fx-font-size: 12px;"
+        );
+
+        Button exportButton = new Button("Export Game");
+        exportButton.setMaxWidth(Double.MAX_VALUE);
+        exportButton.setPrefWidth(Constants.CONTENT_WIDTH);
+        exportButton.setPrefHeight(34);
+        exportButton.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #c8a76a, #8f6a3a);" +
+                        "-fx-text-fill: #1b140c;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        );
+        exportButton.setOnAction(e -> exportGame(pgnText));
+
+        VBox panel = new VBox(10, exportButton, gameOverPgnArea);
+        panel.setPadding(new Insets(8, 0, 0, 0));
+        panel.setLayoutX(Constants.CONTENT_X);
+        panel.setLayoutY(Constants.THREAT_Y + 35);
+        panel.setPrefWidth(Constants.CONTENT_WIDTH);
+        panel.setStyle(
+                "-fx-background-color: rgba(18, 26, 18, 0.55);" +
+                        "-fx-background-radius: 12;" +
+                        "-fx-border-color: rgba(200, 170, 120, 0.55);" +
+                        "-fx-border-radius: 12;" +
+                        "-fx-border-width: 1;"
+        );
+
+        gameOverExportPanel = panel;
+        gameoverExportPanelShown = true;
+
+        if (view != null && view.getRootPane() != null) {
+            view.getRootPane().getChildren().add(panel);
+            panel.toFront();
+        }
+    }
+
+    private void exportGame(String pgnText) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Tablut Game");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Tablut PGN (*.tpgn)", "*.tpgn")
+        );
+        fileChooser.setInitialFileName("tablut_game.tpgn");
+
+        java.io.File chosen = fileChooser.showSaveDialog(view.getStage());
+        if (chosen == null) return;
+
+        String filePath = chosen.getAbsolutePath();
+        if (!filePath.toLowerCase(Locale.ROOT).endsWith(".tpgn")) {
+            filePath += ".tpgn";
+        }
+
+        try {
+            java.nio.file.Files.writeString(
+                    java.nio.file.Path.of(filePath),
+                    pgnText,
+                    java.nio.charset.StandardCharsets.UTF_8
+            );
+        } catch (IOException ex) {
+            System.err.printf("could not export game file : \n");
+            ex.printStackTrace();
+        }
     }
 
 
+    public void endOfTurn() {
+        if (model.getIdWinner() == -1) {
+            model.setNextPlayer();
+            triggerCurrentPlayerTurn();
+        } else {
+            model.stopStage();
+            String message = String.format("Game over : %s\n",
+                    model.getIdWinner() == 0
+                            ? "the king has reached an edge"
+                            : "the king has been encircled");
+            ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);
+            moveHistory.setWinningSide(model.getIdWinner());
+
+            TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+            stageModel.getThreatText().setText(message);
+            showGamePGN(moveHistory.buildGameString());
+        }
+    }
 
 
 

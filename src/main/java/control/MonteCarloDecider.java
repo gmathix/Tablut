@@ -7,6 +7,7 @@ import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.RecurBoard;
 import control.algos.MonteCarlo;
+import javafx.scene.control.Tab;
 import model.Move;
 import model.TablutBoard;
 import model.TablutStageModel;
@@ -31,6 +32,7 @@ public class MonteCarloDecider extends Decider  {
     public ActionList decide() {
         // do a cast get a variable of the real type to get access to the attributes of HoleStageModel
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
+        TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
         RecurBoard recurBoard = new RecurBoard(tablutBoard);
         GameElement pawn = null; // the pawn that is moved
@@ -54,7 +56,9 @@ public class MonteCarloDecider extends Decider  {
         }
 
 
+        tablutControl.getMoveHistory().addMove(bestMove);
 
-        return ((TablutController)control).genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
+
+        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
     }
 }
