@@ -14,17 +14,17 @@ import java.util.List;
 
 
 public class TablutBoardLook extends ClassicBoardLook {
-    private static final Color LIGHT_SQUARE = Color.web("#d8c39a");
-    private static final Color DARK_SQUARE = Color.web("#bf9f6f");
-    private static final Color BORDER_COLOR = Color.web("#5b4630");
-    private static final Color FRAME_COLOR = Color.web("#24180f");
-    private static final Color SPECIAL_SQUARE = Color.web("#7a5528");
-    private static final Color THRONE_COLOR = Color.web("7a5528");
+    public static final Color LIGHT_SQUARE = Color.web("#d8c39a");
+    public static final Color DARK_SQUARE = Color.web("#bf9f6f");
+    public static final Color BORDER_COLOR = Color.web("#5b4630");
+    public static final Color FRAME_COLOR = Color.web("#2a2116");
+    public static final Color SPECIAL_SQUARE = Color.web("#7a5528");
+    public static final Color THRONE_COLOR = Color.web("7a5528");
 
     private final List<Circle> legalMoveMarkers = new ArrayList<>();
 
     public TablutBoardLook(int size, ContainerElement element) {
-        super(size/9, element, -1, LIGHT_SQUARE, DARK_SQUARE, 2, DARK_SQUARE, 22, FRAME_COLOR, true);
+        super(size/9, element, -1, LIGHT_SQUARE, DARK_SQUARE, 0, DARK_SQUARE, 22, FRAME_COLOR, true);
     }
 
     // override this otherwise all square borders disappears except the legal moves squares' when clicking a piece

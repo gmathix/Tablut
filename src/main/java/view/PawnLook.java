@@ -51,7 +51,7 @@ public class PawnLook extends ElementLook {
         } else {
             circle.setStrokeWidth(1.5);
             circle.setStrokeType(StrokeType.CENTERED);
-            circle.setStroke(getEdgeColor(pawn));
+            circle.setStroke(getEdgeColor(pawn.getColor()));
             getGroup().setEffect(new DropShadow(10, Color.color(0, 0, 0, 0.35)));
         }
     }
@@ -61,8 +61,8 @@ public class PawnLook extends ElementLook {
 
     }
 
-    private Color getEdgeColor(Pawn pawn) {
-        return switch (pawn.getColor()) {
+    public static Color getEdgeColor(int pawnType) {
+        return switch (pawnType) {
             case Pawn.PAWN_MOSCOVITE -> MOSCOVITE_EDGE;
             case Pawn.PAWN_SOLDIER -> SOLDIER_EDGE;
             case Pawn.PAWN_KING -> KING_EDGE;
@@ -70,8 +70,8 @@ public class PawnLook extends ElementLook {
         };
     }
 
-    private RadialGradient getGradient(Pawn pawn) {
-        return switch (pawn.getColor()) {
+    public static RadialGradient getGradient(int pawnType) {
+        return switch (pawnType) {
             case Pawn.PAWN_MOSCOVITE -> new RadialGradient(
                     0, .1, -.28, .32, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, MOSCOVITE_LIGHT),
@@ -102,8 +102,8 @@ public class PawnLook extends ElementLook {
         Pawn pawn = (Pawn)element;
 
         circle = new Circle(radius);
-        circle.setFill(getGradient(pawn));
-        circle.setStroke(getEdgeColor(pawn));
+        circle.setFill(getGradient(pawn.getColor()));
+        circle.setStroke(getEdgeColor(pawn.getColor()));
         circle.setStrokeWidth(1.5);
 
         innerCircle = new Circle(radius * 0.58);
