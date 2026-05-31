@@ -269,11 +269,6 @@ public class TablutStageModel extends GameStageModel {
                 nbEdgesRechable++;
             }
         }
-        if (nbEdgesRechable == 1) {
-            System.out.printf("\nPlayer 1 : Raichi\n\n");
-        } else if (nbEdgesRechable >= 2) {
-            System.out.printf("\nPlayer 1 : Tuichi!\n\n");
-        }
 
 
         // check if the king has reached an edge

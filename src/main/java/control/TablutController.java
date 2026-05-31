@@ -57,18 +57,20 @@ public class TablutController extends Controller {
         this.gameMode = gameMode;
         this.inputFile = inputFile;
         this.botPlayers = new int[]{
-                NEGAMAX_PLAYER,
-                NEGAMAX_PLAYER,
+                greenBotPlayer,
+                yellowBotPlayer,
         };
 
-        availableBots[0] = new HashMap<>();
-        availableBots[1] = new HashMap<>();
+        availableBots[0] = new LinkedHashMap<>();
+        availableBots[1] = new LinkedHashMap<>();
 
 
         this.botLevels = botLevels;
 
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
+        setBotPlayer(0, greenBotPlayer);
+        setBotPlayer(1, yellowBotPlayer);
 
         lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
         for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
@@ -116,6 +118,10 @@ public class TablutController extends Controller {
         return botLevels[color];
     }
 
+    public int getBotPlayer(int color) {
+        return botPlayers[color];
+    }
+
 
     // 0 for green, 0 for yellow
     public void setBotLevel(int color, int level) {
@@ -133,7 +139,7 @@ public class TablutController extends Controller {
 
 
     public void setBotPlayer(int color, int botPlayer) {
-        if (botPlayer < 0 || botPlayer > availableBots[color].size()) return;
+        if (!availableBots[color].containsKey(botPlayer)) return;
         this.botPlayers[color] = botPlayer;
     }
 
@@ -337,7 +343,6 @@ public class TablutController extends Controller {
             int sentenceIndex = (int) (Math.random() * sentenceArray.length);
             String sentence = sentenceArray[sentenceIndex];
             stageModel.getBotSentenceText().setText(sentence);
-            System.out.printf("%s %s\n", selection.name, sentence);
 
             updateStatusPanel();
 
