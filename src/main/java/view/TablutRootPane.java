@@ -152,7 +152,7 @@ public class TablutRootPane extends RootPane {
                 square.setFill(((i+j)%2 == 0) ? TablutBoardLook.LIGHT_SQUARE : TablutBoardLook.DARK_SQUARE);
 
                 if (RecurBoard.constrainedKingSquares.contains(i*9 + j) ||
-                        (i*9 + j) == 40add) {
+                        (i*9 + j) == 40) {
                     square.setFill(TablutBoardLook.SPECIAL_SQUARE);
                 }
 
