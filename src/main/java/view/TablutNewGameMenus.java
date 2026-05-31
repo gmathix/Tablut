@@ -127,13 +127,8 @@ public final class TablutNewGameMenus {
         content.setPadding(new Insets(18));
         content.setFillWidth(true);
 
-        Label intro = new Label("The console can finally stay in the past where it belongs.");
-        intro.setWrapText(true);
-        intro.setStyle("-fx-font-size: 13px; -fx-text-fill: -fx-text-inner-color;");
 
         content.getChildren().addAll(
-                intro,
-                new Separator(),
                 modeSection,
                 new Separator(),
                 ruleBoxColumn,
