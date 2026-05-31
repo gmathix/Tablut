@@ -8,12 +8,10 @@ import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
 import boardifier.view.*;
 
-import javafx.scene.text.Font;
 import model.Pawn;
 import model.RuleSets;
 import model.TablutBoard;
 import model.TablutStageModel;
-import view.Constants;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -211,12 +209,14 @@ public class TablutController extends Controller {
 
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         Pawn pawn = (Pawn) element;
-        int capture = stageModel.checkCapture(
+        List<Integer> captures = stageModel.checkCaptures(
                 model.getIdPlayer() == 1, pawn.getBoardX(), dstX, pawn.getBoardY(), dstY
         );
-        if (capture != -1) {
-            GameElement capturedElement = board.getElement(capture / 9, capture % 9);
-            actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
+        if (!captures.isEmpty()) {
+            for (Integer cap : captures) {
+                GameElement capturedElement = board.getElement(cap / 9, cap % 9);
+                actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
+            }
         }
 
         actions.setDoEndOfTurn(true);

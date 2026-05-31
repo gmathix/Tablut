@@ -3,6 +3,9 @@ package model;
 import boardifier.model.*;
 import control.algos.RecurBoard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
  * there are no levels in this game: a party starts and when it's done, the game is also done.
@@ -165,7 +168,15 @@ public class TablutStageModel extends GameStageModel {
         });
     }
 
-    public int checkCapture(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+
+    /**
+     * Returns a list of the pawns that get captured with the current move
+     * Returned values are pawn indexes in raster order (y * 9 + x)
+     */
+    public List<Integer> checkCaptures(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+        List<Integer> captures = new ArrayList<>();
+
+
         // check capture
         int horizontalDirection = 0;
         int verticalDirection = 0;
@@ -204,17 +215,17 @@ public class TablutStageModel extends GameStageModel {
             if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
                 if (isYellow) {
                     if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        return dstY1 * 9 + dstX1;
+                        captures.add(dstY1 * 9 + dstX1);
                     }
                 } else {
                     if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        return dstY1 * 9 + dstX1;
+                        captures.add(dstY1 * 9 + dstX1);
                     }
                 }
             }
         }
 
-        return -1;
+        return captures;
     }
 
     private void computePartyResult() {

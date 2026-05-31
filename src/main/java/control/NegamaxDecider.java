@@ -1,18 +1,10 @@
 package control;
 
-import boardifier.control.ActionFactory;
-import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
 import boardifier.control.Decider;
-import boardifier.model.Coord2D;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import boardifier.model.action.MoveWithinContainerAction;
-import boardifier.model.action.RemoveFromContainerAction;
-import boardifier.model.animation.AnimationTypes;
-import boardifier.view.ContainerLook;
-import boardifier.view.ElementLook;
 import control.algos.RecurBoard;
 import control.algos.NegamaxSearch;
 import model.*;
@@ -57,7 +49,7 @@ public class NegamaxDecider extends Decider {
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
 
-        stage.checkCapture(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+        stage.checkCaptures(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
         if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
             tablutBoard.setKingY(bestMove.dstY());
             tablutBoard.setKingX(bestMove.dstX());

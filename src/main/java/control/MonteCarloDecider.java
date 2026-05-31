@@ -1,7 +1,5 @@
 package control;
 
-import boardifier.control.ActionFactory;
-import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
 import boardifier.control.Decider;
 import boardifier.model.GameElement;
@@ -49,7 +47,7 @@ public class MonteCarloDecider extends Decider  {
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
 
-        stage.checkCapture(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+        stage.checkCaptures(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
         if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
             tablutBoard.setKingY(bestMove.dstY());
             tablutBoard.setKingX(bestMove.dstX());
