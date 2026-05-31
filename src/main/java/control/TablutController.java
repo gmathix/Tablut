@@ -8,6 +8,7 @@ import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
 import boardifier.view.*;
 
+import javafx.application.Platform;
 import model.Pawn;
 import model.RuleSets;
 import model.TablutBoard;
@@ -195,6 +196,9 @@ public class TablutController extends Controller {
         view.getRootPane().setFocusTraversable(true);
         view.getRootPane().requestFocus();
         controlAnimation.startAnimation();
+
+        // make the bot play immediately if it has to start playing
+        Platform.runLater(this::triggerCurrentPlayerTurn);
     }
 
     public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
@@ -308,18 +312,20 @@ public class TablutController extends Controller {
         }
     }
 
+    private void triggerCurrentPlayerTurn() {
+        if (model.isEndStage() || model.isEndGame()) return;
 
-    public void endOfTurn() {
-
-        model.setNextPlayer();
-        // get the new player to display its name
         Player p = model.getCurrentPlayer();
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        if (stageModel == null) return; // could happen at the very beginning, dunno why
+
         stageModel.getPlayerName().setText(p.getName());
 
         if (p.getType() == Player.COMPUTER) {
             int turn = model.getIdPlayer();
             BotSelection selection = availableBots[turn].get(botPlayers[turn]);
+            if (selection == null) return;
+
             Decider decider = selection.supplier.get();
 
             int botLevel = 5;
@@ -348,11 +354,17 @@ public class TablutController extends Controller {
 
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
-        }
-        else {
+        } else {
             stageModel.getBotSentenceText().setText("Your Move.");
             updateStatusPanel();
         }
+    }
+
+
+    public void endOfTurn() {
+
+        model.setNextPlayer();
+        triggerCurrentPlayerTurn();
     }
 
 
