@@ -31,6 +31,7 @@ public class TablutController extends Controller {
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
     public static final int NB_BOARDS_IN_MEMORY = 50;
+    public static final int NB_BOARD_REPETITION_TRESHOLD = 3;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
 
@@ -53,7 +54,10 @@ public class TablutController extends Controller {
     private int currentBoardRepIndex;
     private boolean boardRepeated;
 
+
     private MoveHistory moveHistory;
+    private ListIterator<Move> moveHistoryIterator;
+
     private VBox gameOverExportPanel;
     private TextArea gameOverPgnArea;
     private boolean gameoverExportPanelShown;
@@ -138,6 +142,8 @@ public class TablutController extends Controller {
         return moveHistory;
     }
 
+    public ListIterator<Move> getMoveHistoryIterator() { return moveHistoryIterator; }
+
 
     // 0 for green, 0 for yellow
     public void setBotLevel(int color, int level) {
@@ -183,7 +189,7 @@ public class TablutController extends Controller {
             }
         }
 
-        if (nbFound >= 3) {
+        if (nbFound >= NB_BOARD_REPETITION_TRESHOLD) {
             boardRepeated = true;
         } else {
             boardRepeated = false;
@@ -213,9 +219,13 @@ public class TablutController extends Controller {
                 startingPlayerId,
                 RuleSets.currentRuleset
         );
+        moveHistoryIterator = moveHistory.getMoves().listIterator();
+
 
         model.startGame(gameStageModel);
         model.setIdPlayer(startingPlayerId);
+        ((TablutStageModel)gameStageModel).setMode(TablutStageModel.MODE_PLAY);
+
         view.setView(gameStageView);
         view.getRootPane().setFocusTraversable(true);
         view.getRootPane().requestFocus();
@@ -224,6 +234,7 @@ public class TablutController extends Controller {
         // make the bot play immediately if it has to start playing
         Platform.runLater(this::triggerCurrentPlayerTurn);
     }
+
 
     public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
         ActionList actions = new ActionList();
@@ -345,6 +356,8 @@ public class TablutController extends Controller {
 
         stageModel.getPlayerName().setText(p.getName());
 
+        if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_VIEW_GAME) return;
+
         if (p.getType() == Player.COMPUTER) {
             int turn = model.getIdPlayer();
             BotSelection selection = availableBots[turn].get(botPlayers[turn]);
@@ -419,20 +432,8 @@ public class TablutController extends Controller {
                         "-fx-font-size: 12px;"
         );
 
-        Button exportButton = new Button("Export Game");
-        exportButton.setMaxWidth(Double.MAX_VALUE);
-        exportButton.setPrefWidth(Constants.CONTENT_WIDTH);
-        exportButton.setPrefHeight(34);
-        exportButton.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, #c8a76a, #8f6a3a);" +
-                        "-fx-text-fill: #1b140c;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-cursor: hand;"
-        );
-        exportButton.setOnAction(e -> exportGame(pgnText));
 
-        VBox panel = new VBox(10, exportButton, gameOverPgnArea);
+        VBox panel = new VBox(10, gameOverPgnArea);
         panel.setPadding(new Insets(8, 0, 0, 0));
         panel.setLayoutX(Constants.CONTENT_X);
         panel.setLayoutY(Constants.THREAT_Y + 35);
@@ -454,7 +455,7 @@ public class TablutController extends Controller {
         }
     }
 
-    private void exportGame(String pgnText) {
+    public void exportGame(String pgnText) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Tablut Game");
         fileChooser.getExtensionFilters().add(
@@ -482,11 +483,54 @@ public class TablutController extends Controller {
         }
     }
 
+    public void importGame() throws GameException {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Tablut Game");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Tablut PGN (*.tpgn)", "*.tpgn")
+        );
+
+        java.io.File chosen = fileChooser.showOpenDialog(view.getStage());
+        if (chosen == null) return;
+
+        String filePath = chosen.getAbsolutePath();
+        if (!filePath.toLowerCase(Locale.ROOT).endsWith(".tpgn")) {
+            filePath += ".tpgn";
+        }
+
+        try {
+            moveHistory = MoveHistory.fromGameFile(filePath);
+            moveHistoryIterator = moveHistory.getMoves().listIterator();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        startingPlayerId = moveHistory.getStartingSide();
+        model.setIdPlayer(startingPlayerId);
+        model.addHumanPlayer(moveHistory.getSwedishPlayer());
+        model.addHumanPlayer(moveHistory.getMoscovitePlayer());
+        RuleSets.currentRuleset = moveHistory.getRuleSet();
+
+        startStage("tablut");
+
+        // reassign the move history because startStage just reassigned it
+        try {
+            moveHistory = MoveHistory.fromGameFile(filePath);
+            moveHistoryIterator = moveHistory.getMoves().listIterator();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        ((TablutStageModel)model.getGameStage()).setMode(TablutStageModel.MODE_VIEW_GAME);
+    }
+
 
     public void endOfTurn() {
         if (model.getIdWinner() == -1) {
             model.setNextPlayer();
             triggerCurrentPlayerTurn();
+            processBoardRepetition();
         } else {
             model.stopStage();
             String message = String.format("Game over : %s\n",

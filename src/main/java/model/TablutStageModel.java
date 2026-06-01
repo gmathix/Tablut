@@ -36,6 +36,9 @@ public class TablutStageModel extends GameStageModel {
     public static final int STATE_SELECTPAWN = 1;
     public static final int STATE_SELECTDEST = 2;
 
+    public static final int MODE_PLAY = 1;
+    public static final int MODE_VIEW_GAME = 2;
+
 
 
     private TablutBoard board;
@@ -57,6 +60,8 @@ public class TablutStageModel extends GameStageModel {
 
     private int state;
 
+    private int mode;
+
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
@@ -66,6 +71,7 @@ public class TablutStageModel extends GameStageModel {
 
     // GETTERS
     public int getState() { return state; }
+    public int getMode() { return mode; }
     public TablutBoard getBoard() { return board; }
     public Pawn[] getMoscovitePawns() { return moscovitePawns; }
     public Pawn[] getSoldierPawns() { return soldierPawns; }
@@ -84,6 +90,7 @@ public class TablutStageModel extends GameStageModel {
 
     // SETTERS
     public void setState(int state) { this.state = state; }
+    public void setMode(int mode) { this.mode = mode; }
     public void setBoard(TablutBoard board) {
         this.board = board;
         addContainer(board);
