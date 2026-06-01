@@ -86,6 +86,7 @@ public class RecurBoard {
         }
         this.kingY = board.kingY;
         this.kingX = board.kingX;
+        lastCaptures = new ArrayList<>();
     }
 
 

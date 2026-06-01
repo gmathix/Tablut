@@ -28,7 +28,17 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
     }
 
     public void handle(MouseEvent event) {
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         TablutController tablutControl = (TablutController) control;
+
+        if (stageModel == null) return;
+
+
+        if (stageModel.getMode() == TablutStageModel.MODE_VIEW_GAME) return;
+        if (stageModel.getMode() == TablutStageModel.MODE_PLAY &&
+            !tablutControl.getMoveHistoryIterator().hasNext()) return; // the user has rewound the game, can't play a move
+
+
 
 
         if (!model.isCaptureMouseEvent()) return;
@@ -37,7 +47,7 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
         List<GameElement> currSelected = new ArrayList<>(control.elementsAt(pos));
         List<GameElement> prevSelected = new ArrayList<>(model.getSelected());
 
-        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+
 
         if (stageModel.getState() == TablutStageModel.STATE_SELECTPAWN) {
             for (GameElement element : currSelected) {

@@ -14,6 +14,11 @@ public class TablutView extends View {
     private MenuItem menuIntro;
     private MenuItem menuQuit;
 
+
+    private MenuItem menuImportGame;
+    private MenuItem menuExportGame;
+
+
     public TablutView(Model model, Stage stage, RootPane rootPane) {
         super(model, stage, rootPane);
     }
@@ -21,15 +26,27 @@ public class TablutView extends View {
     @Override
     protected void createMenuBar() {
         menuBar = new MenuBar();
-        Menu menu1 = new Menu("Game");
+        Menu menuGame = new Menu("Game");
         menuStart = new MenuItem("New game");
         menuIntro = new MenuItem("Intro");
         menuQuit = new MenuItem("Quit");
-        menu1.getItems().add(menuStart);
-        menu1.getItems().add(menuIntro);
-        menu1.getItems().add(menuQuit);
-        menuBar.getMenus().add(menu1);
+
+        Menu menuFile = new Menu("File");
+        menuImportGame = new MenuItem("Import Game");
+        menuExportGame = new MenuItem("Export Game");
+
+        menuGame.getItems().add(menuStart);
+        menuGame.getItems().add(menuIntro);
+        menuGame.getItems().add(menuQuit);
+
+        menuFile.getItems().add(menuImportGame);
+        menuFile.getItems().add(menuExportGame);
+
+
+        menuBar.getMenus().add(menuFile);
+        menuBar.getMenus().add(menuGame);
     }
+
     public MenuItem getMenuStart() {
         return menuStart;
     }
@@ -41,4 +58,8 @@ public class TablutView extends View {
     public MenuItem getMenuQuit() {
         return menuQuit;
     }
+
+    public MenuItem getMenuImportGame() { return menuImportGame; }
+
+    public MenuItem getMenuExportGame() { return menuExportGame; }
 }

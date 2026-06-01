@@ -39,12 +39,29 @@ public class TablutActionController extends ControllerAction implements EventHan
             }
         });
 
+
+
         tablutView.getMenuIntro().setOnAction(e -> {
             control.stopGame();
             tablutView.resetView();
         });
         tablutView.getMenuQuit().setOnAction(e -> {
             System.exit(0);
+        });
+
+
+        tablutView.getMenuImportGame().setOnAction(e -> {
+            TablutController tablutControl = (TablutController) control;
+            try {
+                tablutControl.importGame();
+            } catch (GameException err) {
+                err.printStackTrace();
+            }
+        });
+
+        tablutView.getMenuExportGame().setOnAction(e -> {
+            TablutController tablutControl = (TablutController) control;
+            tablutControl.exportGame(tablutControl.getMoveHistory().buildGameString());
         });
     }
 

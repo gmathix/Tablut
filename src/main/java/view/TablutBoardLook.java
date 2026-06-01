@@ -3,10 +3,12 @@ package view;
 import boardifier.model.ContainerElement;
 import boardifier.view.ClassicBoardLook;
 import control.algos.RecurBoard;
+import javafx.css.Rule;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeType;
+import model.RuleSets;
 import model.TablutStageModel;
 
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ public class TablutBoardLook extends ClassicBoardLook {
     public static final Color BORDER_COLOR = Color.web("#5b4630");
     public static final Color FRAME_COLOR = Color.web("#2a2116");
     public static final Color SPECIAL_SQUARE = Color.web("#7a5528");
-    public static final Color THRONE_COLOR = Color.web("7a5528");
+    public static final Color THRONE_COLOR = Color.web("aa5528");
 
     private final List<Circle> legalMoveMarkers = new ArrayList<>();
 
@@ -45,7 +47,11 @@ public class TablutBoardLook extends ClassicBoardLook {
                 cells[i][j].setStrokeType(StrokeType.CENTERED);
                 cells[i][j].setStroke(BORDER_COLOR);
 
-                if (RecurBoard.constrainedKingSquares.contains(i*9 + j)) { // darker color for moscovite starting squares
+                boolean isEdge = i == 0 || i == 8 || j == 0 || j == 8;
+                boolean isCorner = RecurBoard.cornerSquares.contains(i*9 + j);
+
+                if ((RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(i*9 + j)) ||
+                    (RuleSets.isCornerKingEscapes() && (isEdge && !isCorner))) { // darker color for moscovite starting squares
                     cells[i][j].setFill(SPECIAL_SQUARE);
                 } else if (i*9+j == 40) {
                     cells[i][j].setFill(THRONE_COLOR);
