@@ -1,19 +1,21 @@
 package control;
 
-import boardifier.control.ActionFactory;
-import boardifier.control.ActionPlayer;
-import boardifier.control.Controller;
-import boardifier.control.Decider;
-import boardifier.model.GameElement;
-import boardifier.model.Model;
-import boardifier.model.Player;
+import boardifier.control.*;
+import boardifier.model.*;
 import boardifier.model.action.ActionList;
-import boardifier.view.View;
-import com.sun.java.accessibility.util.SwingEventMonitor;
-import model.Pawn;
-import model.RuleSets;
-import model.TablutBoard;
-import model.TablutStageModel;
+import boardifier.model.action.MoveWithinContainerAction;
+import boardifier.model.action.RemoveFromContainerAction;
+import boardifier.model.animation.AnimationTypes;
+import boardifier.view.*;
+
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import model.*;
+import view.Constants;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -28,7 +30,7 @@ public class TablutController extends Controller {
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
-    public static final int NB_BOARDS_IN_MEMORY = 15;
+    public static final int NB_BOARDS_IN_MEMORY = 50;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
 
@@ -37,16 +39,24 @@ public class TablutController extends Controller {
 
 
 
+
     int gameMode;
     int botPlayers[];
+    int botLevels[];
 
     BufferedReader consoleIn;
     String inputFile;
+    private int startingPlayerId = 0;
 
 
     private String lastBoardsRepresentations[];
     private int currentBoardRepIndex;
     private boolean boardRepeated;
+
+    private MoveHistory moveHistory;
+    private VBox gameOverExportPanel;
+    private TextArea gameOverPgnArea;
+    private boolean gameoverExportPanelShown;
 
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
@@ -55,15 +65,20 @@ public class TablutController extends Controller {
         this.gameMode = gameMode;
         this.inputFile = inputFile;
         this.botPlayers = new int[]{
-            NEGAMAX_PLAYER,
-            NEGAMAX_PLAYER,
+                greenBotPlayer,
+                yellowBotPlayer,
         };
 
-        availableBots[0] = new HashMap<>();
-        availableBots[1] = new HashMap<>();
+        availableBots[0] = new LinkedHashMap<>();
+        availableBots[1] = new LinkedHashMap<>();
+
+
+        this.botLevels = botLevels;
 
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
+        setBotPlayer(0, greenBotPlayer);
+        setBotPlayer(1, yellowBotPlayer);
 
         lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
         for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
@@ -72,10 +87,55 @@ public class TablutController extends Controller {
         currentBoardRepIndex = 0;
         boardRepeated = false;
 
+
+        setControlKey(new TablutKeyController(model, view, this));
+        setControlMouse(new TablutMouseController(model, view, this));
+        setControlAction(new TablutActionController(model, view, this));
+
+
+        gameOverExportPanel = null;
+        gameOverPgnArea = null;
+        gameoverExportPanelShown = false;
     }
 
     public TablutController(Model model, View view, int gameMode, String inputFile) {
         this(model, view, gameMode, inputFile, NEGAMAX_PLAYER, NEGAMAX_PLAYER, new int[]{5, 5});
+    }
+
+    public int getGameMode() {
+        return gameMode;
+    }
+
+    public void setGameMode(int gameMode) {
+        this.gameMode = gameMode;
+    }
+
+    public String getInputFile() {
+        return inputFile;
+    }
+
+    public void setInputFile(String inputFile) {
+        this.inputFile = inputFile == null ? "" : inputFile;
+    }
+
+    public int getStartingPlayerId() {
+        return startingPlayerId;
+    }
+
+    public void setStartingPlayerId(int startingPlayerId) {
+        this.startingPlayerId = startingPlayerId;
+    }
+
+    public int getBotLevel(int color) {
+        return botLevels[color];
+    }
+
+    public int getBotPlayer(int color) {
+        return botPlayers[color];
+    }
+
+    public MoveHistory getMoveHistory() {
+        return moveHistory;
     }
 
 
@@ -88,13 +148,14 @@ public class TablutController extends Controller {
                 () -> new MonteCarloDecider(model, this, level)));
         availableBots[color].put(NEGAMONTECARLO_PLAYER, new BotSelection(NEGAMONTECARLO_PLAYER, "Nega-Monte-Carlo",
                 () -> new NegaMonteCarloDecider(model, this, level)));
+        this.botLevels[color] = level;
     }
 
 
 
 
     public void setBotPlayer(int color, int botPlayer) {
-        if (botPlayer < 0 || botPlayer > availableBots[color].size()) return;
+        if (!availableBots[color].containsKey(botPlayer)) return;
         this.botPlayers[color] = botPlayer;
     }
 
@@ -105,6 +166,345 @@ public class TablutController extends Controller {
 
     public boolean isBoardRepeated() { return boardRepeated; }
 
+
+
+    private void processBoardRepetition() {
+        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
+
+        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
+
+        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
+
+        int nbFound = 0;
+        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
+            if (i == currentBoardRepIndex) continue;
+            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
+                nbFound++;
+            }
+        }
+
+        if (nbFound >= 3) {
+            boardRepeated = true;
+        } else {
+            boardRepeated = false;
+        }
+    }
+
+
+    @Override
+    protected void startStage(String stageName) throws GameException {
+        if (model.isStageStarted()) stopGame();
+
+        GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
+        gameStageModel.createElements(gameStageModel.getDefaultElementFactory());
+
+        GameStageView gameStageView = StageFactory.createStageView(stageName, gameStageModel);
+        gameStageView.createLooks();
+
+        mapElementLook = new HashMap<>();
+        for (GameElement element : gameStageModel.getElements()) {
+            ElementLook look = gameStageView.getElementLook(element);
+            mapElementLook.put(element, look);
+        }
+
+        moveHistory = new MoveHistory(
+                model.getPlayers().get(0).getName(),
+                model.getPlayers().get(1).getName(),
+                startingPlayerId,
+                RuleSets.currentRuleset
+        );
+
+        model.startGame(gameStageModel);
+        model.setIdPlayer(startingPlayerId);
+        view.setView(gameStageView);
+        view.getRootPane().setFocusTraversable(true);
+        view.getRootPane().requestFocus();
+        controlAnimation.startAnimation();
+
+        // make the bot play immediately if it has to start playing
+        Platform.runLater(this::triggerCurrentPlayerTurn);
+    }
+
+    public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
+        ActionList actions = new ActionList();
+
+        ElementLook elementLook = getElementLook(element);
+        ContainerLook containerLook = (ContainerLook) getElementLook(board);
+        Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dstY, dstX);
+        actions.addSingleAction(new MoveWithinContainerAction(
+                model, element, dstY, dstX, AnimationTypes.MOVE_LINEARPROP, center.getX(), center.getY(), 10
+        ));
+
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        Pawn pawn = (Pawn) element;
+        List<Integer> captures = stageModel.checkCaptures(
+                model.getIdPlayer() == 1, pawn.getBoardX(), dstX, pawn.getBoardY(), dstY
+        );
+        if (!captures.isEmpty()) {
+            for (Integer cap : captures) {
+                GameElement capturedElement = board.getElement(cap / 9, cap % 9);
+                actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
+            }
+        }
+
+        actions.setDoEndOfTurn(true);
+        stageModel.unselectAll();
+        stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
+
+        return actions;
+    }
+
+
+    private int[] countMaterial(TablutStageModel stageModel) {
+        int defenders = 0;
+        int attackers = 0;
+        TablutBoard board = stageModel.getBoard();
+        for (int y = 0; y < TablutBoard.BOARD_SIZE; y++) {
+            for (int x = 0; x < TablutBoard.BOARD_SIZE; x++) {
+                if (board.getElement(y, x) instanceof Pawn pawn) {
+                    if (pawn.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        attackers++;
+                    } else {
+                        defenders++;
+                    }
+                }
+            }
+        }
+        return new int[]{defenders, attackers};
+    }
+
+    private String buildKingThreatMessage(TablutStageModel stageModel) {
+        TablutBoard board = stageModel.getBoard();
+        int kingX = board.getKingX();
+        int kingY = board.getKingY();
+
+        int nbEdgesReachable = 0;
+        int[] dy = {-1, 0, 1, 0};
+        int[] dx = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            boolean freeWay = true;
+            int y = kingY;
+            int x = kingX;
+            for (int step = 0; step < 8; step++) {
+                y += dy[i];
+                x += dx[i];
+                if (y < 0 || y > 8 || x < 0 || x > 8) {
+                    break;
+                }
+                if (board.getElement(y, x) instanceof Pawn) {
+                    freeWay = false;
+                    break;
+                }
+            }
+            if (freeWay) {
+                nbEdgesReachable++;
+            }
+        }
+
+        if (nbEdgesReachable == 1) {
+            return "Threat: Raichi - the king has one escape lane.";
+        }
+        if (nbEdgesReachable >= 2) {
+            return "Threat: Tuichi - the king has two escape lanes.";
+        }
+        return "Threat: no Raichi or Tuichi yet.";
+    }
+
+    private void updateStatusPanel() {
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        if (stageModel == null) return;
+
+        int[] material = countMaterial(stageModel);
+        stageModel.getMaterialText().setText(String.format("Material: Green %d  |  Gold %d", material[0], material[1]));
+        stageModel.getThreatText().setText(buildKingThreatMessage(stageModel));
+
+        TextLook nameLook = (TextLook) view.getElementLook(stageModel.getPlayerName());
+        TextLook botLook = (TextLook) view.getElementLook(stageModel.getBotSentenceText());
+
+        if (nameLook != null) {
+            nameLook.setColor(model.getIdPlayer() == 0 ? "0x8BCB8F" : "0xE3C36A");
+        }
+        if (botLook != null) {
+            botLook.setColor("0xC8D2C3");
+        }
+        if (nameLook != null && stageModel.getBotSentenceText() != null) {
+            double gap = 12.0;
+            double x = stageModel.getPlayerName().getX() + nameLook.getTextWidth() + gap;
+            double y = stageModel.getPlayerName().getY() + 3.0;
+            stageModel.getBotSentenceText().setLocation(x, y);
+        }
+    }
+
+    private void triggerCurrentPlayerTurn() {
+        if (model.isEndStage() || model.isEndGame()) return;
+
+        Player p = model.getCurrentPlayer();
+        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+        if (stageModel == null) return; // could happen at the very beginning, dunno why
+
+        stageModel.getPlayerName().setText(p.getName());
+
+        if (p.getType() == Player.COMPUTER) {
+            int turn = model.getIdPlayer();
+            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
+            if (selection == null) return;
+
+            Decider decider = selection.supplier.get();
+
+            int botLevel = 5;
+            if (decider instanceof NegamaxDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof MonteCarloDecider d) {
+                botLevel = d.getLevel();
+            } else if (decider instanceof NegaMonteCarloDecider d) {
+                botLevel = d.getLevel();
+            }
+
+            String[] sentenceArray;
+            if (botLevel <= 4) {
+                sentenceArray = BotSentences.SENTENCES_LOSING;
+            } else if (botLevel <= 8) {
+                sentenceArray = BotSentences.SENTENCES_WINNING;
+            } else {
+                sentenceArray = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
+            }
+
+            int sentenceIndex = (int) (Math.random() * sentenceArray.length);
+            String sentence = sentenceArray[sentenceIndex];
+            stageModel.getBotSentenceText().setText(sentence);
+
+            updateStatusPanel();
+
+            ActionPlayer play = new ActionPlayer(model, this, decider, null);
+            play.start();
+        } else {
+            stageModel.getBotSentenceText().setText("Your Move.");
+            updateStatusPanel();
+        }
+    }
+
+
+    private void removeGamePGN() {
+        if (gameOverExportPanel == null) return;
+        if (view != null && view.getRootPane() != null) {
+            view.getRootPane().getChildren().remove(gameOverExportPanel);
+        }
+        gameOverExportPanel = null;
+        gameOverPgnArea = null;
+        gameoverExportPanelShown = false;
+    }
+
+    private void showGamePGN(String pgnText) {
+        if (gameoverExportPanelShown) {
+            if (gameOverPgnArea != null) {
+                gameOverPgnArea.setText(pgnText);
+            }
+            return;
+        }
+
+        removeGamePGN();
+
+        gameOverPgnArea = new TextArea(pgnText);
+        gameOverPgnArea.setEditable(false);
+        gameOverPgnArea.setWrapText(false);
+        gameOverPgnArea.setPrefWidth(Constants.CONTENT_WIDTH);
+        gameOverPgnArea.setPrefHeight(120);
+        gameOverPgnArea.setStyle(
+                "-fx-control-inner-background: #152016;" +
+                        "-fx-text-fill: #e9f0e6;" +
+                        "-fx-highlight-fill: #7f9c7e;" +
+                        "-fx-highlight-text-fill: #152016;" +
+                        "-fx-font-family: 'Monospaced';" +
+                        "-fx-font-size: 12px;"
+        );
+
+        Button exportButton = new Button("Export Game");
+        exportButton.setMaxWidth(Double.MAX_VALUE);
+        exportButton.setPrefWidth(Constants.CONTENT_WIDTH);
+        exportButton.setPrefHeight(34);
+        exportButton.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #c8a76a, #8f6a3a);" +
+                        "-fx-text-fill: #1b140c;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        );
+        exportButton.setOnAction(e -> exportGame(pgnText));
+
+        VBox panel = new VBox(10, exportButton, gameOverPgnArea);
+        panel.setPadding(new Insets(8, 0, 0, 0));
+        panel.setLayoutX(Constants.CONTENT_X);
+        panel.setLayoutY(Constants.THREAT_Y + 35);
+        panel.setPrefWidth(Constants.CONTENT_WIDTH);
+        panel.setStyle(
+                "-fx-background-color: rgba(18, 26, 18, 0.55);" +
+                        "-fx-background-radius: 12;" +
+                        "-fx-border-color: rgba(200, 170, 120, 0.55);" +
+                        "-fx-border-radius: 12;" +
+                        "-fx-border-width: 1;"
+        );
+
+        gameOverExportPanel = panel;
+        gameoverExportPanelShown = true;
+
+        if (view != null && view.getRootPane() != null) {
+            view.getRootPane().getChildren().add(panel);
+            panel.toFront();
+        }
+    }
+
+    private void exportGame(String pgnText) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Tablut Game");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Tablut PGN (*.tpgn)", "*.tpgn")
+        );
+        fileChooser.setInitialFileName("tablut_game.tpgn");
+
+        java.io.File chosen = fileChooser.showSaveDialog(view.getStage());
+        if (chosen == null) return;
+
+        String filePath = chosen.getAbsolutePath();
+        if (!filePath.toLowerCase(Locale.ROOT).endsWith(".tpgn")) {
+            filePath += ".tpgn";
+        }
+
+        try {
+            java.nio.file.Files.writeString(
+                    java.nio.file.Path.of(filePath),
+                    pgnText,
+                    java.nio.charset.StandardCharsets.UTF_8
+            );
+        } catch (IOException ex) {
+            System.err.printf("could not export game file : \n");
+            ex.printStackTrace();
+        }
+    }
+
+
+    public void endOfTurn() {
+        if (model.getIdWinner() == -1) {
+            model.setNextPlayer();
+            triggerCurrentPlayerTurn();
+        } else {
+            model.stopStage();
+            String message = String.format("Game over : %s\n",
+                    model.getIdWinner() == 0
+                            ? "the king has reached an edge"
+                            : "the king has been encircled");
+            ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);
+            moveHistory.setWinningSide(model.getIdWinner());
+
+            TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
+            stageModel.getThreatText().setText(message);
+            showGamePGN(moveHistory.buildGameString());
+        }
+    }
+
+
+
+    /** maybe someone can clean those up **/
 
     /**
      *Implementing a file reader to read the entry file
@@ -151,7 +551,7 @@ public class TablutController extends Controller {
         }
         update();
         while (!model.isEndStage()) {
-            playTurn();
+//            playTurn();
             endOfTurn();
             update();
 
@@ -161,165 +561,4 @@ public class TablutController extends Controller {
     }
 
 
-    private void processBoardRepetition() {
-        currentBoardRepIndex = (currentBoardRepIndex + 1) % NB_BOARDS_IN_MEMORY;
-
-        String currBoardRep = ((TablutStageModel) model.getGameStage()).getBoard().getStringRepresentation();
-
-        lastBoardsRepresentations[currentBoardRepIndex] = currBoardRep;
-
-        int nbFound = 0;
-        for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
-            if (i == currentBoardRepIndex) continue;
-            if (lastBoardsRepresentations[i].equals(currBoardRep)) {
-                nbFound++;
-            }
-        }
-
-        if (nbFound >= 3) {
-            boardRepeated = true;
-        } else {
-            boardRepeated = false;
-        }
-    }
-
-
-    private void playTurn() {
-        // get the new player
-        Player p = model.getCurrentPlayer();
-        if (p.getType() == Player.COMPUTER) {
-            int turn = model.getIdPlayer();
-            BotSelection selection = availableBots[turn].get(botPlayers[turn]);
-            Decider decider = selection.supplier.get();
-            ActionPlayer play = new ActionPlayer(model, this, decider, null);
-
-
-            int botLevel;
-            if (decider instanceof NegamaxDecider d) {
-                botLevel = d.getLevel();
-            } else if (decider instanceof MonteCarloDecider d) {
-                botLevel = d.getLevel();
-            } else if (decider instanceof NegaMonteCarloDecider d) {
-                botLevel = d.getLevel();
-            } else {
-                botLevel = 5;
-            }
-            String[] sentenceArray;
-            if (botLevel <= 4) {
-                sentenceArray = BotSentences.SENTENCES_LOSING;
-            } else if (botLevel <= 8) {
-                sentenceArray = BotSentences.SENTENCES_WINNING;
-            } else {
-                sentenceArray = BotSentences.SENTENCES_EXTREMELY_ARROGANT;
-            }
-
-            int sentenceIndex = (int) (Math.random() * sentenceArray.length);
-            String sentence = sentenceArray[sentenceIndex];
-
-            System.out.printf("%s %s\n", selection.name, sentence);
-
-            play.start();
-        }
-        else {
-            boolean ok = false;
-            while (!ok) {
-                System.out.print(p.getName()+ " > ");
-                try {
-                    String line = consoleIn.readLine();
-                    if (line.length() == 4) {
-                        ok = analyseAndPlay(line);
-                    }
-                    if (!ok) {
-                        System.out.println("incorrect instruction. retry !");
-                    }
-                }
-                catch(IOException e) {}
-            }
-        }
-    }
-
-    public void endOfTurn() {
-
-        model.setNextPlayer();
-        // get the new player to display its name
-        Player p = model.getCurrentPlayer();
-        TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
-        stageModel.getPlayerName().setText(p.getName());
-    }
-    private boolean analyseAndPlay(String line) {
-        TablutStageModel gameStage = (TablutStageModel) model.getGameStage();
-
-        line = line.toUpperCase();
-        boolean isYellow = model.getIdPlayer() == 1;
-
-
-        if (line.contains("STOP")) {
-            stopStage();
-        }
-
-
-        int colSrc = line.charAt(0) - 'A';
-        int rowSrc = line.charAt(1) - '1';
-        int colDest = line.charAt(2) - 'A';
-        int rowDest = line.charAt(3) - '1';
-
-        if (colSrc<0 || rowSrc<0 || colDest>8 || rowDest>8) return false;
-
-
-        GameElement elementSrc = gameStage.getBoard().getElement(rowSrc, colSrc);
-        Pawn currPawn;
-        // check that the selected square contains a pawn
-        if (!(elementSrc instanceof Pawn)) {
-            return false;
-        } else {
-            currPawn = (Pawn) elementSrc;
-        }
-
-        // check that the destination square is empty
-        GameElement elementDst = gameStage.getBoard().getElement(rowDest, colDest);
-        if (elementDst instanceof Pawn p) {
-            return false;
-        }
-
-
-        // check if selected pawn does not belong to the current player
-        if (model.getIdPlayer() == 0 && currPawn.getColor() == Pawn.PAWN_MOSCOVITE) {
-            return false;
-        }
-        else if (model.getIdPlayer() == 1 && currPawn.getColor() != Pawn.PAWN_MOSCOVITE) {
-            return false;
-        }
-
-        // check that this is a legal move
-        gameStage.getBoard().setValidCells(currPawn.getNumber());
-        if (!gameStage.getBoard().canReachCell(rowDest, colDest)) return false;
-
-
-
-        // update the board's king coordinates if we just moved the king
-        if (currPawn.getColor() == Pawn.PAWN_KING) {
-            gameStage.getBoard().setKingX(colDest);
-            gameStage.getBoard().setKingY(rowDest);
-        }
-
-
-
-
-        // check capture
-        gameStage.checkCapture(isYellow, colSrc, colDest, rowSrc, rowDest);
-
-
-
-
-        // make move
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, elementSrc, rowDest, colDest);
-        actions.setDoEndOfTurn(true);
-        ActionPlayer play = new ActionPlayer(model, this, actions);
-        play.start();
-
-
-
-
-        return true;
-    }
 }

@@ -3,6 +3,8 @@ package model;
 import boardifier.model.ElementTypes;
 import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
+import boardifier.model.animation.Animation;
+import boardifier.model.animation.AnimationStep;
 
 /**
  * A basic pawn element, with only 2 fixed parameters : number and color
@@ -18,6 +20,10 @@ public class Pawn extends GameElement {
     public static final int PAWN_SOLDIER   = 3;
     public static final int PAWN_KING      = 4;
 
+    // coords inside the board
+    private int boardX;
+    private int boardY;
+
 
     public Pawn(int number, int color, GameStageModel gameStageModel) {
         super(gameStageModel);
@@ -25,7 +31,12 @@ public class Pawn extends GameElement {
         type = ElementTypes.getType("pawn");
         this.number = number;
         this.color  = color;
+        this.boardY = 0;
+        this.boardX = 0;
     }
+
+    public void setBoardX(int boardX) { this.boardX = boardX; }
+    public void setBoardY(int boardY) { this.boardY = boardY; }
 
     public int getNumber() {
         return number;
@@ -33,6 +44,8 @@ public class Pawn extends GameElement {
     public int getColor() {
         return color;
     }
+    public int getBoardX() { return boardX; }
+    public int getBoardY() { return boardY; }
 
     public String toString() {
         String type = switch (color) {
@@ -43,5 +56,16 @@ public class Pawn extends GameElement {
         };
 
         return String.format("Pawn : %s, number %d\n", type, number);
+    }
+
+    public void update() {
+        if (animation != null) {
+            AnimationStep step = animation.next();
+            if (step == null) {
+                animation = null;
+            } else if (step != Animation.NOPStep) {
+                setLocation(step.getInt(0), step.getInt(1));
+            }
+        }
     }
 }

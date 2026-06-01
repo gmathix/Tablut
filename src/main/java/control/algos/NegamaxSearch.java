@@ -2,6 +2,7 @@ package control.algos;
 
 import model.Move;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,15 +53,13 @@ public class NegamaxSearch {
             int prevKingX = recurBoard.getKingX();
             int prevKingY = recurBoard.getKingY();
             recurBoard.makeMove(m);
-            int capX = recurBoard.getLastCaptureX();
-            int capY = recurBoard.getLastCaptureY();
-            int capPiece = recurBoard.getLastCapturePiece();
+            List<RecurBoard.Capture> lastCaps = recurBoard.getLastCaptures();
 
 
             // evaluate the opponent's score, then inverse it
             double score = -negamax(recurBoard, depth-1, nextTurn, -beta, -alpha);
 
-            recurBoard.undoMove(m, capX, capY, capPiece, prevKingX, prevKingY);
+            recurBoard.undoMove(m, lastCaps, prevKingX, prevKingY);
 
             alpha = Math.max(alpha, score);
 
@@ -104,14 +103,13 @@ public class NegamaxSearch {
             int prevKingX = recurBoard.getKingX();
             int prevKingY = recurBoard.getKingY();
             recurBoard.makeMove(move);
-            int capX = recurBoard.getLastCaptureX();
-            int capY = recurBoard.getLastCaptureY();
-            int capPiece = recurBoard.getLastCapturePiece();
+
+            List<RecurBoard.Capture> prevCaps = recurBoard.getLastCaptures();
 
             // negamax core trick: negative sign and swapped alpha/beta
             double score = -negamax(recurBoard, depth-1, (turn+1) % 2, -beta, -alpha);
 
-            recurBoard.undoMove(move, capX, capY, capPiece, prevKingX, prevKingY);
+            recurBoard.undoMove(move, prevCaps, prevKingX, prevKingY);
 
             if (score > maxScore) {
                 maxScore = score;

@@ -1,57 +1,175 @@
 package view;
 
 import boardifier.model.GameStageModel;
-import boardifier.view.ClassicBoardLook;
+import boardifier.view.BackgroundLook;
 import boardifier.view.GameStageView;
-
 import boardifier.view.TextLook;
-import model.Pawn;
-import model.TablutBoard;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import model.TablutStageModel;
-
-import java.util.Arrays;
-
-/**
- * HoleStageView has to create all the looks for all game elements created by the HoleStageFactory.
- * The desired UI is the following:
- * player            ╔═╗    ┏━━━┓
- *    A   B   C      ║1║    ┃ 1 ┃
- *  ╔═══╦═══╦═══╗    ╠═╣    ┣━━━┫
- * 1║   ║   ║   ║    ║2║    ┃ 2 ┃
- *  ╠═══╬═══╬═══╣    ╠═╣    ┣━━━┫
- * 2║   ║   ║   ║    ║3║    ┃ 3 ┃
- *  ╠═══╬═══╬═══╣    ╠═╣    ┣━━━┫
- * 3║   ║   ║   ║    ║4║    ┃ 4 ┃
- *  ╚═══╩═══╩═══╝    ╚═╝    ┗━━━┛
- *
- * The UI constraints are :
- *   - the main board has double-segments border, coordinates, and cells of size 2x4
- *   - the black pot has double-segments border, will cells that resize to match what is within (or not)
- *   - the red pot has simple-segment border, and cells have a fixed size of 2x4
- *
- *   main board can be instanciated directly as a ClassicBoardLook.
- *   black pot could be instanciated directly as a TableLook, but in this demo a BlackPotLook subclass is created (in case of we want to modifiy the look in some way)
- *   for red pot, a subclass RedPotLook of GridLook is used, in order to override the method that render the borders.
- */
 
 public class TablutStageView extends GameStageView {
     public TablutStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
+        width = (int) Constants.WINDOW_WIDTH;
+        height = (int) Constants.WINDOW_HEIGHT;
     }
 
     @Override
     public void createLooks() {
-        TablutStageModel model = (TablutStageModel)gameStageModel;
+        TablutStageModel model = (TablutStageModel) gameStageModel;
 
-        addLook(new TextLook(model.getPlayerName()));
-        addLook(new ClassicBoardLook(2, 6, model.getBoard(), 1, 1, true));
+
+        BackgroundLook fullBg = new BackgroundLook(
+                (int) Constants.WINDOW_WIDTH,
+                (int) Constants.WINDOW_HEIGHT,
+                BackgroundLook.BACKGROUND_COLOR,
+                Constants.BACKGROUND_HEX.replace("#", "0x"),
+                model.getFullBackdrop()
+        );
+        fullBg.setDepth(-200);
+        addLook(fullBg);
+
+        BackgroundLook boardCard = new BackgroundLook(
+                (int) Constants.BOARD_SIZE,
+                (int) Constants.BOARD_SIZE,
+                BackgroundLook.BACKGROUND_COLOR,
+                Constants.BOARD_HEX.replace("#", "0x"),
+                model.getBoardBackdrop()
+        );
+        boardCard.setDepth(-180);
+        addLook(boardCard);
+
+        BackgroundLook panelCard = new BackgroundLook(
+                (int) Constants.PANEL_WIDTH,
+                (int) Constants.PANEL_HEIGHT,
+                BackgroundLook.BACKGROUND_COLOR,
+                Constants.BACKGROUND_HEX.replace("#", "0x"),
+                model.getPanelBackdrop()
+        );
+        panelCard.setDepth(-170);
+        addLook(panelCard);
+
+        TablutBoardLook boardLook = new TablutBoardLook(
+                (int) Constants.BOARD_RENDER_SIZE,
+                model.getBoard()
+        );
+        boardLook.setDepth(0);
+        addLook(boardLook);
 
         for (int i = 0; i < 16; i++) {
-            addLook(new PawnLook(model.getMoscovitePawns()[i]));
+            PawnLook look = new PawnLook(
+                    (int) Constants.PAWN_SIZE,
+                    model.getMoscovitePawns()[i]
+            );
+            look.setDepth(5);
+            addLook(look);
         }
         for (int i = 0; i < 8; i++) {
-            addLook(new PawnLook(model.getSoldierPawns()[i]));
+            PawnLook look = new PawnLook(
+                    (int) Constants.PAWN_SIZE,
+                    model.getSoldierPawns()[i]
+            );
+            look.setDepth(5);
+            addLook(look);
         }
-        addLook(new PawnLook(model.getKingPawns()[0]));
+        PawnLook look = new PawnLook(
+                (int) Constants.PAWN_SIZE,
+                model.getKingPawns()[0]
+        );
+        look.setDepth(6);
+        addLook(look);
+
+
+        TextLook title = new TextLook(
+                42,
+                Constants.TITLE_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.BOLD,
+                model.getTitleText()
+        );
+        title.setFont(Constants.TITLE_FONT);
+        title.setDepth(20);
+        addLook(title);
+
+        TextLook subtitle = new TextLook(
+                17,
+                Constants.SUBTITLE_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getSubtitleText()
+        );
+        subtitle.setFont(Constants.SUBTITLE_FONT);
+        subtitle.setDepth(20);
+        addLook(subtitle);
+
+        TextLook currentPlayer = new TextLook(
+                24,
+                Constants.BODY_HEX,
+                Constants.FONT_FAMILY,
+                FontWeight.BOLD,
+                model.getPlayerName()
+        );
+        currentPlayer.setFont(Constants.BODY_FONT);
+        currentPlayer.setDepth(20);
+        addLook(currentPlayer);
+
+        TextLook botSentence = new TextLook(
+                15,
+                Constants.BODY_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getBotSentenceText()
+        );
+        botSentence.setFont(Constants.BODY_FONT);
+        botSentence.setWrappingWidth(Constants.CONTENT_WIDTH);
+        botSentence.setDepth(20);
+        addLook(botSentence);
+
+        TextLook help = new TextLook(
+                15,
+                Constants.BODY_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getHelpText()
+        );
+        help.setFont(Constants.BODY_FONT);
+        help.setWrappingWidth(Constants.CONTENT_WIDTH);
+        help.setDepth(20);
+        addLook(help);
+
+        TextLook legend = new TextLook(
+                14,
+                Constants.BODY_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getLegendText()
+        );
+        legend.setFont(Constants.BODY_FONT);
+        legend.setWrappingWidth(Constants.CONTENT_WIDTH);
+        legend.setDepth(20);
+        addLook(legend);
+
+        TextLook material = new TextLook(
+                15,
+                Constants.BODY_HEX,
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getMaterialText()
+        );
+        material.setFont(Constants.BODY_FONT);
+        material.setWrappingWidth(Constants.CONTENT_WIDTH);
+        addLook(material);
+
+        TextLook threat = new TextLook(
+                15,
+                Constants.BODY_HEX.replace("#", "0x"),
+                Constants.FONT_FAMILY,
+                FontWeight.NORMAL,
+                model.getThreatText()
+        );
+        threat.setFont(Constants.BODY_FONT);
+        threat.setWrappingWidth(Constants.CONTENT_WIDTH);
+        addLook(threat);
     }
 }

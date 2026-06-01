@@ -3,9 +3,15 @@ package model;
 import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
-import view.PawnLook;
+import control.TablutController;
+import javafx.scene.control.TextArea;
+import view.Constants;
+import view.TablutNewGameMenus;
 
-import static model.TablutBoard.startingBoard;
+import javafx.stage.Stage;
+
+import java.awt.*;
+
 
 /**
  * TablutStageFactory must create the game elements that are defined in TablutStageModel
@@ -24,7 +30,14 @@ import static model.TablutBoard.startingBoard;
  *
  */
 public class TablutStageFactory extends StageElementsFactory {
+
+
     private TablutStageModel stageModel;
+
+    public static boolean configureNewGame(Stage owner, boardifier.model.Model model, TablutController controller) {
+        return TablutNewGameMenus.configureNewGame(owner, model, controller);
+    }
+
 
     public TablutStageFactory(GameStageModel gameStageModel) {
         super(gameStageModel);
@@ -33,12 +46,62 @@ public class TablutStageFactory extends StageElementsFactory {
 
     @Override
     public void setup() {
+        TextElement fullBackdrop = new TextElement("", stageModel);
+        fullBackdrop.setClickable(false);
+        fullBackdrop.setLocation(0, 0);
+        stageModel.setFullBackdrop(fullBackdrop);
+
+        TextElement boardBackdrop = new TextElement("", stageModel);
+        boardBackdrop.setClickable(false);
+        boardBackdrop.setLocation(Constants.BOARD_X, Constants.BOARD_Y);
+        stageModel.setBoardBackdrop(boardBackdrop);
+
+        TextElement panelBackdrop = new TextElement("", stageModel);
+        panelBackdrop.setClickable(false);
+        panelBackdrop.setLocation(Constants.PANEL_X, Constants.PANEL_Y);
+        stageModel.setPanelBackdrop(panelBackdrop);
+
+        TextElement title = new TextElement("TABLUT", stageModel);
+        title.setClickable(false);
+        title.setLocation(Constants.CONTENT_X, Constants.TITLE_Y);
+        stageModel.setTitleText(title);
+
+        TextElement subtitle = new TextElement("The king escapes, or the attackers win\n by encirclement.", stageModel);
+        subtitle.setClickable(false);
+        subtitle.setLocation(Constants.CONTENT_X, Constants.SUBTITLE_Y);
+        stageModel.setSubtitleText(subtitle);
 
         TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
-        text.setLocation(0,0);
+        text.setLocation( Constants.CONTENT_X, Constants.SECTION_START_Y);
         stageModel.setPlayerName(text);
 
-        TablutBoard board = new TablutBoard(0, 1, stageModel);
+        TextElement botSentence = new TextElement("", stageModel);
+        botSentence.setClickable(false);
+        botSentence.setLocation(Constants.CONTENT_X, Constants.SECTION_START_Y+20);
+        stageModel.setBotSentenceText(botSentence);
+
+        TextElement help = new TextElement("Click a pawn, then a highlighted square.", stageModel);
+        help.setClickable(false);
+        help.setLocation(Constants.CONTENT_X, Constants.HELP_Y);
+        stageModel.setHelpText(help);
+
+        TextElement legend = new TextElement("Green = defenders  |  Gold = attackers", stageModel);
+        legend.setClickable(false);
+        legend.setLocation(Constants.CONTENT_X, Constants.LEGEND_Y);
+        stageModel.setLegendText(legend);
+
+        TextElement material = new TextElement("Material: Green 9  |  Gold 16", stageModel);
+        material.setClickable(false);
+        material.setLocation(Constants.CONTENT_X, Constants.MATERIAL_Y);
+        stageModel.setMaterialText(material);
+
+        TextElement threat = new TextElement("Threat: no Raichi or Tuichi yet.", stageModel);
+        threat.setClickable(false);
+        threat.setLocation(Constants.CONTENT_X, Constants.THREAT_Y);
+        stageModel.setThreatText(threat);
+
+
+        TablutBoard board = new TablutBoard(40, 80, stageModel);
         stageModel.setBoard(board);
 
         Pawn[] moscovitePawns = new Pawn[16];
@@ -46,18 +109,16 @@ public class TablutStageFactory extends StageElementsFactory {
         Pawn[] kingPawns      = new Pawn[1];
 
         for (int i = 0; i < 16; i++) {
-            moscovitePawns[i] = new Pawn(i+1, Pawn.PAWN_MOSCOVITE, stageModel);
+            moscovitePawns[i] = new Pawn(i + 1, Pawn.PAWN_MOSCOVITE, stageModel);
         }
         for (int i = 0; i < 8; i++) {
-            soldierPawns[i] = new Pawn(16 + i+1, Pawn.PAWN_SOLDIER, stageModel);
+            soldierPawns[i] = new Pawn(16 + i + 1, Pawn.PAWN_SOLDIER, stageModel);
         }
         kingPawns[0] = new Pawn(25, Pawn.PAWN_KING, stageModel);
 
         stageModel.setMoscovitePawns(moscovitePawns);
         stageModel.setSoldierPawns(soldierPawns);
         stageModel.setKingPawns(kingPawns);
-
-
 
         int moscoviteIdx = 0;
         int soldierIdx   = 0;
@@ -67,12 +128,18 @@ public class TablutStageFactory extends StageElementsFactory {
                 if (type != 0) {
                     if (type == Pawn.PAWN_MOSCOVITE) {
                         board.addElement(moscovitePawns[moscoviteIdx], i, j);
+                        moscovitePawns[moscoviteIdx].setBoardX(j);
+                        moscovitePawns[moscoviteIdx].setBoardY(i);
                         moscoviteIdx++;
                     } else if (type == Pawn.PAWN_SOLDIER) {
                         board.addElement(soldierPawns[soldierIdx], i, j);
+                        soldierPawns[soldierIdx].setBoardX(j);
+                        soldierPawns[soldierIdx].setBoardY(i);
                         soldierIdx++;
                     } else if (type == Pawn.PAWN_KING) {
                         board.addElement(kingPawns[0], i, j);
+                        kingPawns[0].setBoardX(j);
+                        kingPawns[0].setBoardY(i);
                     }
                 }
             }

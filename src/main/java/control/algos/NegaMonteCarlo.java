@@ -177,7 +177,7 @@ public class NegaMonteCarlo {
                     Node child = entry.getValue();
 
                     double priorScore = 0;
-                    if (currentNode.recurBoard.checkCapture(move) != -1) priorScore += 0.5;
+                    if (!currentNode.recurBoard.checkCaptures(move).isEmpty()) priorScore += 0.5;
                     if (currentNode.turn != turn) priorScore *= -1;
 
                     double score = UCB(child, priorScore);

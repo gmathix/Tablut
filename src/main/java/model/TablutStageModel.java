@@ -3,6 +3,9 @@ package model;
 import boardifier.model.*;
 import control.algos.RecurBoard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
  * there are no levels in this game: a party starts and when it's done, the game is also done.
@@ -30,63 +33,60 @@ import control.algos.RecurBoard;
  */
 public class TablutStageModel extends GameStageModel {
 
-    // define stage state variables
-    private int blackPawnsToPlay;
-    private int redPawnsToPlay;
+    public static final int STATE_SELECTPAWN = 1;
+    public static final int STATE_SELECTDEST = 2;
 
-    // define stage game elements
+
+
     private TablutBoard board;
-    private TablutPawnPot blackPot;
-    private TablutPawnPot redPot;
     private Pawn[] moscovitePawns;
     private Pawn[] soldierPawns;
     private Pawn[] kingPawns;
+
     private TextElement playerName;
-    // Uncomment next line if the example with a main container is used. see end of TablutStageFactory and TablutStageView
-    //private ContainerElement mainContainer;
+    private TextElement titleText;
+    private TextElement subtitleText;
+    private TextElement helpText;
+    private TextElement legendText;
+    private TextElement botSentenceText;
+    private TextElement materialText;
+    private TextElement threatText;
+    private TextElement fullBackdrop;
+    private TextElement boardBackdrop;
+    private TextElement panelBackdrop;
+
+    private int state;
+
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
+        state = STATE_SELECTPAWN;
         setupCallbacks();
     }
 
-    public TablutBoard getBoard() {
-        return board;
-    }
-
-    public TablutPawnPot getBlackPot() {
-        return blackPot;
-    }
-
-    public TablutPawnPot getRedPot() {
-        return redPot;
-    }
-
-    public Pawn[] getMoscovitePawns() {
-        return moscovitePawns;
-    }
-
-    public Pawn[] getSoldierPawns() {
-        return soldierPawns;
-    }
-
+    // GETTERS
+    public int getState() { return state; }
+    public TablutBoard getBoard() { return board; }
+    public Pawn[] getMoscovitePawns() { return moscovitePawns; }
+    public Pawn[] getSoldierPawns() { return soldierPawns; }
     public Pawn[] getKingPawns() { return kingPawns; }
+    public TextElement getPlayerName() { return playerName; }
+    public TextElement getTitleText() { return titleText; }
+    public TextElement getSubtitleText() { return subtitleText; }
+    public TextElement getHelpText() { return helpText; }
+    public TextElement getLegendText() { return legendText; }
+    public TextElement getBotSentenceText() { return botSentenceText; }
+    public TextElement getMaterialText() { return materialText; }
+    public TextElement getThreatText() { return threatText; }
+    public TextElement getFullBackdrop() { return fullBackdrop; }
+    public TextElement getBoardBackdrop() { return boardBackdrop; }
+    public TextElement getPanelBackdrop() { return panelBackdrop; }
 
-    public TextElement getPlayerName() {
-        return playerName;
-    }
-
+    // SETTERS
+    public void setState(int state) { this.state = state; }
     public void setBoard(TablutBoard board) {
         this.board = board;
         addContainer(board);
-    }
-    public void setBlackPot(TablutPawnPot blackPot) {
-        this.blackPot = blackPot;
-        addContainer(blackPot);
-    }
-    public void setRedPot(TablutPawnPot redPot) {
-        this.redPot = redPot;
-        addContainer(redPot);
     }
     public void setMoscovitePawns(Pawn[] moscovitePawns) {
         this.moscovitePawns = moscovitePawns;
@@ -110,19 +110,73 @@ public class TablutStageModel extends GameStageModel {
         this.playerName = playerName;
         addElement(playerName);
     }
+    public void setTitleText(TextElement titleText) {
+        this.titleText = titleText;
+        addElement(titleText);
+    }
+    public void setSubtitleText(TextElement subtitleText) {
+        this.subtitleText = subtitleText;
+        addElement(subtitleText);
+    }
+    public void setHelpText(TextElement helpText) {
+        this.helpText = helpText;
+        addElement(helpText);
+    }
+    public void setLegendText(TextElement legendText) {
+        this.legendText = legendText;
+        addElement(legendText);
+    }
+    public void setBotSentenceText(TextElement botSentenceText) {
+        this.botSentenceText = botSentenceText;
+        addElement(botSentenceText);
+    }
+    public void setMaterialText(TextElement materialText) {
+        this.materialText = materialText;
+        addElement(materialText);
+    }
+    public void setThreatText(TextElement threatText) {
+        this.threatText = threatText;
+        addElement(threatText);
+    }
+    public void setFullBackdrop(TextElement fullBackdrop) {
+        this.fullBackdrop = fullBackdrop;
+        addElement(fullBackdrop);
+    }
+    public void setBoardBackdrop(TextElement boardBackdrop) {
+        this.boardBackdrop = boardBackdrop;
+        addElement(boardBackdrop);
+    }
+    public void setPanelBackdrop(TextElement panelBackdrop) {
+        this.panelBackdrop = panelBackdrop;
+        addElement(panelBackdrop);
+    }
 
 
     private void setupCallbacks() {
-
-        onMoveInContainer(new ContainerOpCallback() {
-            @Override
-            public void execute(GameElement element, ContainerElement containerDest, int rowDest, int colDest) {
-                computePartyResult();
+        onSelectionChange(() -> {
+            if (selected.size() == 0) {
+                board.resetReachableCells(false);
+                return;
             }
+            Pawn pawn = (Pawn) selected.getFirst();
+            board.setValidCells(pawn.getNumber());
+        });
+
+        onMoveInContainer((el, gridDest, rowDest, colDest) -> {
+            if (gridDest != board) return;
+            computePartyResult();
         });
     }
 
-    public void checkCapture(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+
+    /**
+     * Returns a list of the pawns that get captured with the current move
+     * Returned values are pawn indexes in raster order (y * 9 + x)
+     */
+    public List<Integer> checkCaptures(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
+        List<Integer> captures = new ArrayList<>();
+
+
         // check capture
         int horizontalDirection = 0;
         int verticalDirection = 0;
@@ -143,28 +197,35 @@ public class TablutStageModel extends GameStageModel {
             if (dx == -horizontalDirection && horizontalDirection != 0) continue;
             if (dy == -verticalDirection && verticalDirection != 0) continue;
 
+
+            int dstY1 = rowDest + dy;
+            int dstX1 = colDest + dx;
+
+            int dstY2 = rowDest + 2*dy;
+            int dstX2 = colDest + 2*dx;
+
             // check bounds for pawn 2 squares away
-            if (rowDest + 2*dy < 0 || rowDest + 2*dy >= 9) continue;
-            if (colDest + 2*dx < 0 || colDest + 2*dx >= 9) continue;
+            if (dstY2 < 0 || dstY2 >= 9) continue;
+            if (dstX2 < 0 || dstX2 >= 9) continue;
 
 
-            GameElement sideEl = getBoard().getElement(rowDest + dy, colDest + dx);
-            GameElement sideEl2 = getBoard().getElement(rowDest + 2*dy, colDest + 2*dx);
+            GameElement sideEl = getBoard().getElement(dstY1, dstX1);
+            GameElement sideEl2 = getBoard().getElement(dstY2, dstX2);
 
             if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
                 if (isYellow) {
                     if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        getBoard().removeElement(sideEl);
-                        removeElement(sideEl);
+                        captures.add(dstY1 * 9 + dstX1);
                     }
                 } else {
                     if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        getBoard().removeElement(sideEl);
-                        removeElement(sideEl);
+                        captures.add(dstY1 * 9 + dstX1);
                     }
                 }
             }
         }
+
+        return captures;
     }
 
     private void computePartyResult() {
@@ -219,11 +280,6 @@ public class TablutStageModel extends GameStageModel {
                 nbEdgesRechable++;
             }
         }
-        if (nbEdgesRechable == 1) {
-            System.out.printf("\nPlayer 1 : Raichi\n\n");
-        } else if (nbEdgesRechable >= 2) {
-            System.out.printf("\nPlayer 1 : Tuichi!\n\n");
-        }
 
 
         // check if the king has reached an edge
@@ -232,17 +288,14 @@ public class TablutStageModel extends GameStageModel {
                 if (RuleSets.isCornerKingEscapes()) {
                     if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
-                        winMessage = "king reached a corner";
                     }
                 } else if (RuleSets.isConstrainedKingSquares()) {
                     if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
-                        winMessage = "king reached an edge";
                     }
                 }
             } else {
                 idWinner = 0;
-                winMessage = "king reached an edge";
             }
         }
 
@@ -269,15 +322,12 @@ public class TablutStageModel extends GameStageModel {
          */
         if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
             idWinner = 1;
-            winMessage = "yellow surrounded the king";
         }
 
 
 
         if (idWinner != -1) {
-            System.out.printf("Winner is player %d : %s\n", idWinner+1, winMessage);
             model.setIdWinner(idWinner);
-            model.stopStage();
         }
     }
 
