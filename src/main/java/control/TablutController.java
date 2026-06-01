@@ -552,67 +552,10 @@ public class TablutController extends Controller {
 
             TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
             stageModel.getThreatText().setText(message);
-            showGamePGN(moveHistory.buildGameString());
-        }
-    }
 
-
-
-    /** maybe someone can clean those up **/
-
-    /**
-     *Implementing a file reader to read the entry file
-     * Defines what to do within the single stage of the single party
-     * It is pretty straight forward to write :
-     */
-    public void stageLoop() {
-        if (!inputFile.isEmpty() && gameMode == 0) {
-            try {
-                consoleIn = new BufferedReader(new FileReader(inputFile));
-                System.out.println("game scenario based on the entry file  : " + inputFile);
-
-
-                // read starting side from entry file
-                String startingSide = consoleIn.readLine().toLowerCase();
-                if (startingSide.equals("moscovite")) {
-                    model.setIdPlayer(1);
-                } else if (startingSide.equals("swedish")) {
-                    model.setIdPlayer(0);
-                } else {
-                    System.out.printf("Invalid starting side in entry file : got %s, expected 'moscovite' or 'swedish'\n");
-                }
-
-                // read rulesets from entry file
-                int ruleset;
-                do {
-                    ruleset = Integer.parseInt(consoleIn.readLine());
-                    if (ruleset < 0 || ruleset > RuleSets.ruleOptions.size()) {
-                        System.out.printf("Invalid ruleset %d, expected 0 <= ruleset <= %d\n",
-                                ruleset, RuleSets.ruleOptions.size());
-                    } else if (ruleset != 0) {
-                        RuleSets.currentRuleset |= RuleSets.ruleOptions.get(ruleset-1).bit();
-                    }
-                } while (ruleset != 0);
-
-            } catch (IOException e) {
-                System.out.println("Error: \"" + inputFile + " not found. fallback to player vs player\". ");
-                consoleIn = new BufferedReader(new InputStreamReader(System.in));
-
+            if (stageModel.getMode() == TablutStageModel.MODE_PLAY) {
+                showGamePGN(moveHistory.buildGameString());
             }
-
-        } else {
-            consoleIn = new BufferedReader(new InputStreamReader(System.in));
         }
-        update();
-        while (!model.isEndStage()) {
-//            playTurn();
-            endOfTurn();
-            update();
-
-            processBoardRepetition();
-        }
-        endGame();
     }
-
-
 }
