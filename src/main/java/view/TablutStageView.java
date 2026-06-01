@@ -51,6 +51,7 @@ public class TablutStageView extends GameStageView {
         addLook(panelCard);
 
         TablutBoardLook boardLook = new TablutBoardLook(
+                gameStageModel,
                 (int) Constants.BOARD_RENDER_SIZE,
                 model.getBoard()
         );

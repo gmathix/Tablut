@@ -25,6 +25,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import model.RuleSets;
+import model.TablutStageModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +98,6 @@ public final class TablutNewGameMenus {
         for (RuleSets.RuleOption option : RuleSets.ruleOptions) {
             CheckBox checkBox = new CheckBox(option.description());
             checkBox.setUserData(option.bit());
-            checkBox.setSelected((RuleSets.currentRuleset & option.bit()) != 0);
             checkBox.setFont(Font.font(14));
             ruleBoxes.add(checkBox);
             ruleBoxColumn.getChildren().add(checkBox);
@@ -199,7 +199,7 @@ public final class TablutNewGameMenus {
     private static void applySelection(Model model, TablutController controller, NewGameSelection selection) {
         controller.setGameMode(selection.mode());
         controller.setInputFile("");
-        RuleSets.currentRuleset = selection.rulesetMask();
+        controller.setConfigRuleSet(selection.rulesetMask());
 
         model.getPlayers().clear();
 

@@ -33,7 +33,7 @@ public class MonteCarloDecider extends Decider  {
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        control.algos.RecurBoard recurBoard = new control.algos.RecurBoard(tablutBoard);
+        control.algos.RecurBoard recurBoard = new control.algos.RecurBoard(tablutBoard, model.getGameStage());
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();

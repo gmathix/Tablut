@@ -110,7 +110,7 @@ public class Evaluation {
         boolean kingOnThrone = (kingX == 4 && kingY == 4);
 
         int maxDistance = 8;
-        if (RuleSets.isConstrainedKingMoves()) {
+        if (RuleSets.isConstrainedKingMoves(recurBoard.getStageModel().getRuleSet())) {
             maxDistance = 4;
         }
 
@@ -145,9 +145,9 @@ public class Evaluation {
                 }
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isConstrainedKingSquares(recurBoard.getStageModel().getRuleSet()) && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
-                    } else if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isCornerKingEscapes(recurBoard.getStageModel().getRuleSet()) && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
                     }
                 }

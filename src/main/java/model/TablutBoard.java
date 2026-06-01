@@ -31,6 +31,9 @@ import java.awt.*;
  */
 
 public class TablutBoard extends ContainerElement {
+    private TablutStageModel stageModel;
+
+
     public static final int BOARD_SIZE = 9;
 
     // current coordinates of the king
@@ -58,6 +61,8 @@ public class TablutBoard extends ContainerElement {
         resetReachableCells(false);
         this.kingY = 4;
         this.kingX = 4;
+
+        this.stageModel = (TablutStageModel) gameStageModel;
     }
 
     public int getKingX() { return kingX; }
@@ -93,7 +98,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         int distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
             distanceCount = 4;
         }
         // check horizontal empty squares to the left
@@ -111,7 +116,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
             distanceCount = 4;
         }
         // check horizontal empty squares to the right
@@ -129,7 +134,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
             distanceCount = 4;
         }
         // check vertical empty squares up
@@ -147,7 +152,7 @@ public class TablutBoard extends ContainerElement {
         }
 
         distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves()) {
+        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
             distanceCount = 4;
         }
         // check vertical empty squares down

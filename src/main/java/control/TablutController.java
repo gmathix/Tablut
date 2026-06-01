@@ -61,6 +61,8 @@ public class TablutController extends Controller {
     private TextArea gameOverPgnArea;
     private boolean gameoverExportPanelShown;
 
+    private int configRuleSet = RuleSets.RULESET_NORMAL;
+
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
                             int swedishBotPlayer, int moscoviteBotPlayer, int botLevels[]) {
@@ -141,6 +143,10 @@ public class TablutController extends Controller {
         return moveHistory;
     }
 
+    public void setConfigRuleSet(int configRuleSet) {
+        this.configRuleSet = configRuleSet;
+    }
+
     public ListIterator<Move> getMoveHistoryIterator() { return moveHistoryIterator; }
 
     public Map<GameElement, ElementLook> getMapElementLook() { return mapElementLook; }
@@ -213,6 +219,20 @@ public class TablutController extends Controller {
             mapElementLook.put(element, look);
         }
 
+
+
+        model.startGame(gameStageModel);
+        model.setIdPlayer(startingPlayerId);
+        ((TablutStageModel)gameStageModel).setMode(TablutStageModel.MODE_PLAY);
+        ((TablutStageModel)gameStageModel).setRuleSet(configRuleSet);
+
+        view.setView(gameStageView);
+        view.getRootPane().setFocusTraversable(true);
+        view.getRootPane().requestFocus();
+        controlAnimation.startAnimation();
+
+
+
         moveHistory = new MoveHistory(
                 this,
                 model,
@@ -220,19 +240,10 @@ public class TablutController extends Controller {
                 model.getPlayers().get(0).getName(),
                 model.getPlayers().get(1).getName(),
                 startingPlayerId,
-                RuleSets.currentRuleset
+                ((TablutStageModel)gameStageModel).getRuleSet()
         );
         moveHistoryIterator = moveHistory.getMoves().listIterator();
 
-
-        model.startGame(gameStageModel);
-        model.setIdPlayer(startingPlayerId);
-        ((TablutStageModel)gameStageModel).setMode(TablutStageModel.MODE_PLAY);
-
-        view.setView(gameStageView);
-        view.getRootPane().setFocusTraversable(true);
-        view.getRootPane().requestFocus();
-        controlAnimation.startAnimation();
 
         // make the bot play immediately if it has to start playing
         Platform.runLater(this::triggerCurrentPlayerTurn);
@@ -517,7 +528,7 @@ public class TablutController extends Controller {
         model.setIdPlayer(startingPlayerId);
         model.addHumanPlayer(moveHistory.getSwedishPlayer());
         model.addHumanPlayer(moveHistory.getMoscovitePlayer());
-        RuleSets.currentRuleset = moveHistory.getRuleSet();
+        configRuleSet = moveHistory.getRuleSet();
 
         startStage("tablut");
 

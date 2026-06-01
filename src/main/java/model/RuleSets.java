@@ -39,13 +39,6 @@ public class RuleSets {
 
 
 
-    // generally not good to have a global variable since it's harder to debug
-    // but here, we know that it will only be modified at the start of the program, then won't be reused
-    // until the program is relaunched
-    public static int currentRuleset = RULESET_NORMAL;
-
-
-
     public record RuleOption(int bit, String description) {}
 
     public static List<RuleOption> ruleOptions = List.of(
@@ -57,16 +50,16 @@ public class RuleSets {
 
 
 
-    public static boolean isNormal() {
-        return (currentRuleset & RULESET_NORMAL) > 0;
+    public static boolean isNormal(int ruleSet) {
+        return (ruleSet & RULESET_NORMAL) > 0;
     }
-    public static boolean isConstrainedKingSquares() {
-        return (currentRuleset & RULESET_CONSTRAINED_KING_SQUARES) > 0;
+    public static boolean isConstrainedKingSquares(int ruleSet) {
+        return (ruleSet & RULESET_CONSTRAINED_KING_SQUARES) > 0;
     }
-    public static boolean isConstrainedKingMoves() {
-        return (currentRuleset & RULESET_CONSTRAINED_KING_MOVES) > 0;
+    public static boolean isConstrainedKingMoves(int ruleSet) {
+        return (ruleSet & RULESET_CONSTRAINED_KING_MOVES) > 0;
     }
-    public static boolean isCornerKingEscapes() {
-        return (currentRuleset & RULESET_CORNER_KING_ESCAPES) > 0;
+    public static boolean isCornerKingEscapes(int ruleSet) {
+        return (ruleSet & RULESET_CORNER_KING_ESCAPES) > 0;
     }
 }

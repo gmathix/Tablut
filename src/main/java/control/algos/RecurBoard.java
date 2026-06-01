@@ -1,9 +1,7 @@
 package control.algos;
 
-import model.Move;
-import model.Pawn;
-import model.RuleSets;
-import model.TablutBoard;
+import boardifier.model.GameStageModel;
+import model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +11,9 @@ import java.util.List;
  * Convenience board wrapper with minimal information in memory compared to TablutBoard
  */
 public class RecurBoard {
+    private TablutStageModel stageModel;
+
+
     public static final int EMPTY     = 0;
     public static final int MOSCOVITE = 1;
     public static final int SOLDIER   = 2;
@@ -23,12 +24,12 @@ public class RecurBoard {
     public static final int[] DY_VALS = {-1, 0, 1, 0};
     public static final int[] DX_VALS = {0, 1, 0, -1};
 
-    // list of square unreachable by the king in the RULESET_CONSTRAINED_KING_SQUARES rule (flat order index)
+    // list of squares unreachable by the king in the RULESET_CONSTRAINED_KING_SQUARES rule (flat order index)
     public static final List<Integer> constrainedKingSquares = List.of(
-            3, 4, 5, 13, // D1, E1, F1, E2
-            27, 36, 45, 37, // A4, A5, A6, B5
-            35, 44, 53, 43, // I4, I5, I6, H5
-            75, 76, 77, 67  // D9, E9, F9, E8
+            3, 4, 5, // D1, E1, F1
+            27, 36, 45, // A4, A5, A6
+            35, 44, 53, // I4, I5, I6
+            75, 76, 77  // D9, E9, F9
     );
 
     // list of corner squares (flat order index)
@@ -53,7 +54,10 @@ public class RecurBoard {
     private List<Capture> lastCaptures;
 
 
-    public RecurBoard(TablutBoard tablutBoard) {
+    public RecurBoard(TablutBoard tablutBoard, GameStageModel gameStageModel) {
+        this.stageModel = (TablutStageModel) gameStageModel;
+
+
         board = new int[9][9];
         lastCaptures = new ArrayList<>();
 
@@ -94,6 +98,7 @@ public class RecurBoard {
     public int getKingY() { return kingY; }
     public int[][] getBoard() { return board; }
     public List<Capture> getLastCaptures() { return List.copyOf(lastCaptures); }
+    public TablutStageModel getStageModel() { return stageModel; }
 
     public boolean isMoscovite(int piece) {
         return piece == MOSCOVITE;
@@ -155,7 +160,7 @@ public class RecurBoard {
             for (int x = 0; x < 9; x++) {
                 if (((turn == 0 && isSwedish(board[y][x])) || (turn == 1 && isMoscovite(board[y][x])))) {
                     int maxDistance = 8;
-                    if (isKing(board[y][x]) && RuleSets.isConstrainedKingMoves()) {
+                    if (isKing(board[y][x]) && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
                         maxDistance = 4;
                     }
                     for (int d = 0; d < 4; d++) {
@@ -169,7 +174,7 @@ public class RecurBoard {
                             if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break; // prevent out of bounds
                             if (!isEmpty(board[currY][currX])) break; // stop when path is obstructed
                             if (currY == 4 && currX == 4) continue; // skip center square
-                            if (RuleSets.isConstrainedKingSquares()) {
+                            if (RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
                                 if (isKing(board[y][x]) && constrainedKingSquares.contains(currY * 9 + currX))
                                     continue; // skip constrained king squares
                             }
@@ -292,12 +297,12 @@ public class RecurBoard {
 
         // check king position on edges
         if (kingX == 0 || kingX == 8 || kingY == 0 || kingY == 8) {
-            if (RuleSets.isCornerKingEscapes() || RuleSets.isConstrainedKingSquares()) {
-                if (RuleSets.isCornerKingEscapes()) {
+            if (RuleSets.isCornerKingEscapes(stageModel.getRuleSet()) || RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
+                if (RuleSets.isCornerKingEscapes(stageModel.getRuleSet())) {
                     if (cornerSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }
-                } else if (RuleSets.isConstrainedKingSquares()) {
+                } else if (RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
                     if (!constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }
