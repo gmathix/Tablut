@@ -52,6 +52,7 @@ public class TablutKeyController extends ControllerKey implements EventHandler<K
 
                 ActionList actions = tablutControl.genMoveAnimationWithCapture(model, element, board,
                         nextMove.dstY(), nextMove.dstX());
+                actions.setDoEndOfTurn(false);
                 ActionPlayer play = new ActionPlayer(model, control, actions);
                 play.start();
 

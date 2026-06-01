@@ -73,7 +73,8 @@ public class TablutRootPane extends RootPane {
         );
 
         Label body2 = createBodyLabel(
-                "The king escapes by reaching a legal exit square.",
+                "The king escapes by reaching a legal exit square : brown squares are forbidden to the king " +
+                        "(depends on current ruleset)",
                 Constants.SECTION_START_Y + Constants.SECTION_SPACING
         );
 
