@@ -5,8 +5,8 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import control.algos.RecurBoard;
 import control.algos.NegaMonteCarlo;
+import control.algos.RecurMove;
 import model.Move;
 import model.TablutBoard;
 import model.TablutStageModel;
@@ -36,7 +36,7 @@ public class NegaMonteCarloDecider extends Decider {
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        RecurBoard recurBoard = new RecurBoard(tablutBoard);
+        control.algos.RecurBoard recurBoard = new control.algos.RecurBoard(tablutBoard);
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();
@@ -45,17 +45,18 @@ public class NegaMonteCarloDecider extends Decider {
 
 
 
-        Move bestMove = negaMonteCarlo.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
+        RecurMove bestMove = negaMonteCarlo.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
-        stage.checkCaptures(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+
         if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
             tablutBoard.setKingY(bestMove.dstY());
             tablutBoard.setKingX(bestMove.dstX());
         }
 
-        tablutControl.getMoveHistory().addMove(bestMove);
+        tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, bestMove.srcX(), bestMove.srcY(), bestMove.dstX(), bestMove.dstY()));
+
 
         return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
     }

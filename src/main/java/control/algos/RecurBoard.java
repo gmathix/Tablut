@@ -98,7 +98,7 @@ public class RecurBoard {
     public boolean isMoscovite(int piece) {
         return piece == MOSCOVITE;
     }
-    public boolean isGreen(int piece) {
+    public boolean isSwedish(int piece) {
         return piece == SOLDIER || piece == KING;
     }
     public boolean isKing(int piece) {
@@ -139,21 +139,21 @@ public class RecurBoard {
     }
 
 
-    public List<Move> getLegalMoves(int turn) {
-        List<Move> legalMoves = new ArrayList<>();
+    public List<RecurMove> getLegalMoves(int turn) {
+        List<RecurMove> legalMoves = new ArrayList<>();
 
-        List<Move> captures = new ArrayList<>();
-        List<Move> kingMoves = new ArrayList<>();
-        List<Move> otherMoves = new ArrayList<>();
+        List<RecurMove> captures = new ArrayList<>();
+        List<RecurMove> kingMoves = new ArrayList<>();
+        List<RecurMove> otherMoves = new ArrayList<>();
 
-        Move currMove;
+        RecurMove currMove;
 
         int[] dy_vals = {-1, 0, 1, 0};
         int[] dx_vals = {0, 1, 0, -1};
 
         for (int y = 0; y < 9; y++) {
             for (int x = 0; x < 9; x++) {
-                if (((turn == 0 && isGreen(board[y][x])) || (turn == 1 && isMoscovite(board[y][x])))) {
+                if (((turn == 0 && isSwedish(board[y][x])) || (turn == 1 && isMoscovite(board[y][x])))) {
                     int maxDistance = 8;
                     if (isKing(board[y][x]) && RuleSets.isConstrainedKingMoves()) {
                         maxDistance = 4;
@@ -164,7 +164,7 @@ public class RecurBoard {
                         for (int i = 0; i <= maxDistance; i++) {
                             currY += dy_vals[d];
                             currX += dx_vals[d];
-                            currMove = new Move(x, y, currX, currY);
+                            currMove = new RecurMove(this, x, y, currX, currY);
 
                             if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break; // prevent out of bounds
                             if (!isEmpty(board[currY][currX])) break; // stop when path is obstructed
@@ -198,7 +198,7 @@ public class RecurBoard {
     }
 
     // same as TablutStageModel.checkCapture()
-    public List<Integer> checkCaptures(Move move) {
+    public List<Integer> checkCaptures(RecurMove move) {
         List<Integer> captures = new ArrayList<>();
 
 
@@ -227,7 +227,7 @@ public class RecurBoard {
                     captures.add((dstY + dy) * 9 + (dstX + dx));
                 }
             } else {
-                if (isMoscovite(n) && (isGreen(n2) || centerCapturing)) {
+                if (isMoscovite(n) && (isSwedish(n2) || centerCapturing)) {
                     captures.add((dstY + dy) * 9 + (dstX + dx));
                 }
             }
@@ -236,7 +236,7 @@ public class RecurBoard {
         return captures;
     }
 
-    public void makeMove(Move move) {
+    public void makeMove(RecurMove move) {
         // assume the move is valid
 
         int dstY = move.dstY();
@@ -267,7 +267,7 @@ public class RecurBoard {
         }
     }
 
-    public void undoMove(Move move, List<Capture> prevCaps, int prevKingX, int prevKingY) {
+    public void undoMove(RecurMove move, List<Capture> prevCaps, int prevKingX, int prevKingY) {
         // assumes that this move corresponds to the last move played on this board
 
         board[move.srcY()][move.srcX()] = board[move.dstY()][move.dstX()];
@@ -285,7 +285,7 @@ public class RecurBoard {
 
 
     /**
-     * @return MAX_VALUE for green win, MIN_VALUE for yellow win
+     * @return MAX_VALUE for swedish win, MIN_VALUE for moscovite win
      */
     public double checkWin() {
 

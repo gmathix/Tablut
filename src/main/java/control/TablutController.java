@@ -10,7 +10,6 @@ import boardifier.view.*;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -64,13 +63,13 @@ public class TablutController extends Controller {
 
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
-                            int greenBotPlayer, int yellowBotPlayer, int botLevels[]) {
+                            int swedishBotPlayer, int moscoviteBotPlayer, int botLevels[]) {
         super(model, view);
         this.gameMode = gameMode;
         this.inputFile = inputFile;
         this.botPlayers = new int[]{
-                greenBotPlayer,
-                yellowBotPlayer,
+                swedishBotPlayer,
+                moscoviteBotPlayer,
         };
 
         availableBots[0] = new LinkedHashMap<>();
@@ -81,8 +80,8 @@ public class TablutController extends Controller {
 
         setBotLevel(0, botLevels[0]);
         setBotLevel(1, botLevels[1]);
-        setBotPlayer(0, greenBotPlayer);
-        setBotPlayer(1, yellowBotPlayer);
+        setBotPlayer(0, swedishBotPlayer);
+        setBotPlayer(1, moscoviteBotPlayer);
 
         lastBoardsRepresentations = new String[NB_BOARDS_IN_MEMORY];
         for (int i = 0; i < NB_BOARDS_IN_MEMORY; i++) {
@@ -144,8 +143,9 @@ public class TablutController extends Controller {
 
     public ListIterator<Move> getMoveHistoryIterator() { return moveHistoryIterator; }
 
+    public Map<GameElement, ElementLook> getMapElementLook() { return mapElementLook; }
 
-    // 0 for green, 0 for yellow
+    // 0 for swedish, 0 for moscovite
     public void setBotLevel(int color, int level) {
         availableBots[color].clear();
         availableBots[color].put(NEGAMAX_PLAYER, new BotSelection(NEGAMAX_PLAYER, "Negamax",
@@ -214,6 +214,9 @@ public class TablutController extends Controller {
         }
 
         moveHistory = new MoveHistory(
+                this,
+                model,
+                view,
                 model.getPlayers().get(0).getName(),
                 model.getPlayers().get(1).getName(),
                 startingPlayerId,
@@ -248,8 +251,8 @@ public class TablutController extends Controller {
 
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         Pawn pawn = (Pawn) element;
-        List<Integer> captures = stageModel.checkCaptures(
-                model.getIdPlayer() == 1, pawn.getBoardX(), dstX, pawn.getBoardY(), dstY
+        List<Integer> captures = stageModel.getBoard().checkCaptures(
+                pawn.getColor() == Pawn.PAWN_MOSCOVITE, pawn.getBoardX(), dstX, pawn.getBoardY(), dstY
         );
         if (!captures.isEmpty()) {
             for (Integer cap : captures) {
@@ -327,7 +330,7 @@ public class TablutController extends Controller {
         if (stageModel == null) return;
 
         int[] material = countMaterial(stageModel);
-        stageModel.getMaterialText().setText(String.format("Material: Green %d  |  Gold %d", material[0], material[1]));
+        stageModel.getMaterialText().setText(String.format("Material: Swedish %d  |  Gold %d", material[0], material[1]));
         stageModel.getThreatText().setText(buildKingThreatMessage(stageModel));
 
         TextLook nameLook = (TextLook) view.getElementLook(stageModel.getPlayerName());
@@ -357,6 +360,8 @@ public class TablutController extends Controller {
         stageModel.getPlayerName().setText(p.getName());
 
         if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_VIEW_GAME) return;
+        if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_PLAY &&
+            moveHistoryIterator.hasNext()) return;
 
         if (p.getType() == Player.COMPUTER) {
             int turn = model.getIdPlayer();
@@ -391,6 +396,8 @@ public class TablutController extends Controller {
 
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();
+
+
         } else {
             stageModel.getBotSentenceText().setText("Your Move.");
             updateStatusPanel();
@@ -499,7 +506,8 @@ public class TablutController extends Controller {
         }
 
         try {
-            moveHistory = MoveHistory.fromGameFile(filePath);
+            moveHistory = new MoveHistory(this, model, view);
+            moveHistory.parseGameFileHeader(filePath);
             moveHistoryIterator = moveHistory.getMoves().listIterator();
         } catch (IOException e) {
             e.printStackTrace();
@@ -515,11 +523,13 @@ public class TablutController extends Controller {
 
         // reassign the move history because startStage just reassigned it
         try {
-            moveHistory = MoveHistory.fromGameFile(filePath);
-            moveHistoryIterator = moveHistory.getMoves().listIterator();
+            moveHistory.parseGameFileMoves(filePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        model.setIdWinner(-1);
 
 
         ((TablutStageModel)model.getGameStage()).setMode(TablutStageModel.MODE_VIEW_GAME);
@@ -564,12 +574,12 @@ public class TablutController extends Controller {
 
                 // read starting side from entry file
                 String startingSide = consoleIn.readLine().toLowerCase();
-                if (startingSide.equals("yellow")) {
+                if (startingSide.equals("moscovite")) {
                     model.setIdPlayer(1);
-                } else if (startingSide.equals("green")) {
+                } else if (startingSide.equals("swedish")) {
                     model.setIdPlayer(0);
                 } else {
-                    System.out.printf("Invalid starting side in entry file : got %s, expected 'yellow' or 'green'\n");
+                    System.out.printf("Invalid starting side in entry file : got %s, expected 'moscovite' or 'swedish'\n");
                 }
 
                 // read rulesets from entry file

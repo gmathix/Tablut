@@ -4,13 +4,10 @@ import boardifier.model.GameStageModel;
 import boardifier.model.StageElementsFactory;
 import boardifier.model.TextElement;
 import control.TablutController;
-import javafx.scene.control.TextArea;
 import view.Constants;
 import view.TablutNewGameMenus;
 
 import javafx.stage.Stage;
-
-import java.awt.*;
 
 
 /**
@@ -72,7 +69,7 @@ public class TablutStageFactory extends StageElementsFactory {
         stageModel.setSubtitleText(subtitle);
 
         TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
-        text.setLocation( Constants.CONTENT_X, Constants.SECTION_START_Y);
+        text.setLocation(Constants.CONTENT_X, Constants.SECTION_START_Y);
         stageModel.setPlayerName(text);
 
         TextElement botSentence = new TextElement("", stageModel);
@@ -85,12 +82,12 @@ public class TablutStageFactory extends StageElementsFactory {
         help.setLocation(Constants.CONTENT_X, Constants.HELP_Y);
         stageModel.setHelpText(help);
 
-        TextElement legend = new TextElement("Green = defenders  |  Gold = attackers", stageModel);
+        TextElement legend = new TextElement("Swedish = defenders  |  Gold = attackers", stageModel);
         legend.setClickable(false);
         legend.setLocation(Constants.CONTENT_X, Constants.LEGEND_Y);
         stageModel.setLegendText(legend);
 
-        TextElement material = new TextElement("Material: Green 9  |  Gold 16", stageModel);
+        TextElement material = new TextElement("Material: Swedish 9  |  Gold 16", stageModel);
         material.setClickable(false);
         material.setLocation(Constants.CONTENT_X, Constants.MATERIAL_Y);
         stageModel.setMaterialText(material);

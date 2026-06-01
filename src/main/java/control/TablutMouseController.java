@@ -36,7 +36,7 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
 
         if (stageModel.getMode() == TablutStageModel.MODE_VIEW_GAME) return;
         if (stageModel.getMode() == TablutStageModel.MODE_PLAY &&
-            !tablutControl.getMoveHistoryIterator().hasNext()) return; // the user has rewound the game, can't play a move
+                tablutControl.getMoveHistoryIterator().hasNext()) return; // the user has rewound the game, can't play a move
 
 
 
@@ -54,7 +54,7 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
                 if (element.getType() == ElementTypes.getType("pawn")) {
                     Pawn pawn = (Pawn) element;
                     if ((pawn.getColor() == Pawn.PAWN_MOSCOVITE && model.getIdPlayer() == 1) ||
-                        (pawn.getColor() != Pawn.PAWN_MOSCOVITE && model.getIdPlayer() == 0)) {
+                            (pawn.getColor() != Pawn.PAWN_MOSCOVITE && model.getIdPlayer() == 0)) {
 
                         element.toggleSelected();
                         stageModel.setState(TablutStageModel.STATE_SELECTDEST);
@@ -105,7 +105,12 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
             int[] dest = lookBoard.getCellFromSceneLocation(pos);
             if (dest != null && board.canReachCell(dest[0], dest[1])) {
 
-                tablutControl.getMoveHistory().addMove(new Move(pawn.getBoardX(), pawn.getBoardY(), dest[1], dest[0]));
+                ActionList actions = tablutControl.genMoveAnimationWithCapture(model, element, board, dest[0], dest[1]);
+                ActionPlayer play = new ActionPlayer(model, control, actions);
+                play.start();
+
+
+                tablutControl.getMoveHistoryIterator().add(new Move(board, pawn.getBoardX(), pawn.getBoardY(), dest[1], dest[0]));
 
 
                 if (pawn.getColor() == Pawn.PAWN_KING) {
@@ -114,11 +119,6 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
                 }
                 pawn.setBoardX(dest[1]);
                 pawn.setBoardY(dest[0]);
-
-
-                ActionList actions = tablutControl.genMoveAnimationWithCapture(model, element, board, dest[0], dest[1]);
-                ActionPlayer play = new ActionPlayer(model, control, actions);
-                play.start();
             }
         }
     }

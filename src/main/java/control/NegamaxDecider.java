@@ -5,8 +5,8 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import control.algos.RecurBoard;
 import control.algos.NegamaxSearch;
+import control.algos.RecurMove;
 import model.*;
 
 public class NegamaxDecider extends Decider {
@@ -34,7 +34,7 @@ public class NegamaxDecider extends Decider {
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        RecurBoard recurBoard = new RecurBoard(tablutBoard);
+        control.algos.RecurBoard recurBoard = new control.algos.RecurBoard(tablutBoard);
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();
@@ -43,14 +43,14 @@ public class NegamaxDecider extends Decider {
 
 
 
-        Move bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
-        if (bestMove == null) return null;
+        RecurMove bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
+
 
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
 
-        stage.checkCaptures(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
+
         if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
             tablutBoard.setKingY(bestMove.dstY());
             tablutBoard.setKingX(bestMove.dstX());
@@ -59,7 +59,8 @@ public class NegamaxDecider extends Decider {
         ((Pawn)pawn).setBoardY(bestMove.dstY());
 
 
-        tablutControl.getMoveHistory().addMove(bestMove);
+        tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, bestMove.srcX(), bestMove.srcY(), bestMove.dstX(), bestMove.dstY()));
+
 
         return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
     }

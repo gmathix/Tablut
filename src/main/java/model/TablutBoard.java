@@ -1,7 +1,20 @@
 package model;
 
+import boardifier.control.Controller;
+import boardifier.model.Coord2D;
+import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
 import boardifier.model.ContainerElement;
+import boardifier.model.action.ActionList;
+import boardifier.model.action.MoveWithinContainerAction;
+import boardifier.model.animation.AnimationTypes;
+import boardifier.view.ContainerLook;
+import boardifier.view.ElementLook;
+import boardifier.view.GameStageView;
+import control.TablutController;
+import view.Constants;
+import view.PawnLook;
+import view.TablutStageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +37,9 @@ public class TablutBoard extends ContainerElement {
     private int kingX;
     private int kingY;
 
-    /* 2 = moscovite (yellow)
-     * 3 = soldier (green)
-     * 4 = king (green)
+    /* 2 = moscovite (moscovite)
+     * 3 = soldier (swedish)
+     * 4 = king (swedish)
      */
     public static int[][] startingBoard = {
             {0, 0, 0, 2, 2, 2, 0, 0, 0},
@@ -154,6 +167,140 @@ public class TablutBoard extends ContainerElement {
 
 
         return lst;
+    }
+
+
+    public void applyMove(Move move) {
+        Pawn movedPawn = (Pawn) getElement(move.srcY(), move.srcX());
+        moveElement(movedPawn, move.dstY(), move.dstX());
+        movedPawn.setBoardX(move.dstX());
+        movedPawn.setBoardY(move.dstY());
+
+        if (movedPawn.getColor() == Pawn.PAWN_KING) {
+            kingX = move.dstX();
+            kingY = move.dstY();
+        }
+
+        List<Capture> captures = move.getCaptures();
+        List<Pawn> capturedPawns = move.getCapturedPawns();
+        for (int i = 0; i < captures.size(); i++) {
+            Capture cap = captures.get(i);
+            Pawn pawn = i < capturedPawns.size() ? capturedPawns.get(i) : null;
+            if (pawn == null) {
+                pawn = (Pawn) getElement(cap.y(), cap.x());
+            }
+            if (pawn != null) {
+                removeElement(pawn);
+            }
+        }
+    }
+
+    public void undoMove(Controller control, GameStageView view, GameStageModel model, Move move) {
+        // assume the move was valid
+
+        TablutController tablutControl = (TablutController) control;
+        TablutStageModel stageModel = (TablutStageModel) model;
+
+        Pawn movedPawn = (Pawn) getElement(move.dstY(), move.dstX());
+        if (movedPawn != null) {
+            moveElement(movedPawn, move.srcY(), move.srcX());
+            movedPawn.setBoardX(move.srcX());
+            movedPawn.setBoardY(move.srcY());
+
+            if (movedPawn.getColor() == Pawn.PAWN_KING) {
+                kingX = move.srcX();
+                kingY = move.srcY();
+            }
+        }
+
+        List<Capture> captures = move.getCaptures();
+        List<Pawn> capturedPawns = move.getCapturedPawns();
+
+        for (int i = 0; i < captures.size(); i++) {
+            Capture cap = captures.get(i);
+
+            Pawn pawn = (i < capturedPawns.size()) ? capturedPawns.get(i) : null;
+
+            if (pawn == null) {
+                // fallback only when replay data is incomplete otherwise we create a clone of the pawn (which would be cheating)
+                pawn = new Pawn(0, cap.piece(), stageModel);
+                PawnLook look = new PawnLook((int) Constants.PAWN_SIZE, pawn);
+                look.setDepth(5);
+                view.addLook(look);
+                tablutControl.getMapElementLook().put(pawn, look);
+            }
+
+            pawn.setBoardX(cap.x());
+            pawn.setBoardY(cap.y());
+
+            if (pawn.getColor() == Pawn.PAWN_KING) {
+                kingX = cap.x();
+                kingY = cap.y();
+            }
+            pawn.setVisible(true);
+
+            addElement(pawn, cap.y(), cap.x());
+        }
+    }
+
+    /**
+
+     * Returns a list of the pawns that get captured with the current move
+     * Returned values are pawn indexes in raster order (y * 9 + x)
+     */
+    public List<Integer> checkCaptures(boolean isMoscovite, int colSrc, int colDest, int rowSrc, int rowDest) {
+        List<Integer> captures = new ArrayList<>();
+
+
+        // check capture
+        int horizontalDirection = 0;
+        int verticalDirection = 0;
+
+        if (colSrc - colDest != 0)
+            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
+        if (rowSrc - rowDest != 0)
+            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
+
+        int[] dy_vals = {-1, 0, 1, 0};
+        int[] dx_vals = {0, -1, 0, 1};
+
+        for (int i = 0; i < 4; i++) {
+            int dy = dy_vals[i];
+            int dx = dx_vals[i];
+
+            // do not check the squares on the path the pawn came from
+            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
+            if (dy == -verticalDirection && verticalDirection != 0) continue;
+
+
+            int dstY1 = rowDest + dy;
+            int dstX1 = colDest + dx;
+
+            int dstY2 = rowDest + 2*dy;
+            int dstX2 = colDest + 2*dx;
+
+            // check bounds for pawn 2 squares away
+            if (dstY2 < 0 || dstY2 >= 9) continue;
+            if (dstX2 < 0 || dstX2 >= 9) continue;
+
+
+            GameElement sideEl = getElement(dstY1, dstX1);
+            GameElement sideEl2 = getElement(dstY2, dstX2);
+
+            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
+                if (isMoscovite) {
+                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
+                        captures.add(dstY1 * 9 + dstX1);
+                    }
+                } else {
+                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
+                        captures.add(dstY1 * 9 + dstX1);
+                    }
+                }
+            }
+        }
+
+        return captures;
     }
 
 

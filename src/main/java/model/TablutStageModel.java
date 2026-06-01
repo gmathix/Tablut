@@ -1,10 +1,6 @@
 package model;
 
 import boardifier.model.*;
-import control.algos.RecurBoard;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
@@ -176,64 +172,7 @@ public class TablutStageModel extends GameStageModel {
     }
 
 
-    /**
-     * Returns a list of the pawns that get captured with the current move
-     * Returned values are pawn indexes in raster order (y * 9 + x)
-     */
-    public List<Integer> checkCaptures(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
-        List<Integer> captures = new ArrayList<>();
 
-
-        // check capture
-        int horizontalDirection = 0;
-        int verticalDirection = 0;
-
-        if (colSrc - colDest != 0)
-            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
-        if (rowSrc - rowDest != 0)
-            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
-
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, -1, 0, 1};
-
-        for (int i = 0; i < 4; i++) {
-            int dy = dy_vals[i];
-            int dx = dx_vals[i];
-
-            // do not check the squares on the path the pawn came from
-            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-            if (dy == -verticalDirection && verticalDirection != 0) continue;
-
-
-            int dstY1 = rowDest + dy;
-            int dstX1 = colDest + dx;
-
-            int dstY2 = rowDest + 2*dy;
-            int dstX2 = colDest + 2*dx;
-
-            // check bounds for pawn 2 squares away
-            if (dstY2 < 0 || dstY2 >= 9) continue;
-            if (dstX2 < 0 || dstX2 >= 9) continue;
-
-
-            GameElement sideEl = getBoard().getElement(dstY1, dstX1);
-            GameElement sideEl2 = getBoard().getElement(dstY2, dstX2);
-
-            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-                if (isYellow) {
-                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
-                } else {
-                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
-                }
-            }
-        }
-
-        return captures;
-    }
 
     private void computePartyResult() {
         int idWinner = -1;
@@ -266,10 +205,10 @@ public class TablutStageModel extends GameStageModel {
                 x += dx_vals[i];
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isCornerKingEscapes() && !control.algos.RecurBoard.cornerSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
-                    } else if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isConstrainedKingSquares() && control.algos.RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
                     }
@@ -293,11 +232,11 @@ public class TablutStageModel extends GameStageModel {
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
                 if (RuleSets.isCornerKingEscapes()) {
-                    if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
+                    if (control.algos.RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
                 } else if (RuleSets.isConstrainedKingSquares()) {
-                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                    if (!control.algos.RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
                 }
@@ -330,7 +269,6 @@ public class TablutStageModel extends GameStageModel {
         if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
             idWinner = 1;
         }
-
 
 
         if (idWinner != -1) {

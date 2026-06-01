@@ -62,11 +62,11 @@ public class MonteCarlo {
     private static class Node {
         boolean isRoot;
         public Node parent;
-        public Map<Move, Node> children;
+        public Map<RecurMove, Node> children;
 
         public int turn;
         public RecurBoard recurBoard;
-        public List<Move> unvisitedMoves;
+        public List<RecurMove> unvisitedMoves;
         public int nbTotalLegalMoves;
 
 
@@ -118,8 +118,8 @@ public class MonteCarlo {
         return ((double) node.wins / node.visits) + C * Math.sqrt(Math.log(node.parent.visits) / node.visits);
     }
 
-    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
-        Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
+    public RecurMove findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
+        RecurMove bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
         Node root = new Node(true, null, recurBoard, turn);
@@ -154,7 +154,7 @@ public class MonteCarlo {
              * 2. Expansion
              */
             int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
-            Move randomMove = currentNode.unvisitedMoves.get(moveIndex);
+            RecurMove randomMove = currentNode.unvisitedMoves.get(moveIndex);
             RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
             childRecurBoard.makeMove(randomMove);
             Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
@@ -170,7 +170,7 @@ public class MonteCarlo {
              */
             int playoutTurn = currentNode.turn;
             RecurBoard playoutRecurBoard = new RecurBoard(currentNode.recurBoard);
-            List<Move> legalMoves;
+            List<RecurMove> legalMoves;
             double winScore = 0;
 
             while (winScore == 0) { // play a fast, random game until the game is over
@@ -202,7 +202,7 @@ public class MonteCarlo {
             root.visits++;
         }
 
-        List<Map.Entry<Move, Node>> sorted = root.children.entrySet().stream()
+        List<Map.Entry<RecurMove, Node>> sorted = root.children.entrySet().stream()
                 .sorted((e1, e2) ->
                         Integer.compare(
                                 e2.getValue().visits,

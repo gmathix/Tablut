@@ -13,7 +13,7 @@ public class NegamaxSearch {
     public static int nbEvals = 0;
 
 
-    private record BestMove(Move move, double score) {}
+    private record BestMove(RecurMove move, double score) {}
 
 
     public NegamaxSearch(int level) {
@@ -32,11 +32,11 @@ public class NegamaxSearch {
     }
 
 
-    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMode) {
+    public RecurMove findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMode) {
         double alpha = Double.NEGATIVE_INFINITY;
         double beta = Double.POSITIVE_INFINITY;
 
-        List<Move> legalMoves = recurBoard.getLegalMoves(turn);
+        List<RecurMove> legalMoves = recurBoard.getLegalMoves(turn);
         if (legalMoves.isEmpty()) {
             return null;
         }
@@ -47,7 +47,7 @@ public class NegamaxSearch {
 
         List<BestMove> bestMoves = new ArrayList<>();
 
-        for (Move m : recurBoard.getLegalMoves(turn)) {
+        for (RecurMove m : recurBoard.getLegalMoves(turn)) {
 //            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
 //            newRecurBoard.makeMove(m);
             int prevKingX = recurBoard.getKingX();
@@ -73,7 +73,7 @@ public class NegamaxSearch {
                         bm2.score, bm1.score
                 )
         ).toList();
-        Move bestMove = bestMoves.getFirst().move();
+        RecurMove bestMove = bestMoves.getFirst().move();
         if (findAlternativeMode && bestMoves.size() > 1) {
             bestMove = bestMoves.get(1).move;
         }
@@ -89,14 +89,14 @@ public class NegamaxSearch {
         }
 
         double maxScore = Double.NEGATIVE_INFINITY;
-        List<Move> legalMoves = recurBoard.getLegalMoves(turn);
+        List<RecurMove> legalMoves = recurBoard.getLegalMoves(turn);
 
         if (legalMoves.isEmpty()) {
             return Double.NEGATIVE_INFINITY - depth;
         }
 
 
-        for (Move move : legalMoves) {
+        for (RecurMove move : legalMoves) {
 //            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
 //            newRecurBoard.makeMove(move);
 

@@ -25,7 +25,7 @@ import java.util.*;
  *
  *
  * This is much better for tablut because :
- *    - if the new expanded node allows a sneaky and vicious king escape while green has 2 pawns remaining 2 moves
+ *    - if the new expanded node allows a sneaky and vicious king escape while swedish has 2 pawns remaining 2 moves
  *      down the line, a random simulation will certainly miss it, when the depth-2/3 negamax will spawn kill it,
  *      return a massively crushing score (MAX_VALUE ~ 1e7) and propagate an almost perfect 1.0 value,
  *      which MCTS will recognize as very valuable
@@ -62,11 +62,11 @@ public class NegaMonteCarlo {
     private static class Node {
         boolean isRoot;
         public Node parent;
-        public Map<Move, Node> children;
+        public Map<RecurMove, Node> children;
 
         public int turn;
         public RecurBoard recurBoard;
-        public List<Move> unvisitedMoves;
+        public List<RecurMove> unvisitedMoves;
         public int nbTotalLegalMoves;
 
 
@@ -140,8 +140,8 @@ public class NegaMonteCarlo {
          *  a light score that biases which children get selected
          *  it can be sth cheap :
          *     - does the move threaten capture ? (for both sides)
-         *     - does the move open an escape path ? (for green)
-         *     - does the move close an escape path ? (for yellow)
+         *     - does the move open an escape path ? (for swedish)
+         *     - does the move close an escape path ? (for moscovite)
          *     - etc
          *  calculated fast (preferably O(1)) and applied at every selection step in the loop
          */
@@ -150,8 +150,8 @@ public class NegaMonteCarlo {
                 + W * (priorScore / (1 + node.visits));
     }
 
-    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
-        Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
+    public RecurMove findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
+        RecurMove bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
         Node root = new Node(true, null, recurBoard, turn);
@@ -172,8 +172,8 @@ public class NegaMonteCarlo {
             while (currentNode.isFullyExpanded() && !currentNode.isTerminal()) {
                 double bestScore = Double.NEGATIVE_INFINITY;
                 Node bestNode = null;
-                for (Map.Entry<Move, Node> entry : currentNode.children.entrySet()) {
-                    Move move = entry.getKey();
+                for (Map.Entry<RecurMove, Node> entry : currentNode.children.entrySet()) {
+                    RecurMove move = entry.getKey();
                     Node child = entry.getValue();
 
                     double priorScore = 0;
@@ -196,7 +196,7 @@ public class NegaMonteCarlo {
             // only expand if the selected node isn't a game over state
             if (!currentNode.isTerminal() && !currentNode.unvisitedMoves.isEmpty()) {
                 int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
-                Move randomMove = currentNode.unvisitedMoves.get(moveIndex);
+                RecurMove randomMove = currentNode.unvisitedMoves.get(moveIndex);
 
                 RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
                 childRecurBoard.makeMove(randomMove);
@@ -211,11 +211,11 @@ public class NegaMonteCarlo {
             /**
              * 3. Simulation (replaced with low depth negamax)
              * all nodes run a search at depth a least two
-             * when green is playing :
+             * when swedish is playing :
              *    - if there are 4 or 5 moscovites in the same 5x5 region as the king, run at depth 3
              *    - there are less than 4 moscovites in the same 5x5 region, run at depth 4
              *    because those situations are more promising.
-             * when yellow is playing :
+             * when moscovite is playing :
              *    depending on the king encerclement score :
              *    - when it is lower than -20 (~2 moscovites surrounding the king orthogonally), increment depth by 1
              *    - when it is lower than -30 (~3 moscovites surrounding the king orthogonally), increment depth by 1
@@ -235,7 +235,7 @@ public class NegaMonteCarlo {
 
             double negamaxScore = negamaxSearch.negamax(currentNode.recurBoard, this.negamaxDepth + depthBonus, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 
-            // green needs one escape path, yellow needs full encerclement.
+            // swedish needs one escape path, moscovite needs full encerclement.
             // the value of the score means different stuff depending on who's playing, so we use different "temperatures"
             double temp = currentNode.turn == 0 ? 80 : 120;
             score = 1 / (1 + Math.exp(-negamaxScore / temp));
@@ -264,7 +264,7 @@ public class NegaMonteCarlo {
         }
 
 
-        List<Map.Entry<Move, Node>> sorted = root.children.entrySet().stream()
+        List<Map.Entry<RecurMove, Node>> sorted = root.children.entrySet().stream()
                 .sorted((e1, e2) ->
                         Integer.compare(
                                 e2.getValue().visits,
@@ -294,10 +294,10 @@ public class NegaMonteCarlo {
         }
 
         double bestScore = Double.NEGATIVE_INFINITY;
-        List<Move> moves = recurBoard.getLegalMoves(turn);
+        List<RecurMove> moves = recurBoard.getLegalMoves(turn);
         if (moves.isEmpty()) return turn == 0 ? -1000 : 1000;
 
-        for (Move m : moves) {
+        for (RecurMove m : moves) {
             RecurBoard newRecurBoard = new RecurBoard(recurBoard);
             newRecurBoard.makeMove(m);
             double score = -smallNegamax(newRecurBoard, depth-1, (turn+1) % 2, -beta, -alpha);

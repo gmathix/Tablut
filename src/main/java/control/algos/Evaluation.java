@@ -20,23 +20,23 @@ public class Evaluation {
      * Main evaluation method used for the negamax
      * There current 3 evaluation criteria are :
      *   1. Immediate win conditions :
-     *      - Green king reached an edge -> green wins
-     *      - Yellow has surrounded the king -> yellow wins
+     *      - Swedish king reached an edge -> swedish wins
+     *      - Moscovite has surrounded the king -> moscovite wins
      *   2. Delayed win conditions :
-     *      - either it is green to play and it can reach one or more edges -> green wins
-     *      - or it is yellow to play and the king can reach two or more edges (Tuichi) -> green wins
-     *      - or it is yellow to play and they can surround the king -> yellow wins
-     *   3. King encerclement (relative to green) :
+     *      - either it is swedish to play and it can reach one or more edges -> swedish wins
+     *      - or it is moscovite to play and the king can reach two or more edges (Tuichi) -> swedish wins
+     *      - or it is moscovite to play and they can surround the king -> moscovite wins
+     *   3. King encerclement (relative to swedish) :
      *      - Vertically or horizontally, surrounding pieces receive a +5 score
      *      - Diagonally, they receive a +2.5 score
-     *      - Moscovites (yellow pieces) receive a x3 multiplier
+     *      - Moscovites (moscovite pieces) receive a x3 multiplier
      *      - Total encerclement is then negative
      *   4. Material difference :
      *      - Calculate the proportion difference between the remaining pawns :
-     *         - Green pawns are 8 at the start
-     *         - Yellow pawns are 16 at the start
+     *         - Swedish pawns are 8 at the start
+     *         - Moscovite pawns are 16 at the start
      *
-     * @param turn 0 for green, 1 for yellow
+     * @param turn 0 for swedish, 1 for moscovite
      * @param currDepth the depth of the current node (should be 0)
      * @param baseDepth the total depth of the whole tree
      * @return
@@ -49,13 +49,13 @@ public class Evaluation {
         // 1. check win conditions immediately
         double win = recurBoard.checkWin();
         if (win == (double) Integer.MAX_VALUE) {
-            /** green won : if we are green this is good otherwise it's terrible
+            /** swedish won : if we are swedish this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
              */
             return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
         if (win == Integer.MIN_VALUE) {
-            // yellow won : if we are yellow this is good otherwise it's terrible
+            // moscovite won : if we are moscovite this is good otherwise it's terrible
             return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
 
@@ -78,13 +78,13 @@ public class Evaluation {
         double boardControl = evaluateBoardControl(recurBoard);
 
 
-        double greenScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
+        double swedishScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
                             (encerclement * ENCERCLEMENT_WEIGHT) +
                             (materialDiff * MATERIAL_WEIGHT) +
                             (boardControl * POSITION_WEIGHT);
 
 
-        return (turn == 0) ? greenScore : -greenScore;
+        return (turn == 0) ? swedishScore : -swedishScore;
     }
 
     public static double checkDelayedWinAndPaths(RecurBoard recurBoard, int turn, int depthDiff) {
@@ -95,7 +95,7 @@ public class Evaluation {
         /**
          * check king escape and encerclement simultaneously.
          * we start from the king's position, loop in all 4 direction until :
-         *    - an edge is reached without anything blocking the king -> green wins
+         *    - an edge is reached without anything blocking the king -> swedish wins
          *    - a moscovite is reached with nothing between it and the king, and there are already 3
          *      moscovites surrounding the king (or the king is next to the center throne, so there just
          *      needs to be 3 surrounding moscovites)
@@ -178,16 +178,16 @@ public class Evaluation {
         }
 
 
-        // return relative to green
+        // return relative to swedish
         return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5);
     }
 
     /**
-     * Evaluate the king encerclement relative to Green (always negative) :
+     * Evaluate the king encerclement relative to Swedish (always negative) :
      *    - Vertically or horizontally, surrounding pieces receive a +1 score
      *    - Diagonally, they receive a +0.5 score
-     *    - Moscovites (yellow pieces) receive a x3 multiplier
-     *    - Soldiers (green pieces) receive a -1 multiplier because they protect the king
+     *    - Moscovites (moscovite pieces) receive a x3 multiplier
+     *    - Soldiers (swedish pieces) receive a -1 multiplier because they protect the king
      */
     public static double countKingEncerclement(RecurBoard recurBoard) {
         double encerclement = 0;
@@ -221,23 +221,23 @@ public class Evaluation {
 
 
     /**
-     * Returns the material difference (king excluded) relative to Green
+     * Returns the material difference (king excluded) relative to Swedish
      */
     public static double countMaterialDiff(RecurBoard recurBoard) {
-        double nbYellowPawns = 0;
-        double nbGreenPawns = 0;
+        double nbMoscovitePawns = 0;
+        double nbSwedishPawns = 0;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (recurBoard.getBoard()[i][j] == RecurBoard.MOSCOVITE) {
-                    nbYellowPawns++;
+                    nbMoscovitePawns++;
                 } else if (recurBoard.getBoard()[i][j] == RecurBoard.SOLDIER) {
-                    nbGreenPawns++;
+                    nbSwedishPawns++;
                 }
             }
         }
 
         // normalize between -30 and 30
-        return (nbGreenPawns / 8 - nbYellowPawns / 16) * 30;
+        return (nbSwedishPawns / 8 - nbMoscovitePawns / 16) * 30;
     }
 
 
