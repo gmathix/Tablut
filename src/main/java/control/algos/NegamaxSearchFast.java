@@ -72,6 +72,10 @@ public class NegamaxSearchFast {
     public static final int NB_POSSIBLE_MOVES = 1296;
     public static final int MAX_CAPTURES = 3;
 
+    // flags for TT entries
+    public static final int LOWER_BOUND = 0;
+    public static final int UPPER_BOUND = 1;
+    public static final int EXACT       = 2;
 
 
     private class TTEntry {
@@ -79,11 +83,13 @@ public class NegamaxSearchFast {
         long    hash;
         double  score;
         int     depth;
+        int     flag;
         public TTEntry() {
             processed = false;
             hash  = 0;
             score = 0;
             depth = 0;
+            flag = -1;
         }
     }
 
@@ -214,9 +220,18 @@ public class NegamaxSearchFast {
         double win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
 
         int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
-        if (tt[ttIndex].processed) {
-            if (zobristKey[0] == tt[ttIndex].hash) {
-                return tt[ttIndex].score;
+        TTEntry entry = tt[ttIndex];
+        if (entry.processed) {
+            if (zobristKey[0] == entry.hash) {
+                if (entry.flag == EXACT)
+                    return entry.score;
+                else if (entry.flag == LOWER_BOUND)
+                    alpha = Math.max(alpha, entry.score);
+                else if (entry.flag == UPPER_BOUND)
+                    beta = Math.min(beta, entry.score);
+
+                if (alpha >= beta)
+                    return entry.score;
             }
         }
 
@@ -231,6 +246,8 @@ public class NegamaxSearchFast {
             return Double.NEGATIVE_INFINITY - depth;
         }
 
+        int flag;
+        double alphaOrig = alpha;
         for (int i = 0; i < moveCountStack[ply]; i++) {
             int move = movesStack[ply][i];
 
@@ -242,15 +259,30 @@ public class NegamaxSearchFast {
 
             FastBoard.undoMove(board, move, ply, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
 
-            tt[ttIndex].score = score;
-            tt[ttIndex].hash = zobristKey[0];
-            tt[ttIndex].depth = depth;
-            tt[ttIndex].processed = true;
-
             if (score > maxScore) maxScore = score;
             alpha = Math.max(alpha, score);
-            if (alpha >= beta) break;
+            if (alpha >= beta) {
+                tt[ttIndex].score = score;
+                tt[ttIndex].hash = zobristKey[0];
+                tt[ttIndex].depth = depth;
+                tt[ttIndex].processed = true;
+                tt[ttIndex].flag = LOWER_BOUND;
+                break;
+            }
         }
+
+        if (maxScore <= alphaOrig)
+            flag = UPPER_BOUND;
+        else if (maxScore >= beta)
+            flag = LOWER_BOUND;
+        else
+            flag = EXACT;
+
+        tt[ttIndex].score = maxScore;
+        tt[ttIndex].hash = zobristKey[0];
+        tt[ttIndex].depth = depth;
+        tt[ttIndex].processed = true;
+        tt[ttIndex].flag = flag;
 
         return maxScore;
     }
