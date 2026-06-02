@@ -6,6 +6,7 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.NegamaxSearch;
+import control.algos.NegamaxSearchFast;
 import control.algos.RecurMove;
 import model.*;
 
@@ -40,13 +41,16 @@ public class NegamaxDecider extends Decider {
 
         int turn = model.getIdPlayer();
 
-        NegamaxSearch negamaxSearch = new NegamaxSearch(level);
+//        NegamaxSearch negamaxSearch = new NegamaxSearch(level);
+        NegamaxSearchFast negamaxSearchFast = new NegamaxSearchFast(tablutBoard, level);
 
+        int bestMoveInt = negamaxSearchFast.findBestMove(turn, ((TablutController) control).isBoardRepeated());
 
+//        RecurMove bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
 
-        RecurMove bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
-
-
+        int src = bestMoveInt & 0x7F;
+        int dst = (bestMoveInt >> 7) & 0x7F;
+        RecurMove bestMove = new RecurMove(recurBoard, src % 9, src / 9, dst % 9, dst / 9);
 
 
         pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());

@@ -43,18 +43,6 @@ public class RecurMove {
     public int dstY() { return dstY; }
 
 
-
-    public static RecurMove fromString(String move) {
-        move = move.toUpperCase();
-        return new RecurMove(
-                null,
-                move.charAt(0) - 'A',
-                move.charAt(1) - '1',
-                move.charAt(2) - 'A',
-                move.charAt(3) - '1'
-        );
-    }
-
     public String toString() {
         return cols[srcX] + rows[srcY] + cols[dstX] + rows[dstY];
     }
