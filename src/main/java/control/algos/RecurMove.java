@@ -16,9 +16,6 @@ public class RecurMove {
     private int srcX, srcY, dstX, dstY;
     private int piece;
 
-//    private List<Capture> captures;
-
-    private short captures[];
 
     public RecurMove(RecurBoard board, int srcX, int srcY, int dstX, int dstY) {
         this.board = board;
@@ -29,7 +26,6 @@ public class RecurMove {
 
         piece = board.getBoard()[srcY][srcX];
 
-        captures = new short[3];
 
 //        captures = new ArrayList<>();
 //        List<Integer> caps = board.checkCaptures(this);
@@ -45,8 +41,6 @@ public class RecurMove {
     public int srcY() { return srcY; }
     public int dstX() { return dstX; }
     public int dstY() { return dstY; }
-    public short[] getCaptures() { return captures; }
-
 
 
 
