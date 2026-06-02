@@ -30,7 +30,7 @@ public class NegamaxDecider extends Decider {
 
     @Override
     public ActionList decide() {
-        System.out.println(model.getGameStage());
+        // System.out.println(model.getGameStage());
         // do a cast get a variable of the real type to get access to the attributes of HoleStageModel
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
