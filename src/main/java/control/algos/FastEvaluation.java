@@ -7,13 +7,13 @@ import model.RuleSets;
 public class FastEvaluation {
 
     // virtual inf boundary that doesn't break floating point math of exp functions (unlike damn Double.NEGATIVE_INFINITY)
-    public static final double VIRTUAL_INF = 10000;
+    public static final float VIRTUAL_INF = 10000;
 
     // weights for each evaluation criteria
-    public static final double ESCAPE_PATH_WEIGHT  = 15;
-    public static final double ENCERCLEMENT_WEIGHT = 20;
-    public static final double MATERIAL_WEIGHT     = 30;
-    public static final double POSITION_WEIGHT     = 5;
+    public static final float ESCAPE_PATH_WEIGHT  = 15;
+    public static final float ENCERCLEMENT_WEIGHT = 20;
+    public static final float MATERIAL_WEIGHT     = 30;
+    public static final float POSITION_WEIGHT     = 5;
 
     public static final byte EMPTY = 0;
     public static final byte MOSCOVITE = Pawn.PAWN_MOSCOVITE;
@@ -47,13 +47,13 @@ public class FastEvaluation {
      * @param baseDepth the total depth of the whole tree
      * @return
      */
-    public static double evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth, byte[] kingPosStack, int ruleSet) {
+    public static float evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth, byte[] kingPosStack, int ruleSet) {
         int depthDiff = baseDepth - currDepth;
 
-        double score = 0;
+        float score = 0;
 
         // 1. check win conditions immediately
-        double win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
         if (win == (double) Integer.MAX_VALUE) {
             /** swedish won : if we are swedish this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
@@ -67,7 +67,7 @@ public class FastEvaluation {
 
 
         // 2. check delayed wins
-        double delayedWin = checkDelayedWinAndPaths(board, turn, ply, depthDiff, kingPosStack, ruleSet);
+        float delayedWin = checkDelayedWinAndPaths(board, turn, ply, depthDiff, kingPosStack, ruleSet);
         if (Math.abs(delayedWin) >= VIRTUAL_INF - 100)
             return delayedWin;
 
@@ -76,15 +76,15 @@ public class FastEvaluation {
 
 
         // 3. positional evaluation
-        double encerclement = countKingEncerclement(board, ply, kingPosStack);
+        float encerclement = countKingEncerclement(board, ply, kingPosStack);
 
         // 4. count material difference
-        double materialDiff = countMaterialDiff(board);
+        float materialDiff = countMaterialDiff(board);
 
-        double boardControl = evaluateBoardControl(board);
+        float boardControl = evaluateBoardControl(board);
 
 
-        double swedishScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
+        float swedishScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
                 (encerclement * ENCERCLEMENT_WEIGHT) +
                 (materialDiff * MATERIAL_WEIGHT) +
                 (boardControl * POSITION_WEIGHT);
@@ -93,7 +93,7 @@ public class FastEvaluation {
         return (turn == 0) ? swedishScore : -swedishScore;
     }
 
-    public static double checkDelayedWinAndPaths(byte[] board, int turn, int ply, int depthDiff, byte[] kingPosStack, int ruleSet) {
+    public static float checkDelayedWinAndPaths(byte[] board, int turn, int ply, int depthDiff, byte[] kingPosStack, int ruleSet) {
 
         int kingPos = kingPosStack[ply];
         int kingY = kingPos / 9;
@@ -186,7 +186,7 @@ public class FastEvaluation {
 
 
         // return relative to swedish
-        return (nbEdgesReachable * 4.0) - (kingObstructions * 1.5);
+        return (nbEdgesReachable * 4.0f) - (kingObstructions * 1.5f);
     }
 
     /**
@@ -196,8 +196,8 @@ public class FastEvaluation {
      *    - Moscovites (moscovite pieces) receive a x3 multiplier
      *    - Soldiers (swedish pieces) receive a -1 multiplier because they protect the king
      */
-    public static double countKingEncerclement(byte[] board, int ply, byte[] kingPosStack) {
-        double encerclement = 0;
+    public static float countKingEncerclement(byte[] board, int ply, byte[] kingPosStack) {
+        float encerclement = 0;
 
         int kingPos = kingPosStack[ply];
         int kingY = kingPos / 9;
@@ -213,9 +213,9 @@ public class FastEvaluation {
 
                 int piece = board[y*9+x];
                 if (piece != EMPTY) {
-                    double score;
+                    float score;
                     if (Math.abs(dy - dx) == 1) score = 1; // vertical or horizontal
-                    else                        score = 0.5; // diagonal
+                    else                        score = 0.5f; // diagonal
 
                     if (piece == MOSCOVITE) {
                         score *= 3;
@@ -235,9 +235,9 @@ public class FastEvaluation {
     /**
      * Returns the material difference (king excluded) relative to Swedish
      */
-    public static double countMaterialDiff(byte[] board) {
-        double nbMoscovitePawns = 0;
-        double nbSwedishPawns = 0;
+    public static float countMaterialDiff(byte[] board) {
+        float nbMoscovitePawns = 0;
+        float nbSwedishPawns = 0;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (board[i*9+j] == MOSCOVITE) {
@@ -253,8 +253,8 @@ public class FastEvaluation {
     }
 
 
-    public static double evaluateBoardControl(byte[] board) {
-        double score = 0;
+    public static float evaluateBoardControl(byte[] board) {
+        float score = 0;
         for (int i = 2; i <= 6; i++) {
             for (int j = 2; j <= 6; j++) {
                 if (i == 4 && j == 4) continue;

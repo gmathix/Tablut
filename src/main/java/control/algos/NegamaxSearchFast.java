@@ -73,25 +73,11 @@ public class NegamaxSearchFast {
     public static final int MAX_CAPTURES = 3;
 
     // flags for TT entries
-    public static final int LOWER_BOUND = 0;
-    public static final int UPPER_BOUND = 1;
-    public static final int EXACT       = 2;
+    public static final int LOWER_BOUND = 1;
+    public static final int UPPER_BOUND = 2;
+    public static final int EXACT       = 3;
 
 
-    private class TTEntry {
-        boolean processed;
-        long    hash;
-        double  score;
-        int     depth;
-        int     flag;
-        public TTEntry() {
-            processed = false;
-            hash  = 0;
-            score = 0;
-            depth = 0;
-            flag = -1;
-        }
-    }
 
 
     private int startingDepth;
@@ -114,12 +100,18 @@ public class NegamaxSearchFast {
     private long       sideToMove;
     private long[]     zobristKey;
 
-    TTEntry[]          tt;
+
+    // data-oriented layout is better than a TTEntry class/record for cache behavior
+    private long[]    ttHash;
+    private float[]  ttScore;
+    private byte[]    ttDepth;
+    private byte[]    ttFlag;
+    private int[]     ttBestMove;
 
 
 
 
-    private record BestMove(RecurMove move, double score) {}
+    private record BestMove(RecurMove move, float score) {}
 
 
     public NegamaxSearchFast(TablutBoard tablutBoard, int level) {
@@ -174,11 +166,11 @@ public class NegamaxSearchFast {
         zobristKey[0] ^= sideToMove;
 
 
-        tt = new TTEntry[NB_TT_ENTRIES];
-        for (int i = 0; i < NB_TT_ENTRIES; i++) {
-            tt[i] = new TTEntry();
-            tt[i].processed = false;
-        }
+        ttHash = new long[NB_TT_ENTRIES];
+        ttScore = new float[NB_TT_ENTRIES];
+        ttDepth = new byte[NB_TT_ENTRIES];
+        ttFlag = new byte[NB_TT_ENTRIES];
+        ttBestMove = new int[NB_TT_ENTRIES];
     }
 
 
@@ -186,9 +178,9 @@ public class NegamaxSearchFast {
         int bestMove = -1;
 
 
-        double alpha = Double.NEGATIVE_INFINITY;
-        double beta = Double.POSITIVE_INFINITY;
-        double bestScore = Double.NEGATIVE_INFINITY;
+        float alpha = Float.NEGATIVE_INFINITY;
+        float beta = Float.POSITIVE_INFINITY;
+        float bestScore = Float.NEGATIVE_INFINITY;
 
         FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, ruleSet);
         if (moveCountStack[0] == 0) return -1;
@@ -199,7 +191,7 @@ public class NegamaxSearchFast {
             FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack);
             FastBoard.makeMove(board, move, 0, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
 
-            double score = -negamax(board, startingDepth-1, 1, (turn+1) % 2, -beta, -alpha);
+            float score = -negamax(board, startingDepth-1, 1, (turn+1) % 2, -beta, -alpha);
 
             FastBoard.undoMove(board, move, 0, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
 
@@ -216,22 +208,22 @@ public class NegamaxSearchFast {
     }
 
 
-    public double negamax(byte[] board, int depth, int ply, int turn, double alpha, double beta) {
-        double win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+    public float negamax(byte[] board, int depth, int ply, int turn, float alpha, float beta) {
+        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
 
         int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
-        TTEntry entry = tt[ttIndex];
-        if (entry.processed) {
-            if (zobristKey[0] == entry.hash) {
-                if (entry.flag == EXACT)
-                    return entry.score;
-                else if (entry.flag == LOWER_BOUND)
-                    alpha = Math.max(alpha, entry.score);
-                else if (entry.flag == UPPER_BOUND)
-                    beta = Math.min(beta, entry.score);
+
+        if (ttFlag[ttIndex] != 0) {
+            if (zobristKey[0] == ttHash[ttIndex]) {
+                if (ttHash[ttIndex] == EXACT)
+                    return ttScore[ttIndex];
+                else if (ttFlag[ttIndex] == LOWER_BOUND)
+                    alpha = Math.max(alpha, ttScore[ttIndex]);
+                else if (ttFlag[ttIndex] == UPPER_BOUND)
+                    beta = Math.min(beta, ttScore[ttIndex]);
 
                 if (alpha >= beta)
-                    return entry.score;
+                    return ttScore[ttIndex];
             }
         }
 
@@ -239,15 +231,15 @@ public class NegamaxSearchFast {
             return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, kingPosStack, ruleSet);
         }
 
-        double maxScore = Double.NEGATIVE_INFINITY;
+        float maxScore = Float.NEGATIVE_INFINITY;
         FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, ruleSet);
 
         if (moveCountStack[ply] == 0) { // can't make moves, automatically lose
-            return Double.NEGATIVE_INFINITY - depth;
+            return Float.NEGATIVE_INFINITY - depth;
         }
 
-        int flag;
-        double alphaOrig = alpha;
+        byte flag;
+        float alphaOrig = alpha;
         for (int i = 0; i < moveCountStack[ply]; i++) {
             int move = movesStack[ply][i];
 
@@ -255,18 +247,17 @@ public class NegamaxSearchFast {
             FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack);
             FastBoard.makeMove(board, move, ply, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
 
-            double score = -negamax(board, depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
+            float score = -negamax(board, depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
 
             FastBoard.undoMove(board, move, ply, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
 
             if (score > maxScore) maxScore = score;
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
-                tt[ttIndex].score = score;
-                tt[ttIndex].hash = zobristKey[0];
-                tt[ttIndex].depth = depth;
-                tt[ttIndex].processed = true;
-                tt[ttIndex].flag = LOWER_BOUND;
+                ttScore[ttIndex] = score;
+                ttHash[ttIndex] = zobristKey[0];
+                ttDepth[ttIndex] = (byte) depth;
+                ttFlag[ttIndex] = LOWER_BOUND;
                 break;
             }
         }
@@ -278,11 +269,10 @@ public class NegamaxSearchFast {
         else
             flag = EXACT;
 
-        tt[ttIndex].score = maxScore;
-        tt[ttIndex].hash = zobristKey[0];
-        tt[ttIndex].depth = depth;
-        tt[ttIndex].processed = true;
-        tt[ttIndex].flag = flag;
+        ttScore[ttIndex] = maxScore;
+        ttHash[ttIndex] = zobristKey[0];
+        ttDepth[ttIndex] = (byte) depth;
+        ttFlag[ttIndex] = flag;
 
         return maxScore;
     }

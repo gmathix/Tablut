@@ -249,7 +249,7 @@ public class FastBoard {
         zobristKey[0] ^= sideToMove;
     }
 
-    public static double checkWin(byte[] board, int ply, byte[] kingPosStack, int ruleSet) {
+    public static float checkWin(byte[] board, int ply, byte[] kingPosStack, int ruleSet) {
         int kingPos = kingPosStack[ply];
 
         int kingY = kingPos / 9;
