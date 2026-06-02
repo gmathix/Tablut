@@ -16,9 +16,9 @@ public class Pawn extends GameElement {
     private int color;
 
 
-    public static final int PAWN_MOSCOVITE = 2;
-    public static final int PAWN_SOLDIER   = 3;
-    public static final int PAWN_KING      = 4;
+    public static final int PAWN_MOSCOVITE = 1;
+    public static final int PAWN_SOLDIER   = 2;
+    public static final int PAWN_KING      = 3;
 
     // coords inside the board
     private int boardX;

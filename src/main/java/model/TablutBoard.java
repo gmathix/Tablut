@@ -45,15 +45,15 @@ public class TablutBoard extends ContainerElement {
      * 4 = king (swedish)
      */
     public static int[][] startingBoard = {
-            {0, 0, 0, 2, 2, 2, 0, 0, 0},
+            {0, 0, 0, 1, 1, 1, 0, 0, 0},
+            {0, 0, 0, 0, 1, 0, 0, 0, 0},
             {0, 0, 0, 0, 2, 0, 0, 0, 0},
-            {0, 0, 0, 0, 3, 0, 0, 0, 0},
-            {2, 0, 0, 0, 3, 0, 0, 0, 2},
-            {2, 2, 3, 3, 4, 3, 3, 2, 2},
-            {2, 0, 0, 0, 3, 0, 0, 0, 2},
-            {0, 0, 0, 0, 3, 0, 0, 0, 0},
+            {1, 0, 0, 0, 2, 0, 0, 0, 1},
+            {1, 1, 2, 2, 3, 2, 2, 1, 1},
+            {1, 0, 0, 0, 2, 0, 0, 0, 1},
             {0, 0, 0, 0, 2, 0, 0, 0, 0},
-            {0, 0, 0, 2, 2, 2, 0, 0, 0},
+            {0, 0, 0, 0, 1, 0, 0, 0, 0},
+            {0, 0, 0, 1, 1, 1, 0, 0, 0},
     };
     public TablutBoard(int x, int y, GameStageModel gameStageModel) {
         // call the super-constructor to create a 9x9 grid, named "holeboard", and in x,y in space

@@ -14,6 +14,9 @@ public class FastBoard {
     public static final byte SWEDISH = Pawn.PAWN_SOLDIER;
     public static final byte KING = Pawn.PAWN_KING;
 
+    public static int[] pieceTypes = new int[]{EMPTY, MOSCOVITE, SWEDISH, KING};
+
+
 
     public static final int[] DY_VALS = new int[]{-1, 0, 1, 0};
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
@@ -196,7 +199,8 @@ public class FastBoard {
     }
 
 
-    public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack, byte[] kingPosStack) {
+    public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey, long sideToMove) {
         // update kingPosStack[ply+1], not kingPosStack[ply]
 
         int src = move & 0x7F;
@@ -208,13 +212,21 @@ public class FastBoard {
         board[dst] = board[src];
         board[src] = EMPTY;
 
+        zobristKey[0] ^= zobrist[board[dst]][src];
+        zobristKey[0] ^= zobrist[board[dst]][dst];
+
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
+
+            zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
             board[capCoord] = EMPTY;
         }
+
+        zobristKey[0] ^= sideToMove;
     }
 
-    public static void undoMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack, byte[] kingPosStack) {
+    public static void undoMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey, long sideToMove) {
         int src = move & 0x7F;
         int dst = (move >> 7) & 0x7F;
 
@@ -223,11 +235,18 @@ public class FastBoard {
         board[src] = board[dst];
         board[dst] = EMPTY;
 
+        zobristKey[0] ^= zobrist[board[src]][dst];
+        zobristKey[0] ^= zobrist[board[src]][src];
+
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
             int capPiece = captureStack[ply][i] & 0x03;
             board[capCoord] = (byte) capPiece;
+
+            zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
         }
+
+        zobristKey[0] ^= sideToMove;
     }
 
     public static double checkWin(byte[] board, int ply, byte[] kingPosStack, int ruleSet) {

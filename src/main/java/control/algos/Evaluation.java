@@ -230,7 +230,7 @@ public class Evaluation {
             for (int j = 0; j < 9; j++) {
                 if (recurBoard.getBoard()[i][j] == RecurBoard.MOSCOVITE) {
                     nbMoscovitePawns++;
-                } else if (recurBoard.getBoard()[i][j] == RecurBoard.SOLDIER) {
+                } else if (recurBoard.getBoard()[i][j] == RecurBoard.SWEDISH) {
                     nbSwedishPawns++;
                 }
             }

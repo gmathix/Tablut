@@ -17,8 +17,10 @@ public class RecurBoard {
 
     public static final int EMPTY     = 0;
     public static final int MOSCOVITE = 1;
-    public static final int SOLDIER   = 2;
+    public static final int SWEDISH   = 2;
     public static final int KING      = 3;
+
+    public static int[] pieceTypes = new int[]{MOSCOVITE, SWEDISH, KING};
 
 
     // utils for clockwise rotation
@@ -75,7 +77,7 @@ public class RecurBoard {
                     board[i][j] = switch (p.getColor()) {
                         case 0 -> EMPTY;
                         case Pawn.PAWN_MOSCOVITE -> MOSCOVITE;
-                        case Pawn.PAWN_SOLDIER -> SOLDIER;
+                        case Pawn.PAWN_SOLDIER -> SWEDISH;
                         case Pawn.PAWN_KING -> KING;
                         default -> EMPTY;
                     };
@@ -113,13 +115,13 @@ public class RecurBoard {
         return piece == MOSCOVITE;
     }
     public boolean isSwedish(int piece) {
-        return piece == SOLDIER || piece == KING;
+        return piece == SWEDISH || piece == KING;
     }
     public boolean isKing(int piece) {
         return piece == KING;
     }
     public boolean isSoldier(int piece) {
-        return piece == SOLDIER;
+        return piece == SWEDISH;
     }
     public boolean isEmpty(int piece) {
         return piece == EMPTY;
@@ -138,7 +140,7 @@ public class RecurBoard {
                         switch (board[i][j]) {
                             case EMPTY -> " ";
                             case MOSCOVITE -> "M";
-                            case SOLDIER -> "S";
+                            case SWEDISH -> "S";
                             case KING -> "K";
                             default -> " ";
                         }
