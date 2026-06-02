@@ -155,7 +155,7 @@ public class MonteCarlo {
              */
             int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
             RecurMove randomMove = currentNode.unvisitedMoves.get(moveIndex);
-            RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
+            RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard, recurBoard.getStageModel());
             childRecurBoard.makeMove(randomMove);
             Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
 
@@ -169,7 +169,7 @@ public class MonteCarlo {
              * 3. Simulation
              */
             int playoutTurn = currentNode.turn;
-            RecurBoard playoutRecurBoard = new RecurBoard(currentNode.recurBoard);
+            RecurBoard playoutRecurBoard = new RecurBoard(currentNode.recurBoard, recurBoard.getStageModel());
             List<RecurMove> legalMoves;
             double winScore = 0;
 

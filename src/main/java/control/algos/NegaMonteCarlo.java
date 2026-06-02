@@ -198,7 +198,7 @@ public class NegaMonteCarlo {
                 int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
                 RecurMove randomMove = currentNode.unvisitedMoves.get(moveIndex);
 
-                RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
+                RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard, recurBoard.getStageModel());
                 childRecurBoard.makeMove(randomMove);
 
                 Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
@@ -298,7 +298,7 @@ public class NegaMonteCarlo {
         if (moves.isEmpty()) return turn == 0 ? -1000 : 1000;
 
         for (RecurMove m : moves) {
-            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
+            RecurBoard newRecurBoard = new RecurBoard(recurBoard, recurBoard.getStageModel());
             newRecurBoard.makeMove(m);
             double score = -smallNegamax(newRecurBoard, depth-1, (turn+1) % 2, -beta, -alpha);
             bestScore = Math.max(bestScore, score);

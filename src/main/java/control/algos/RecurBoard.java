@@ -81,7 +81,8 @@ public class RecurBoard {
         }
     }
 
-    public RecurBoard(RecurBoard board) {
+    public RecurBoard(RecurBoard board, GameStageModel gameStageModel) {
+        this.stageModel = (TablutStageModel) gameStageModel;
         this.board = new int[9][9];
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
