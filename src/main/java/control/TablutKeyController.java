@@ -14,7 +14,6 @@ import model.*;
 
 public class TablutKeyController extends ControllerKey implements EventHandler<KeyEvent> {
     private boolean leftPressed = false;
-    private boolean rightPressed = false;
 
 
     public TablutKeyController(Model model, View view, Controller control) {
@@ -33,8 +32,6 @@ public class TablutKeyController extends ControllerKey implements EventHandler<K
 
 
             if (event.getCode() == KeyCode.RIGHT && tablutControl.getMoveHistoryIterator().hasNext()) {
-                if (rightPressed) return;
-                rightPressed = true;
 
                 Move nextMove = tablutControl.getMoveHistoryIterator().next();
 
@@ -70,9 +67,6 @@ public class TablutKeyController extends ControllerKey implements EventHandler<K
         } else if (event.getEventType() == KeyEvent.KEY_RELEASED) {
             if (event.getCode() == KeyCode.LEFT) {
                 leftPressed = false;
-            }
-            if (event.getCode() == KeyCode.RIGHT) {
-                rightPressed = false;
             }
         }
     }

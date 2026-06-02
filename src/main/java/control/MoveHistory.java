@@ -185,12 +185,10 @@ public class MoveHistory {
             if (movesLine.length >= 2) {
 
                 Move move = Move.fromString(board, movesLine[1]);
-                System.out.println("adding move " + movesLine[1]);
                 tablutControl.getMoveHistoryIterator().add(move);
                 board.applyMove(move);
 
                 if (movesLine.length >= 3) {
-                    System.out.println("adding move " + movesLine[2]);
                     if (movesLine[2].contains("-")) {
                         winningSide = movesLine[2].equals("1-0") ? 0 : 1;
                     } else {
