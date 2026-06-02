@@ -18,6 +18,11 @@ public class FastBoard {
     public static final int[] DY_VALS = new int[]{-1, 0, 1, 0};
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
 
+    public static int[] captures = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] kingMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] otherMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+
+
     public static final List<Integer> constrainedKingSquares = List.of(
             3, 4, 5, // D1, E1, F1
             27, 36, 45, // A4, A5, A6
@@ -75,9 +80,7 @@ public class FastBoard {
 
         int nbMoves = 0;
 
-        int[] captures = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-        int[] kingMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-        int[] otherMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+
         int nbCaptures = 0;
         int nbKingMoves = 0;
         int nbOtherMoves = 0;
