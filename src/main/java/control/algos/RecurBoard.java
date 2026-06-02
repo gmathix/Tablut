@@ -4,6 +4,7 @@ import boardifier.model.GameStageModel;
 import model.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -51,7 +52,11 @@ public class RecurBoard {
 
     // those values will have to be collected by the negamax search after every makeMove()
     // in order to pass them to undoMove() right after
-    private List<Capture> lastCaptures;
+
+    /** capture layout :
+     *  ((y * 9 + x) << 3) | pieceType
+     */
+    private short lastCaptures[];
 
 
     public RecurBoard(TablutBoard tablutBoard, GameStageModel gameStageModel) {
@@ -59,7 +64,9 @@ public class RecurBoard {
 
 
         board = new int[9][9];
-        lastCaptures = new ArrayList<>();
+
+        lastCaptures = new short[3];
+
 
         // make a smaller board (in memory) from the huge TablutBoard class
         for (int i = 0; i < 9; i++) {
@@ -91,14 +98,15 @@ public class RecurBoard {
         }
         this.kingY = board.kingY;
         this.kingX = board.kingX;
-        lastCaptures = new ArrayList<>();
+
+        lastCaptures = new short[3];
     }
 
 
     public int getKingX() { return kingX; }
     public int getKingY() { return kingY; }
     public int[][] getBoard() { return board; }
-    public List<Capture> getLastCaptures() { return List.copyOf(lastCaptures); }
+    public short[] getLastCaptures() { return Arrays.copyOf(lastCaptures, 3); }
     public TablutStageModel getStageModel() { return stageModel; }
 
     public boolean isMoscovite(int piece) {
@@ -145,6 +153,15 @@ public class RecurBoard {
     }
 
 
+    public boolean isEmptyCaptures(short[] captures) {
+        int total = 0;
+        for (int cap : captures) {
+            total += cap;
+        }
+        return total == 0;
+    }
+
+
     public List<RecurMove> getLegalMoves(int turn) {
         List<RecurMove> legalMoves = new ArrayList<>();
 
@@ -181,7 +198,7 @@ public class RecurBoard {
                             }
 
 
-                            if (!checkCaptures(currMove).isEmpty()) {
+                            if (!isEmptyCaptures(checkCaptures(currMove))) {
                                 captures.add(currMove);
                             } else if (isKing(board[y][x])) {
                                 kingMoves.add(currMove);
@@ -204,8 +221,8 @@ public class RecurBoard {
     }
 
     // same as TablutStageModel.checkCapture()
-    public List<Integer> checkCaptures(RecurMove move) {
-        List<Integer> captures = new ArrayList<>();
+    public short[] checkCaptures(RecurMove move) {
+        short captures[] = new short[3];
 
 
         int dstY = move.dstY();
@@ -215,6 +232,7 @@ public class RecurBoard {
 
         int selPiece = board[srcY][srcX];
 
+        int capIndex = 0;
         // check capture
         for (int i = 0; i < 4; i++) {
             int dy = DY_VALS[i];
@@ -230,11 +248,15 @@ public class RecurBoard {
             boolean centerCapturing = dstY + 2 * dy == 4 && dstX + 2 * dx == 4;
             if (isMoscovite(selPiece)) {
                 if ((isSoldier(n) && (isMoscovite(n2) || centerCapturing))) {
-                    captures.add((dstY + dy) * 9 + (dstX + dx));
+                    short coord = (short) ((dstY + dy) * 9 + (dstX + dx));
+                    captures[capIndex] = (short) ((coord << 3) | n);
+                    capIndex++;
                 }
-            } else {
-                if (isMoscovite(n) && (isSwedish(n2) || centerCapturing)) {
-                    captures.add((dstY + dy) * 9 + (dstX + dx));
+            } else if (isSoldier(selPiece)) {
+                if ((isMoscovite(n) && (isSwedish(n2) || centerCapturing))) {
+                    short coord = (short) ((dstY + dy) * 9 + (dstX + dx));
+                    captures[capIndex] = (short) ((coord << 3) | n);
+                    capIndex++;
                 }
             }
         }
@@ -252,14 +274,13 @@ public class RecurBoard {
 
         int selPiece = board[srcY][srcX];
 
-        lastCaptures.clear();
+        lastCaptures = checkCaptures(move).clone();
 
-        List<Integer> captures = checkCaptures(move);
-        if (!captures.isEmpty()) {
-            for (Integer cap : captures) {
-                int capX = cap % 9;
-                int capY = cap / 9;
-                lastCaptures.add(new Capture(capX, capY, board[capY][capX]));
+        if (!isEmptyCaptures(lastCaptures)) {
+            for (short cap : lastCaptures) {
+                if (cap == 0) continue;
+                int capX = (cap >> 3) % 9;
+                int capY = (cap >> 3) / 9;
                 board[capY][capX] = EMPTY;
             }
         }
@@ -273,7 +294,7 @@ public class RecurBoard {
         }
     }
 
-    public void undoMove(RecurMove move, List<Capture> prevCaps, int prevKingX, int prevKingY) {
+    public void undoMove(RecurMove move, short[] prevCaps, int prevKingX, int prevKingY) {
         // assumes that this move corresponds to the last move played on this board
 
         board[move.srcY()][move.srcX()] = board[move.dstY()][move.dstX()];
@@ -282,9 +303,10 @@ public class RecurBoard {
         this.kingX = prevKingX;
         this.kingY = prevKingY;
 
-        if (!prevCaps.isEmpty()) {
-            for (Capture cap : prevCaps) {
-                board[cap.y][cap.x] = cap.piece;
+        if (!isEmptyCaptures(prevCaps))  {
+            for (short cap : prevCaps) {
+                if (cap == 0) continue;
+                board[(cap >> 3) / 9][(cap >> 3) % 9] = cap & 0b111;
             }
         }
     }

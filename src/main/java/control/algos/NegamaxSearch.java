@@ -53,7 +53,7 @@ public class NegamaxSearch {
             int prevKingX = recurBoard.getKingX();
             int prevKingY = recurBoard.getKingY();
             recurBoard.makeMove(m);
-            List<RecurBoard.Capture> lastCaps = recurBoard.getLastCaptures();
+            short[] lastCaps = recurBoard.getLastCaptures();
 
 
             // evaluate the opponent's score, then inverse it
@@ -104,7 +104,8 @@ public class NegamaxSearch {
             int prevKingY = recurBoard.getKingY();
             recurBoard.makeMove(move);
 
-            List<RecurBoard.Capture> prevCaps = recurBoard.getLastCaptures();
+
+            short[] prevCaps = recurBoard.getLastCaptures();
 
             // negamax core trick: negative sign and swapped alpha/beta
             double score = -negamax(recurBoard, depth-1, (turn+1) % 2, -beta, -alpha);
