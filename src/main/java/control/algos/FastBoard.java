@@ -82,12 +82,13 @@ public class FastBoard {
 
 
     public static void generateMoves(byte[] board, int turn, int ply, int[] moveCountStack, int[][] movesStack,
-                                     int[][] killerMovesStack, int ruleSet) {
+                                     int[][] killerMovesStack, int bestTTMove, boolean hasTTBestMove, int ruleSet) {
         int[] moveList = movesStack[ply];
         moveCountStack[ply] = 0;
 
         int nbMoves = 0;
 
+        int nbTTBestMove  = hasTTBestMove ? 1 : 0;
         int nbKillerMoves = 0;
         int nbCaptures    = 0;
         int nbKingMoves   = 0;
@@ -140,17 +141,20 @@ public class FastBoard {
 //        System.arraycopy(captures, 0, moveList, nbKillerMoves, nbCaptures);
 //        System.arraycopy(kingMoves, 0, moveList, nbKillerMoves + nbCaptures, nbKingMoves);
 //        System.arraycopy(otherMoves, 0, moveList, nbKillerMoves + nbCaptures + nbKingMoves, nbOtherMoves);
+        if (hasTTBestMove) {
+            movesStack[ply][0] = bestTTMove;
+        }
         for (int i = 0; i < nbKillerMoves; i++) {
-            movesStack[ply][i] = killerMoves[i];
+            movesStack[ply][i + nbTTBestMove] = killerMoves[i];
         }
         for (int i = 0; i < nbCaptures; i++) {
-            movesStack[ply][i + nbKillerMoves] = captures[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves] = captures[i];
         }
         for (int i = 0; i < nbKingMoves; i++) {
-            movesStack[ply][i + nbCaptures + nbKillerMoves] = kingMoves[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures] = kingMoves[i];
         }
         for (int i = 0; i < nbOtherMoves; i++) {
-            movesStack[ply][i + nbKillerMoves + nbCaptures + nbKingMoves] = otherMoves[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures + nbKingMoves] = otherMoves[i];
         }
 
         moveCountStack[ply] = nbMoves;

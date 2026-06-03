@@ -294,7 +294,7 @@ public class NegaMonteCarlo {
             return new Node(parent, moveFromParent, turn, ply, new int[0], true);
         }
 
-        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, ruleSet);
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
         int legalCount = moveCountStack[ply];
         int[] legalMoves = Arrays.copyOf(movesStack[ply], legalCount);
 
@@ -487,7 +487,7 @@ public class NegaMonteCarlo {
         }
 
         float maxScore = Float.NEGATIVE_INFINITY;
-        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, ruleSet);
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
 
         if (moveCountStack[ply] == 0) {
             return -FastEvaluation.VIRTUAL_INF + depth;
