@@ -60,13 +60,6 @@ import java.util.Random;
  *  * killer moves : int[STARTING_DEPTH][2]
  *    whenever a move causes an alpha/beta prune : store as killer
  *    later : generate killer first in move list
- *
- *  * history heuristic : int history[TOTAL_POSSIBLE_MOVES]
- *    index : history[moveSrc * 81 + moveDst]
- *    whenever a move causes a prune : history[index] += depth
- *    then store them first as well in the move list, because moves that historically prune well get searched first
- *
- *  *
  */
 public class NegamaxSearchFast {
 
@@ -96,7 +89,7 @@ public class NegamaxSearchFast {
     private static final byte[]     kingPosStack        = new byte[MAX_DEPTH + 1];
     private static final int[]      moveCountStack      = new int[MAX_DEPTH + 1];
     private static final byte[]     materialDiffStack   = new byte[MAX_DEPTH + 1];
-    private static final int[]     bestMovesStack       = new int[MAX_DEPTH + 1];
+    private static final int[]      bestMovesStack       = new int[MAX_DEPTH + 1];
 
     private static final short[][]  captureStack        = new short[MAX_DEPTH + 1][MAX_CAPTURES];
     private static final int[][]    movesStack          = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
@@ -225,8 +218,7 @@ public class NegamaxSearchFast {
                     bestScore = score;
                     currentBestMove = move;
                     BestMove bm = new BestMove(move, score);
-                    if (depth == startingDepth-1)
-                        bestMoves.add(bm);
+                    bestMoves.add(bm);
                 }
                 alpha = Math.max(alpha, score);
                 if (alpha >= beta) break;
