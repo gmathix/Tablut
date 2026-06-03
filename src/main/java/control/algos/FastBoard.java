@@ -9,10 +9,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FastBoard {
-    public static final byte EMPTY = 0;
+    public static final float VIRTUAL_INF = Evaluation.VIRTUAL_INF;
+
+
+    public static final byte EMPTY     = 0;
     public static final byte MOSCOVITE = Pawn.PAWN_MOSCOVITE;
-    public static final byte SWEDISH = Pawn.PAWN_SOLDIER;
-    public static final byte KING = Pawn.PAWN_KING;
+    public static final byte SWEDISH   = Pawn.PAWN_SOLDIER;
+    public static final byte KING      = Pawn.PAWN_KING;
 
     public static int[] pieceTypes = new int[]{EMPTY, MOSCOVITE, SWEDISH, KING};
 
@@ -21,9 +24,10 @@ public class FastBoard {
     public static final int[] DY_VALS = new int[]{-1, 0, 1, 0};
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
 
-    public static int[] captures = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-    public static int[] kingMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-    public static int[] otherMoves = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] killerMoves = new int[2];
+    public static int[] captures    = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] kingMoves   = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] otherMoves  = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
 
 
     public static final List<Integer> constrainedKingSquares = List.of(
@@ -77,16 +81,17 @@ public class FastBoard {
 
 
 
-    public static void generateMoves(byte[] board, int turn, int ply, int[] moveCountStack, int[][] movesStack, int ruleSet) {
+    public static void generateMoves(byte[] board, int turn, int ply, int[] moveCountStack, int[][] movesStack,
+                                     int[][] killerMovesStack, int ruleSet) {
         int[] moveList = movesStack[ply];
         moveCountStack[ply] = 0;
 
         int nbMoves = 0;
 
-
-        int nbCaptures = 0;
-        int nbKingMoves = 0;
-        int nbOtherMoves = 0;
+        int nbKillerMoves = 0;
+        int nbCaptures    = 0;
+        int nbKingMoves   = 0;
+        int nbOtherMoves  = 0;
 
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
@@ -107,7 +112,14 @@ public class FastBoard {
                             if (currY == 4 && currX == 4) continue; // skip throne
 
                             int move = (i*9 + j) | ((currY*9 + currX) << 7);
-                            if (isCapture(board, move, ply)) {
+
+                            if (move == killerMovesStack[ply][0]) {
+                                killerMoves[nbKillerMoves] = move;
+                                nbKillerMoves++;
+                            } else if (move == killerMovesStack[ply][1]) {
+                                killerMoves[nbKillerMoves] = move;
+                                nbKillerMoves++;
+                            } else if (isCapture(board, move, ply)) {
                                 captures[nbCaptures] = move;
                                 nbCaptures++;
                             } else if (isKing(board[i * 9 + j])) {
@@ -124,14 +136,21 @@ public class FastBoard {
             }
         }
 
+//        System.arraycopy(killerMoves, 0, moveList, 0, nbKillerMoves);
+//        System.arraycopy(captures, 0, moveList, nbKillerMoves, nbCaptures);
+//        System.arraycopy(kingMoves, 0, moveList, nbKillerMoves + nbCaptures, nbKingMoves);
+//        System.arraycopy(otherMoves, 0, moveList, nbKillerMoves + nbCaptures + nbKingMoves, nbOtherMoves);
+        for (int i = 0; i < nbKillerMoves; i++) {
+            movesStack[ply][i] = killerMoves[i];
+        }
         for (int i = 0; i < nbCaptures; i++) {
-            movesStack[ply][i] = captures[i];
+            movesStack[ply][i + nbKillerMoves] = captures[i];
         }
         for (int i = 0; i < nbKingMoves; i++) {
-            movesStack[ply][nbCaptures + i] = kingMoves[i];
+            movesStack[ply][i + nbCaptures + nbKillerMoves] = kingMoves[i];
         }
         for (int i = 0; i < nbOtherMoves; i++) {
-            movesStack[ply][nbCaptures + nbKingMoves + i] = otherMoves[i];
+            movesStack[ply][i + nbKillerMoves + nbCaptures + nbKingMoves] = otherMoves[i];
         }
 
         moveCountStack[ply] = nbMoves;
@@ -216,12 +235,13 @@ public class FastBoard {
         zobristKey[0] ^= zobrist[board[dst]][src];
         zobristKey[0] ^= zobrist[board[dst]][dst];
 
+        materialDiffStack[ply+1] = materialDiffStack[ply];
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
 
             // relative to swedish side : +2 for moscovite loss, -4 for swedish loss
-            if (isMoscovite(board[capCoord])) materialDiffStack[ply+1] = (byte) (materialDiffStack[ply] + 2);
-            else materialDiffStack[ply+1] = (byte) (materialDiffStack[ply] - 4);
+            if (isMoscovite(board[capCoord])) materialDiffStack[ply+1] += 2;
+            else materialDiffStack[ply+1] -= 4;
 
             zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
             board[capCoord] = EMPTY;
@@ -267,12 +287,12 @@ public class FastBoard {
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isCornerKingEscapes(ruleSet) || RuleSets.isConstrainedKingSquares(ruleSet)) {
                 if (RuleSets.isCornerKingEscapes(ruleSet)) {
-                    if (cornerSquares.contains(kingPos)) return Integer.MAX_VALUE;
+                    if (cornerSquares.contains(kingPos)) return VIRTUAL_INF;
                 } else if (RuleSets.isConstrainedKingSquares(ruleSet)) {
-                    if (!constrainedKingSquares.contains(kingPos)) return Integer.MAX_VALUE;
+                    if (!constrainedKingSquares.contains(kingPos)) return VIRTUAL_INF;
                 }
             } else {
-                return Integer.MAX_VALUE;
+                return VIRTUAL_INF;
             }
         }
 
@@ -286,7 +306,7 @@ public class FastBoard {
             }
         }
         if (nbSurrounding == 4) {
-            return Integer.MIN_VALUE;
+            return -VIRTUAL_INF;
         }
 
         return 0;

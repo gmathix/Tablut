@@ -67,28 +67,29 @@ public class NegaMonteCarlo {
      *  Allocated once, have to zeroed out before calling findBestMove()
      */
 
-    private static Random rng = new Random(12345);
+    private static final Random rng = new Random(12345);
 
-    private static byte[] board               = new byte[81];
-    private static byte[] kingPosStack        = new byte [MAX_SEARCH_PLY + 1];
-    private static byte[] captureCountStack   = new byte [MAX_SEARCH_PLY + 1];
-    private static int[]  moveCountStack      = new int  [MAX_SEARCH_PLY];
-    private static byte[] materialDiffStack   = new byte [MAX_SEARCH_PLY + 1];
+    private static final byte[] board               = new byte [81];
+    private static final byte[] kingPosStack        = new byte [MAX_SEARCH_PLY + 1];
+    private static final byte[] captureCountStack   = new byte [MAX_SEARCH_PLY + 1];
+    private static final int[]  moveCountStack      = new int  [MAX_SEARCH_PLY];
+    private static final byte[] materialDiffStack   = new byte [MAX_SEARCH_PLY + 1];
 
-    private static short[][] captureStack     = new short[MAX_SEARCH_PLY + 1][NegamaxSearchFast.MAX_CAPTURES];
-    private static int[][]   movesStack       = new int  [MAX_SEARCH_PLY + 1][NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    private static final short[][] captureStack     = new short[MAX_SEARCH_PLY + 1][NegamaxSearchFast.MAX_CAPTURES];
+    private static final int[][]   movesStack       = new int  [MAX_SEARCH_PLY + 1][NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    private static final int[][]   killerMovesStack = new int  [MAX_SEARCH_PLY + 1][2];
 
-    private static long[][] zobrist           = new long[4][81];
-    private static long[]   zobristKey        = new long[1];
-    private static long     sideToMove        = rng.nextLong();
+    private static final long[][] zobrist           = new long[4][81];
+    private static final long[]   zobristKey        = new long[1];
+    private static final long     sideToMove        = rng.nextLong();
 
 
     // currently (8 + 4 + 1 + 1 + 4) * (1 << 20) ~= 14.6MB transposition table
-    private static long[]  ttHash             = new long[NegamaxSearchFast.NB_TT_ENTRIES];
-    private static float[] ttScore            = new float[NegamaxSearchFast.NB_TT_ENTRIES];
-    private static byte[]  ttDepth            = new byte[NegamaxSearchFast.NB_TT_ENTRIES];
-    private static byte[]  ttFlag             = new byte[NegamaxSearchFast.NB_TT_ENTRIES];
-    private static int[]   ttBestMove         = new int[NegamaxSearchFast.NB_TT_ENTRIES];
+    private static final long[]  ttHash             = new long[NegamaxSearchFast.NB_TT_ENTRIES];
+    private static final float[] ttScore            = new float[NegamaxSearchFast.NB_TT_ENTRIES];
+    private static final byte[]  ttDepth            = new byte[NegamaxSearchFast.NB_TT_ENTRIES];
+    private static final byte[]  ttFlag             = new byte[NegamaxSearchFast.NB_TT_ENTRIES];
+    private static final int[]   ttBestMove         = new int[NegamaxSearchFast.NB_TT_ENTRIES];
 
 
     private static class Node {
@@ -159,13 +160,12 @@ public class NegaMonteCarlo {
         TablutStageModel stageModel = (TablutStageModel) tablutBoard.getModel().getGameStage();
         ruleSet = stageModel.getRuleSet();
 
-        zobrist = new long[4][81];
+
         for (int piece : FastBoard.pieceTypes) {
             for (int i =0 ; i < 81; i++ ){
                 zobrist[piece][i] = rng.nextLong();
             }
         }
-        sideToMove = rng.nextLong();
         zobristKey[0] = 0;
     }
 
@@ -180,6 +180,7 @@ public class NegaMonteCarlo {
         for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
         for (int[] moves : movesStack) Arrays.fill(moves, 0);
         for (long[] squares : zobrist) Arrays.fill(squares, 0);
+        for (int[] moves : killerMovesStack) Arrays.fill(moves, 0);
 
         Arrays.fill(ttHash, 0);
         Arrays.fill(ttScore, 0);
@@ -188,7 +189,6 @@ public class NegaMonteCarlo {
         Arrays.fill(ttBestMove, 0);
 
         zobristKey[0] = 0;
-        sideToMove = 0;
     }
 
 
@@ -294,7 +294,7 @@ public class NegaMonteCarlo {
             return new Node(parent, moveFromParent, turn, ply, new int[0], true);
         }
 
-        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, ruleSet);
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, ruleSet);
         int legalCount = moveCountStack[ply];
         int[] legalMoves = Arrays.copyOf(movesStack[ply], legalCount);
 
@@ -323,7 +323,7 @@ public class NegaMonteCarlo {
             float exploit = 1.0f - (child.wins / (float) child.visits);
             float explore = (float) (C * Math.sqrt(Math.log(Math.max(1, node.visits)) / child.visits));
             float prior = (float) (W * (movePrior(node, node.legalMoves[i]) / (1.0 + child.visits)));
-            float score = exploit + exploit + prior;
+            float score = exploit + explore + prior;
 
             if (score >= bestScore) {
                 bestScore = score;
@@ -487,7 +487,7 @@ public class NegaMonteCarlo {
         }
 
         float maxScore = Float.NEGATIVE_INFINITY;
-        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, ruleSet);
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, ruleSet);
 
         if (moveCountStack[ply] == 0) {
             return -FastEvaluation.VIRTUAL_INF + depth;

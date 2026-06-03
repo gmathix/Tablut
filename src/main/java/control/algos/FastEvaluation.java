@@ -7,7 +7,7 @@ import model.RuleSets;
 public class FastEvaluation {
 
     // virtual inf boundary that doesn't break floating point math of exp functions (unlike damn Double.NEGATIVE_INFINITY)
-    public static final float VIRTUAL_INF = 10000;
+    public static final float VIRTUAL_INF = 10000f;
 
     // weights for each evaluation criteria
     public static final float ESCAPE_PATH_WEIGHT  = 15;
@@ -55,13 +55,13 @@ public class FastEvaluation {
 
         // 1. check win conditions immediately
         float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
-        if (win == (double) Integer.MAX_VALUE) {
+        if (win == VIRTUAL_INF) {
             /** swedish won : if we are swedish this is good otherwise it's terrible
              * we substract/add depthDiff so that less deep wins will have better score
              */
             return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }
-        if (win == Integer.MIN_VALUE) {
+        if (win == -VIRTUAL_INF) {
             // moscovite won : if we are moscovite this is good otherwise it's terrible
             return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
         }

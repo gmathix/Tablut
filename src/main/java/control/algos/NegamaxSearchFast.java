@@ -75,6 +75,7 @@ public class NegamaxSearchFast {
     public static final int NB_POSSIBLE_MOVES   = 1296; // calculated (not in my head :( )
     public static final int MAX_CAPTURES        = 3;
     public static final int MAX_DEPTH           = 10;
+    public static final float VIRTUAL_INF       = Evaluation.VIRTUAL_INF;
 
     // flags for TT entries
     public static final int LOWER_BOUND = 1;
@@ -88,30 +89,30 @@ public class NegamaxSearchFast {
     private static int ruleSet;
 
 
-    private static Random rng = new Random(12345);
+    private static final Random rng = new Random(12345);
 
-    private static byte[]     board = new byte[81];
-    private static byte[]     captureCountStack = new byte[MAX_DEPTH + 1];
-    private static byte[]     kingPosStack = new byte[MAX_DEPTH + 1];
-    private static int[]      moveCountStack = new int[MAX_DEPTH + 1];
-    private static byte[]    materialDiffStack = new byte[MAX_DEPTH + 1];
+    private static byte[]           board               = new byte[81];
+    private static final byte[]     captureCountStack   = new byte[MAX_DEPTH + 1];
+    private static final byte[]     kingPosStack        = new byte[MAX_DEPTH + 1];
+    private static final int[]      moveCountStack      = new int[MAX_DEPTH + 1];
+    private static final byte[]     materialDiffStack   = new byte[MAX_DEPTH + 1];
 
-    private static short[][]  captureStack = new short[MAX_DEPTH + 1][MAX_CAPTURES];
-    private static int[][]    movesStack = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
-    private static int[][]    killerMoves = new int[NB_POSSIBLE_MOVES][2];
-
-
-    private static long[][]   zobrist = new long[4][81];
-    private static long       sideToMove = rng.nextLong();
-    private static long[]     zobristKey = new long[1];
+    private static final short[][]  captureStack        = new short[MAX_DEPTH + 1][MAX_CAPTURES];
+    private static final int[][]    movesStack          = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
+    private static final int[][]    killerMovesStack    = new int[MAX_DEPTH + 1][2];
 
 
-    // data-oriented layout is better than a TTEntry class/record for cache behavior
-    private static long[]    ttHash = new long[NB_TT_ENTRIES];
-    private static float[]   ttScore = new float[NB_TT_ENTRIES];
-    private static byte[]    ttDepth = new byte[NB_TT_ENTRIES];
-    private static byte[]    ttFlag = new byte[NB_TT_ENTRIES];
-    private static int[]     ttBestMove = new int[NB_TT_ENTRIES];
+    private static final long[][]   zobrist             = new long[4][81];
+    private static final long       sideToMove          = rng.nextLong();
+    private static final long[]     zobristKey          = new long[1];
+
+
+    // currently (8 + 4 + 1 + 1 + 4) * (1 << 20) ~= 14.6MB transposition table
+    private static final long[]    ttHash               = new long[NB_TT_ENTRIES];
+    private static final float[]   ttScore              = new float[NB_TT_ENTRIES];
+    private static final byte[]    ttDepth              = new byte[NB_TT_ENTRIES];
+    private static final byte[]    ttFlag               = new byte[NB_TT_ENTRIES];
+    private static final int[]     ttBestMove           = new int[NB_TT_ENTRIES];
 
 
 
@@ -129,7 +130,7 @@ public class NegamaxSearchFast {
 
         for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
         for (int[] moves : movesStack) Arrays.fill(moves, 0);
-        for (int[] moves : killerMoves) Arrays.fill(moves, 0);
+        for (int[] moves : killerMovesStack) Arrays.fill(moves, 0);
         for (long[] squares : zobrist) Arrays.fill(squares, 0);
 
         Arrays.fill(ttHash, 0);
@@ -139,7 +140,6 @@ public class NegamaxSearchFast {
         Arrays.fill(ttBestMove, 0);
 
         zobristKey[0] = 0;
-        sideToMove = 0;
     }
 
     public static void configure(int level, TablutBoard tablutBoard) {
@@ -168,7 +168,6 @@ public class NegamaxSearchFast {
                 zobrist[pieceType][i] = rng.nextLong();
             }
         }
-        sideToMove = rng.nextLong();
 
         zobristKey[0] = 0;
         // xor numbers corresponding to active pieces together
@@ -185,13 +184,13 @@ public class NegamaxSearchFast {
         List<BestMove> moves = new ArrayList<>();
 
 
-        float alpha = Float.NEGATIVE_INFINITY;
-        float beta = Float.POSITIVE_INFINITY;
+        float alpha = -VIRTUAL_INF;
+        float beta = VIRTUAL_INF;
 
-        float bestScore = Float.NEGATIVE_INFINITY;
+        float bestScore = -VIRTUAL_INF;
 
 
-        FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, ruleSet);
+        FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, ruleSet);
         if (moveCountStack[0] == 0) return -1;
         for (int i = 0; i < moveCountStack[0]; i++) {
             int move = movesStack[0][i];
@@ -210,7 +209,6 @@ public class NegamaxSearchFast {
                     board, move, 0, captureCountStack, captureStack, materialDiffStack,
                     kingPosStack, zobrist, zobristKey, sideToMove
             );
-
 
             if (score > bestScore) {
                 bestScore = score;
@@ -239,29 +237,27 @@ public class NegamaxSearchFast {
 
         int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
 
-        if (ttFlag[ttIndex] != 0) {
-            if (zobristKey[0] == ttHash[ttIndex]) {
-                if (ttFlag[ttIndex] == EXACT)
-                    return ttScore[ttIndex];
-                else if (ttFlag[ttIndex] == LOWER_BOUND)
-                    alpha = Math.max(alpha, ttScore[ttIndex]);
-                else if (ttFlag[ttIndex] == UPPER_BOUND)
-                    beta = Math.min(beta, ttScore[ttIndex]);
-
-                if (alpha >= beta)
-                    return ttScore[ttIndex];
+        if (ttFlag[ttIndex] != 0 && zobristKey[0] == ttHash[ttIndex]) {
+            if (ttDepth[ttIndex] >= depth) {
+                if (ttFlag[ttIndex] == EXACT) return ttScore[ttIndex];
+                else if (ttFlag[ttIndex] == LOWER_BOUND) alpha = Math.max(alpha, ttScore[ttIndex]);
+                else if (ttFlag[ttIndex] == UPPER_BOUND) beta = Math.min(beta, ttScore[ttIndex]);
+                if (alpha >= beta) return ttScore[ttIndex];
             }
         }
 
-        if (win != 0 || depth == 0) {
+        if (win != 0) {
+            return win;
+        }
+        if (depth == 0) {
             return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, kingPosStack, ruleSet);
         }
 
-        float maxScore = Float.NEGATIVE_INFINITY;
-        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, ruleSet);
+        float maxScore = -VIRTUAL_INF;
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, ruleSet);
 
         if (moveCountStack[ply] == 0) { // can't make moves, automatically lose
-            return Float.NEGATIVE_INFINITY - depth;
+            return -VIRTUAL_INF - depth;
         }
 
         byte flag;
@@ -287,6 +283,10 @@ public class NegamaxSearchFast {
             if (score > maxScore) maxScore = score;
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
+                if (killerMovesStack[ply][0] != move) {
+                    killerMovesStack[ply][1] = killerMovesStack[ply][0];
+                    killerMovesStack[ply][0] = move;
+                }
                 ttScore[ttIndex] = score;
                 ttHash[ttIndex] = zobristKey[0];
                 ttDepth[ttIndex] = (byte) depth;
@@ -295,12 +295,9 @@ public class NegamaxSearchFast {
             }
         }
 
-        if (maxScore <= alphaOrig)
-            flag = UPPER_BOUND;
-        else if (maxScore >= beta)
-            flag = LOWER_BOUND;
-        else
-            flag = EXACT;
+        if (maxScore <= alphaOrig) flag = UPPER_BOUND;
+        else if (maxScore >= beta) flag = LOWER_BOUND;
+        else                       flag = EXACT;
 
         ttScore[ttIndex] = maxScore;
         ttHash[ttIndex] = zobristKey[0];

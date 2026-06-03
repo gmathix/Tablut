@@ -6,7 +6,7 @@ import model.RuleSets;
 public class Evaluation {
 
     // virtual inf boundary that doesn't break floating point math of exp functions (unlike damn Double.NEGATIVE_INFINITY)
-    public static final double VIRTUAL_INF = 10000;
+    public static final float VIRTUAL_INF = 10000f;
 
     // weights for each evaluation criteria
     public static final double ESCAPE_PATH_WEIGHT  = 15;
