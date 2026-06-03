@@ -41,12 +41,12 @@ public class NegamaxDecider extends Decider {
 
         int turn = model.getIdPlayer();
 
-//        NegamaxSearch negamaxSearch = new NegamaxSearch(level);
-        NegamaxSearchFast negamaxSearchFast = new NegamaxSearchFast(tablutBoard, level);
 
-        int bestMoveInt = negamaxSearchFast.findBestMove(turn, ((TablutController) control).isBoardRepeated());
 
-//        RecurMove bestMove = negamaxSearch.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
+        NegamaxSearchFast.resetBuffers();
+        NegamaxSearchFast.configure(level, tablutBoard);
+        int bestMoveInt = NegamaxSearchFast.findBestMove(turn, ((TablutController) control).isBoardRepeated());
+
 
         int src = bestMoveInt & 0x7F;
         int dst = (bestMoveInt >> 7) & 0x7F;

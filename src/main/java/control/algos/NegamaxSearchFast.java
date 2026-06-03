@@ -3,6 +3,9 @@ package control.algos;
 import model.TablutBoard;
 import model.TablutStageModel;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 
@@ -67,10 +70,11 @@ import java.util.Random;
  */
 public class NegamaxSearchFast {
 
-    // 2**23 * 8 bytes ~= 67MB
-    public static final int NB_TT_ENTRIES = 1 << 23;
-    public static final int NB_POSSIBLE_MOVES = 1296;
-    public static final int MAX_CAPTURES = 3;
+    // 2**20 * 8 bytes ~= 9MB
+    public static final int NB_TT_ENTRIES       = 1 << 20;
+    public static final int NB_POSSIBLE_MOVES   = 1296; // calculated (not in my head :( )
+    public static final int MAX_CAPTURES        = 3;
+    public static final int MAX_DEPTH           = 10;
 
     // flags for TT entries
     public static final int LOWER_BOUND = 1;
@@ -80,49 +84,74 @@ public class NegamaxSearchFast {
 
 
 
-    private int startingDepth;
-    private int ruleSet;
+    private static int startingDepth;
+    private static int ruleSet;
 
 
-    private byte[]     board;
+    private static Random rng = new Random(12345);
 
-    private byte[]     captureCountStack;
-    private byte[]     kingPosStack;
-    private int[]      moveCountStack;
-    private int[]      historyHeuristic;
+    private static byte[]     board = new byte[81];
+    private static byte[]     captureCountStack = new byte[MAX_DEPTH + 1];
+    private static byte[]     kingPosStack = new byte[MAX_DEPTH + 1];
+    private static int[]      moveCountStack = new int[MAX_DEPTH + 1];
+    private static byte[]    materialDiffStack = new byte[MAX_DEPTH + 1];
 
-    private short[][]  captureStack;
-    private int[][]    movesStack;
-    private int[][]    killerMoves;
+    private static short[][]  captureStack = new short[MAX_DEPTH + 1][MAX_CAPTURES];
+    private static int[][]    movesStack = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
+    private static int[][]    killerMoves = new int[NB_POSSIBLE_MOVES][2];
 
-    private Random     rng;
-    private long[][]   zobrist;
-    private long       sideToMove;
-    private long[]     zobristKey;
+
+    private static long[][]   zobrist = new long[4][81];
+    private static long       sideToMove = rng.nextLong();
+    private static long[]     zobristKey = new long[1];
 
 
     // data-oriented layout is better than a TTEntry class/record for cache behavior
-    private long[]    ttHash;
-    private float[]  ttScore;
-    private byte[]    ttDepth;
-    private byte[]    ttFlag;
-    private int[]     ttBestMove;
+    private static long[]    ttHash = new long[NB_TT_ENTRIES];
+    private static float[]   ttScore = new float[NB_TT_ENTRIES];
+    private static byte[]    ttDepth = new byte[NB_TT_ENTRIES];
+    private static byte[]    ttFlag = new byte[NB_TT_ENTRIES];
+    private static int[]     ttBestMove = new int[NB_TT_ENTRIES];
 
 
 
 
-    private record BestMove(RecurMove move, float score) {}
+    private record BestMove(int move, float score) {}
 
 
-    public NegamaxSearchFast(TablutBoard tablutBoard, int level) {
-        this.startingDepth = switch (level) {
+
+    public static void resetBuffers() {
+        Arrays.fill(board, (byte) 0);
+        Arrays.fill(kingPosStack, (byte) 0);
+        Arrays.fill(captureCountStack, (byte) 0);
+        Arrays.fill(moveCountStack, 0);
+        Arrays.fill(materialDiffStack, (byte) 0);
+
+        for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
+        for (int[] moves : movesStack) Arrays.fill(moves, 0);
+        for (int[] moves : killerMoves) Arrays.fill(moves, 0);
+        for (long[] squares : zobrist) Arrays.fill(squares, 0);
+
+        Arrays.fill(ttHash, 0);
+        Arrays.fill(ttScore, 0);
+        Arrays.fill(ttDepth, (byte) 0);
+        Arrays.fill(ttFlag, (byte) 0);
+        Arrays.fill(ttBestMove, 0);
+
+        zobristKey[0] = 0;
+        sideToMove = 0;
+    }
+
+    public static void configure(int level, TablutBoard tablutBoard) {
+        startingDepth = switch (level) {
             case 0, 1 -> 1;
             case 2 -> 2;
             case 3,4 -> 3;
             case 5 -> 4;
             case 6,7 -> 5;
-            case 8,9 -> 6;
-            case 10 -> 7;
+            case 8 -> 6;
+            case 9 -> 7;
+            case 10 -> 8;
             default -> 4;
         };
 
@@ -130,22 +159,8 @@ public class NegamaxSearchFast {
         ruleSet = stageModel.getRuleSet();
 
         board = FastBoard.fromTablutBoard(tablutBoard);
-
-        kingPosStack = new byte[startingDepth+1];
-        captureCountStack = new byte[startingDepth+1];
-        moveCountStack = new int[startingDepth+1];
-        historyHeuristic = new int[NB_POSSIBLE_MOVES];
-
-        captureStack = new short[startingDepth+1][MAX_CAPTURES];
-        movesStack = new int[startingDepth+1][NB_POSSIBLE_MOVES];
-        killerMoves = new int[startingDepth+1][2];
-        kingPosStack[0] = FastBoard.getKingPos(board);
-
-
-
-
-        rng = new Random(12345);
-        zobrist = new long[4][81];
+        kingPosStack[0]   = FastBoard.getKingPos(board);
+        materialDiffStack[0] = FastEvaluation.countMaterialDiff(board);
 
         // initialize random numbers
         for (int pieceType : FastBoard.pieceTypes) {
@@ -155,8 +170,7 @@ public class NegamaxSearchFast {
         }
         sideToMove = rng.nextLong();
 
-
-        zobristKey = new long[]{0};
+        zobristKey[0] = 0;
         // xor numbers corresponding to active pieces together
         for (int i = 0; i < 81; i++) {
             if (board[i] != FastBoard.EMPTY) {
@@ -164,23 +178,18 @@ public class NegamaxSearchFast {
             }
         }
         zobristKey[0] ^= sideToMove;
-
-
-        ttHash = new long[NB_TT_ENTRIES];
-        ttScore = new float[NB_TT_ENTRIES];
-        ttDepth = new byte[NB_TT_ENTRIES];
-        ttFlag = new byte[NB_TT_ENTRIES];
-        ttBestMove = new int[NB_TT_ENTRIES];
     }
 
 
-    public int findBestMove(int turn, boolean findAlternativeMode) {
-        int bestMove = -1;
+    public static int findBestMove(int turn, boolean findAlternativeMode) {
+        List<BestMove> moves = new ArrayList<>();
 
 
         float alpha = Float.NEGATIVE_INFINITY;
         float beta = Float.POSITIVE_INFINITY;
+
         float bestScore = Float.NEGATIVE_INFINITY;
+
 
         FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, ruleSet);
         if (moveCountStack[0] == 0) return -1;
@@ -188,34 +197,51 @@ public class NegamaxSearchFast {
             int move = movesStack[0][i];
 
             kingPosStack[1] = kingPosStack[0];
+            materialDiffStack[1] = materialDiffStack[0];
             FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack);
-            FastBoard.makeMove(board, move, 0, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
+            FastBoard.makeMove(
+                    board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                    kingPosStack, zobrist, zobristKey, sideToMove
+            );
 
-            float score = -negamax(board, startingDepth-1, 1, (turn+1) % 2, -beta, -alpha);
+            float score = -negamax(startingDepth-1, 1, (turn+1) % 2, -beta, -alpha);
 
-            FastBoard.undoMove(board, move, 0, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
+            FastBoard.undoMove(
+                    board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                    kingPosStack, zobrist, zobristKey, sideToMove
+            );
 
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = move;
+                moves.add(new BestMove(move, score));
             }
             alpha = Math.max(alpha, score);
             if (alpha >= beta) break;
+        }
+
+        moves = moves.stream().sorted(
+                (bm1, bm2) -> Double.compare(
+                        bm2.score, bm1.score
+                )
+        ).toList();
+        int bestMove = moves.getFirst().move;
+        if (findAlternativeMode && moves.size() > 1) {
+            bestMove = moves.get(1).move;
         }
 
         return bestMove;
     }
 
 
-    public float negamax(byte[] board, int depth, int ply, int turn, float alpha, float beta) {
+    public static float negamax(int depth, int ply, int turn, float alpha, float beta) {
         float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
 
         int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
 
         if (ttFlag[ttIndex] != 0) {
             if (zobristKey[0] == ttHash[ttIndex]) {
-                if (ttHash[ttIndex] == EXACT)
+                if (ttFlag[ttIndex] == EXACT)
                     return ttScore[ttIndex];
                 else if (ttFlag[ttIndex] == LOWER_BOUND)
                     alpha = Math.max(alpha, ttScore[ttIndex]);
@@ -228,7 +254,7 @@ public class NegamaxSearchFast {
         }
 
         if (win != 0 || depth == 0) {
-            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, kingPosStack, ruleSet);
+            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, kingPosStack, ruleSet);
         }
 
         float maxScore = Float.NEGATIVE_INFINITY;
@@ -244,12 +270,19 @@ public class NegamaxSearchFast {
             int move = movesStack[ply][i];
 
             kingPosStack[ply+1] = kingPosStack[ply];
+            materialDiffStack[ply+1] = materialDiffStack[ply];
             FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack);
-            FastBoard.makeMove(board, move, ply, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
+            FastBoard.makeMove(
+                    board, move, ply, captureCountStack, captureStack, materialDiffStack,
+                    kingPosStack, zobrist, zobristKey, sideToMove
+            );
 
-            float score = -negamax(board, depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
+            float score = -negamax(depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
 
-            FastBoard.undoMove(board, move, ply, captureCountStack, captureStack, kingPosStack, zobrist, zobristKey, sideToMove);
+            FastBoard.undoMove(
+                    board, move, ply, captureCountStack, captureStack, kingPosStack
+                    , materialDiffStack, zobrist, zobristKey, sideToMove
+            );
 
             if (score > maxScore) maxScore = score;
             alpha = Math.max(alpha, score);
