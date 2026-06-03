@@ -200,7 +200,8 @@ public class FastBoard {
 
 
     public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey, long sideToMove) {
+                                byte[] materialDiffStack, byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                long sideToMove) {
         // update kingPosStack[ply+1], not kingPosStack[ply]
 
         int src = move & 0x7F;
@@ -218,6 +219,10 @@ public class FastBoard {
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
 
+            // relative to swedish side : +2 for moscovite loss, -4 for swedish loss
+            if (isMoscovite(board[capCoord])) materialDiffStack[ply+1] = (byte) (materialDiffStack[ply] + 2);
+            else materialDiffStack[ply+1] = (byte) (materialDiffStack[ply] - 4);
+
             zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
             board[capCoord] = EMPTY;
         }
@@ -226,7 +231,8 @@ public class FastBoard {
     }
 
     public static void undoMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey, long sideToMove) {
+                                byte[] materialDiffStack, byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                long sideToMove) {
         int src = move & 0x7F;
         int dst = (move >> 7) & 0x7F;
 
@@ -241,6 +247,9 @@ public class FastBoard {
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
             int capPiece = captureStack[ply][i] & 0x03;
+
+            // no need to reset material diff too, done in negamax
+
             board[capCoord] = (byte) capPiece;
 
             zobristKey[0] ^= zobrist[board[capCoord]][capCoord];

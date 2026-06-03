@@ -47,7 +47,8 @@ public class FastEvaluation {
      * @param baseDepth the total depth of the whole tree
      * @return
      */
-    public static float evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth, byte[] kingPosStack, int ruleSet) {
+    public static float evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth,
+                                 byte[] materialDiffStack, byte[] kingPosStack, int ruleSet) {
         int depthDiff = baseDepth - currDepth;
 
         float score = 0;
@@ -79,7 +80,7 @@ public class FastEvaluation {
         float encerclement = countKingEncerclement(board, ply, kingPosStack);
 
         // 4. count material difference
-        float materialDiff = countMaterialDiff(board);
+        byte  materialDiff = materialDiffStack[ply];
 
         float boardControl = evaluateBoardControl(board);
 
@@ -235,9 +236,9 @@ public class FastEvaluation {
     /**
      * Returns the material difference (king excluded) relative to Swedish
      */
-    public static float countMaterialDiff(byte[] board) {
-        float nbMoscovitePawns = 0;
-        float nbSwedishPawns = 0;
+    public static byte countMaterialDiff(byte[] board) {
+        byte nbMoscovitePawns = 0;
+        byte nbSwedishPawns = 0;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (board[i*9+j] == MOSCOVITE) {
@@ -248,8 +249,8 @@ public class FastEvaluation {
             }
         }
 
-        // normalize between -30 and 30
-        return (nbSwedishPawns / 8 - nbMoscovitePawns / 16) * 30;
+        // normalize between -32 and 32
+        return (byte) (nbSwedishPawns * 4 - nbMoscovitePawns * 2);
     }
 
 
