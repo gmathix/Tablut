@@ -96,6 +96,7 @@ public class NegamaxSearchFast {
     private static final byte[]     kingPosStack        = new byte[MAX_DEPTH + 1];
     private static final int[]      moveCountStack      = new int[MAX_DEPTH + 1];
     private static final byte[]     materialDiffStack   = new byte[MAX_DEPTH + 1];
+    private static final int[]     bestMovesStack       = new int[MAX_DEPTH + 1];
 
     private static final short[][]  captureStack        = new short[MAX_DEPTH + 1][MAX_CAPTURES];
     private static final int[][]    movesStack          = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
@@ -127,6 +128,7 @@ public class NegamaxSearchFast {
         Arrays.fill(captureCountStack, (byte) 0);
         Arrays.fill(moveCountStack, 0);
         Arrays.fill(materialDiffStack, (byte) 0);
+        Arrays.fill(bestMovesStack, 0);
 
         for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
         for (int[] moves : movesStack) Arrays.fill(moves, 0);
@@ -181,51 +183,65 @@ public class NegamaxSearchFast {
 
 
     public static int findBestMove(int turn, boolean findAlternativeMode) {
-        List<BestMove> moves = new ArrayList<>();
+        List<BestMove> bestMoves = new ArrayList<>();
 
 
-        float alpha = -VIRTUAL_INF;
-        float beta = VIRTUAL_INF;
 
-        float bestScore = -VIRTUAL_INF;
+        int currentBestMove = 0;
 
 
-        FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
-        if (moveCountStack[0] == 0) return -1;
-        for (int i = 0; i < moveCountStack[0]; i++) {
-            int move = movesStack[0][i];
+        for (int depth = 0; depth < startingDepth; depth++) { // iterative deepening
 
-            kingPosStack[1] = kingPosStack[0];
-            materialDiffStack[1] = materialDiffStack[0];
-            FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack);
-            FastBoard.makeMove(
-                    board, move, 0, captureCountStack, captureStack, materialDiffStack,
-                    kingPosStack, zobrist, zobristKey, sideToMove
-            );
+            float alpha = -VIRTUAL_INF;
+            float beta = VIRTUAL_INF;
 
-            float score = -negamax(startingDepth-1, 1, (turn+1) % 2, -beta, -alpha);
+            float bestScore = -VIRTUAL_INF;
 
-            FastBoard.undoMove(
-                    board, move, 0, captureCountStack, captureStack, materialDiffStack,
-                    kingPosStack, zobrist, zobristKey, sideToMove
-            );
+            // generate moves with the first move in the list being the current best one
+            if (depth == 0) FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
+            else FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, currentBestMove, true, ruleSet);
 
-            if (score > bestScore) {
-                bestScore = score;
-                moves.add(new BestMove(move, score));
+            if (moveCountStack[0] == 0) return -1;
+
+            for (int i = 0; i < moveCountStack[0]; i++) {
+                int move = movesStack[0][i];
+
+                kingPosStack[1] = kingPosStack[0];
+                materialDiffStack[1] = materialDiffStack[0];
+                FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack);
+                FastBoard.makeMove(
+                        board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                        kingPosStack, zobrist, zobristKey, sideToMove
+                );
+
+                float score = -negamax(depth, 1, (turn+1) % 2, -beta, -alpha);
+
+                FastBoard.undoMove(
+                        board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                        kingPosStack, zobrist, zobristKey, sideToMove
+                );
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    currentBestMove = move;
+                    BestMove bm = new BestMove(move, score);
+                    if (depth == startingDepth-1)
+                        bestMoves.add(bm);
+                }
+                alpha = Math.max(alpha, score);
+                if (alpha >= beta) break;
             }
-            alpha = Math.max(alpha, score);
-            if (alpha >= beta) break;
         }
 
-        moves = moves.stream().sorted(
+
+        bestMoves = bestMoves.stream().sorted(
                 (bm1, bm2) -> Double.compare(
                         bm2.score, bm1.score
                 )
         ).toList();
-        int bestMove = moves.getFirst().move;
-        if (findAlternativeMode && moves.size() > 1) {
-            bestMove = moves.get(1).move;
+        int bestMove = bestMoves.getFirst().move;
+        if (findAlternativeMode && bestMoves.size() > 1) {
+            bestMove = bestMoves.get(1).move;
         }
 
         return bestMove;
@@ -233,7 +249,6 @@ public class NegamaxSearchFast {
 
 
     public static float negamax(int depth, int ply, int turn, float alpha, float beta) {
-        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
 
 
         boolean hasTTBestMove = false;
@@ -252,9 +267,6 @@ public class NegamaxSearchFast {
             }
         }
 
-        if (win != 0) {
-            return win;
-        }
         if (depth == 0) {
             return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, kingPosStack, ruleSet);
         }

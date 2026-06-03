@@ -114,6 +114,9 @@ public class FastBoard {
 
                             int move = (i*9 + j) | ((currY*9 + currX) << 7);
 
+                            nbMoves++;
+
+                            if (move == bestTTMove) continue; // will be added after, avoid duplication in otherMoves
                             if (move == killerMovesStack[ply][0]) {
                                 killerMoves[nbKillerMoves] = move;
                                 nbKillerMoves++;
@@ -130,7 +133,6 @@ public class FastBoard {
                                 otherMoves[nbOtherMoves] = move;
                                 nbOtherMoves++;
                             }
-                            nbMoves++;
                         }
                     }
                 }

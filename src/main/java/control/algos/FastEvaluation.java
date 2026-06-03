@@ -10,10 +10,10 @@ public class FastEvaluation {
     public static final float VIRTUAL_INF = 10000f;
 
     // weights for each evaluation criteria
-    public static final float ESCAPE_PATH_WEIGHT  = 15;
-    public static final float ENCERCLEMENT_WEIGHT = 20;
-    public static final float MATERIAL_WEIGHT     = 30;
-    public static final float POSITION_WEIGHT     = 5;
+    public static final float BLOCKING_MOSCOVITES_WEIGHT = 15;
+    public static final float ENCERCLEMENT_WEIGHT        = 20;
+    public static final float MATERIAL_WEIGHT            = 30;
+    public static final float POSITION_WEIGHT            = 7;
 
     public static final byte EMPTY = 0;
     public static final byte MOSCOVITE = Pawn.PAWN_MOSCOVITE;
@@ -69,7 +69,7 @@ public class FastEvaluation {
 
         // 2. check delayed wins
         float delayedWin = checkDelayedWinAndPaths(board, turn, ply, depthDiff, kingPosStack, ruleSet);
-        if (Math.abs(delayedWin) >= VIRTUAL_INF - 100)
+        if (Math.abs(delayedWin) >= (VIRTUAL_INF - 100) / 2)
             return delayedWin;
 
 
@@ -80,12 +80,12 @@ public class FastEvaluation {
         float encerclement = countKingEncerclement(board, ply, kingPosStack);
 
         // 4. count material difference
-        byte  materialDiff = materialDiffStack[ply];
+        byte  materialDiff = (byte) (materialDiffStack[ply] / 3.2f);
 
         float boardControl = evaluateBoardControl(board);
 
 
-        float swedishScore = (delayedWin * ESCAPE_PATH_WEIGHT) +
+        float swedishScore = (delayedWin * BLOCKING_MOSCOVITES_WEIGHT) +
                 (encerclement * ENCERCLEMENT_WEIGHT) +
                 (materialDiff * MATERIAL_WEIGHT) +
                 (boardControl * POSITION_WEIGHT);
@@ -144,12 +144,8 @@ public class FastEvaluation {
 
                 if (piece != EMPTY) {
                     edgeReachable = false;
-                    if (piece == MOSCOVITE && j > 0) {
-                        kingObstructions++;
-                    } else if (piece == SWEDISH) {
-                        kingObstructions++;
-                    }
-                    break;
+                    kingObstructions++;
+                    if (piece == MOSCOVITE) kingObstructions++; // moscovites that block count double
                 }
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
@@ -159,7 +155,6 @@ public class FastEvaluation {
                         edgeReachable = false;
                     }
                 }
-
             }
 
             if (edgeReachable) {
@@ -179,23 +174,23 @@ public class FastEvaluation {
 
 
         if ((turn == 0 && nbEdgesReachable >= 1) || (turn == 1 && nbEdgesReachable >= 2)) {
-            return turn == 0 ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+            return turn == 0 ? (VIRTUAL_INF - depthDiff) / 2 : (-VIRTUAL_INF + depthDiff) / 2;
         }
         if (kingSurrounded) {
-            return turn == 1 ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+            return turn == 1 ? (VIRTUAL_INF - depthDiff) / 2 : (-VIRTUAL_INF + depthDiff) / 2;
         }
 
 
-        // return relative to swedish
-        return (nbEdgesReachable * 4.0f) - (kingObstructions * 1.5f);
+        if (kingObstructions > 10) kingObstructions = 10;
+        return -kingObstructions;
     }
+
+
 
     /**
      * Evaluate the king encerclement relative to Swedish (always negative) :
      *    - Vertically or horizontally, surrounding pieces receive a +1 score
      *    - Diagonally, they receive a +0.5 score
-     *    - Moscovites (moscovite pieces) receive a x3 multiplier
-     *    - Soldiers (swedish pieces) receive a -1 multiplier because they protect the king
      */
     public static float countKingEncerclement(byte[] board, int ply, byte[] kingPosStack) {
         float encerclement = 0;
@@ -213,23 +208,21 @@ public class FastEvaluation {
                 if (y < 0 || y > 8 || x < 0 || x > 8) continue;
 
                 int piece = board[y*9+x];
-                if (piece != EMPTY) {
+                if (piece == MOSCOVITE) {
                     float score;
                     if (Math.abs(dy - dx) == 1) score = 1; // vertical or horizontal
                     else                        score = 0.5f; // diagonal
 
-                    if (piece == MOSCOVITE) {
-                        score *= 3;
-                    } else {
-                        score *= -1;
-                    }
-
                     encerclement += score;
+                } else if (y == 4 && x == 4) { // center
+                    if (Math.abs(dy - dx) == 1) encerclement += 1;
                 }
             }
         }
 
-        return -encerclement;
+        if (encerclement == 0) return 10;
+        if (encerclement <= 1) return 8;
+        return -(encerclement * ((float) 10 / 6));
     }
 
 
@@ -261,13 +254,13 @@ public class FastEvaluation {
                 if (i == 4 && j == 4) continue;
                 int piece = board[i*9+j];
                 if (piece == SWEDISH) {
-                    score += 0.2;
+                    score += 2;
                 } else if (piece == MOSCOVITE) {
-                    score -= 0.2;
+                    score -= 1;
                 }
             }
         }
-        return score;
+        return score / 1.6f;
     }
 
 
