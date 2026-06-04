@@ -28,20 +28,6 @@ public class RecurBoard {
     public static final int[] DX_VALS = {0, 1, 0, -1};
 
     // list of squares unreachable by the king in the RULESET_CONSTRAINED_KING_SQUARES rule (flat order index)
-    public static final List<Integer> constrainedKingSquares = List.of(
-            3, 4, 5, // D1, E1, F1
-            27, 36, 45, // A4, A5, A6
-            35, 44, 53, // I4, I5, I6
-            75, 76, 77  // D9, E9, F9
-    );
-
-    // list of corner squares (flat order index)
-    public static final List<Integer> cornerSquares = List.of(
-            0, // A1
-            8, // I1
-            72, // A9,
-            80 //I9
-    );
 
 
     public record Capture(int x, int y, int piece) {}
@@ -195,7 +181,7 @@ public class RecurBoard {
                             if (!isEmpty(board[currY][currX])) break; // stop when path is obstructed
                             if (currY == 4 && currX == 4) continue; // skip center square
                             if (RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
-                                if (isKing(board[y][x]) && constrainedKingSquares.contains(currY * 9 + currX))
+                                if (isKing(board[y][x]) && RuleSets.constrainedKingSquares.contains(currY * 9 + currX))
                                     continue; // skip constrained king squares
                             }
 
@@ -324,11 +310,11 @@ public class RecurBoard {
         if (kingX == 0 || kingX == 8 || kingY == 0 || kingY == 8) {
             if (RuleSets.isCornerKingEscapes(stageModel.getRuleSet()) || RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
                 if (RuleSets.isCornerKingEscapes(stageModel.getRuleSet())) {
-                    if (cornerSquares.contains(kingY * 9 + kingX)) {
+                    if (RuleSets.cornerSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }
                 } else if (RuleSets.isConstrainedKingSquares(stageModel.getRuleSet())) {
-                    if (!constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                    if (!RuleSets.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         return Integer.MAX_VALUE;
                     }
                 }

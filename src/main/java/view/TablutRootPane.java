@@ -9,6 +9,7 @@ import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import model.Pawn;
+import model.RuleSets;
 import model.TablutBoard;
 
 import java.util.ArrayList;
@@ -149,7 +150,7 @@ public class TablutRootPane extends RootPane {
                 square.setY(startY + i*squareSize);
                 square.setFill(((i+j)%2 == 0) ? TablutBoardLook.LIGHT_SQUARE : TablutBoardLook.DARK_SQUARE);
 
-                if (control.algos.RecurBoard.constrainedKingSquares.contains(i*9 + j)) {
+                if (RuleSets.constrainedKingSquares.contains(i*9 + j)) {
                     square.setFill(TablutBoardLook.SPECIAL_SQUARE);
                 }
                 if (i*9 + j == 40) {

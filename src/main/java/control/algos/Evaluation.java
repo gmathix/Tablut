@@ -1,5 +1,6 @@
 package control.algos;
 
+import javafx.css.Rule;
 import model.RuleSets;
 
 
@@ -145,9 +146,9 @@ public class Evaluation {
                 }
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares(recurBoard.getStageModel().getRuleSet()) && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isConstrainedKingSquares(recurBoard.getStageModel().getRuleSet()) && RuleSets.constrainedKingSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
-                    } else if (RuleSets.isCornerKingEscapes(recurBoard.getStageModel().getRuleSet()) && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isCornerKingEscapes(recurBoard.getStageModel().getRuleSet()) && !RuleSets.cornerSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
                     }
                 }

@@ -39,14 +39,44 @@ public class RuleSets {
 
 
 
+    public static final int RULESET_ASHTON_RULES                = 1 << 4;
+
+
+
+
     public record RuleOption(int bit, String description) {}
 
     public static List<RuleOption> ruleOptions = List.of(
+            new RuleOption(RuleSets.RULESET_ASHTON_RULES,             "Ashton rules (official, tournament)"),
             new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_SQUARES, "King cannot land on starting Moscovite squares"),
             new RuleOption(RuleSets.RULESET_CONSTRAINED_KING_MOVES,   "King cannot move more than 4 squares"),
             new RuleOption(RuleSets.RULESET_CORNER_KING_ESCAPES,      "King must reach a corner to win")
     );
 
+
+
+    public static final List<Integer> constrainedKingSquares = List.of(
+            3, 4, 5, // D1, E1, F1
+            27, 36, 45, // A4, A5, A6
+            35, 44, 53, // I4, I5, I6
+            75, 76, 77  // D9, E9, F9
+    );
+
+    // list of corner squares (flat order index)
+    public static final List<Integer> cornerSquares = List.of(
+            0, // A1
+            8, // I1
+            72, // A9,
+            80 //I9
+    );
+
+
+    public static final List<Integer> campsSquares = List.of(
+            3, 4, 5, 13, // D1, E1, F1
+            27, 36, 45, 37, // A4, A5, A6
+            35, 44, 53, 43, // I4, I5, I6
+            75, 76, 77, 84  // D9, E9, F9
+    );
 
 
 
@@ -62,4 +92,5 @@ public class RuleSets {
     public static boolean isCornerKingEscapes(int ruleSet) {
         return (ruleSet & RULESET_CORNER_KING_ESCAPES) > 0;
     }
+    public static boolean isAshtonRules(int ruleSet) { return (ruleSet & RULESET_ASHTON_RULES) > 0;}
 }

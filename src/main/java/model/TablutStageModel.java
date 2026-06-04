@@ -208,10 +208,10 @@ public class TablutStageModel extends GameStageModel {
                 x += dx_vals[i];
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isCornerKingEscapes(ruleSet) && !control.algos.RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isCornerKingEscapes(ruleSet) && !RuleSets.cornerSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
-                    } else if (RuleSets.isConstrainedKingSquares(ruleSet) && control.algos.RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isConstrainedKingSquares(ruleSet) && RuleSets.constrainedKingSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
                     }
@@ -235,11 +235,11 @@ public class TablutStageModel extends GameStageModel {
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isConstrainedKingSquares(ruleSet) || RuleSets.isCornerKingEscapes(ruleSet)) {
                 if (RuleSets.isCornerKingEscapes(ruleSet)) {
-                    if (control.algos.RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
+                    if (RuleSets.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
                 } else if (RuleSets.isConstrainedKingSquares(ruleSet)) {
-                    if (!control.algos.RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                    if (!RuleSets.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
                 }

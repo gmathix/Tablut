@@ -185,10 +185,10 @@ public class NegamaxSearchFast {
 
         for (int depth = 0; depth < startingDepth; depth++) { // iterative deepening
 
-            float alpha = -VIRTUAL_INF;
-            float beta = VIRTUAL_INF;
+            float alpha = Float.NEGATIVE_INFINITY;
+            float beta = Float.POSITIVE_INFINITY;
 
-            float bestScore = -VIRTUAL_INF;
+            float bestScore = Float.NEGATIVE_INFINITY;
 
             // generate moves with the first move in the list being the current best one
             if (depth == 0) FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
@@ -241,7 +241,9 @@ public class NegamaxSearchFast {
 
 
     public static float negamax(int depth, int ply, int turn, float alpha, float beta) {
-
+        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+        if (win > 0) return turn == 0 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
+        if (win < 0) return turn == 1 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
 
         boolean hasTTBestMove = false;
         int bestTTMove = 0;

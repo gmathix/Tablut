@@ -52,10 +52,12 @@ public class TablutBoardLook extends ClassicBoardLook {
                 cells[i][j].setStroke(BORDER_COLOR);
 
                 boolean isEdge = i == 0 || i == 8 || j == 0 || j == 8;
-                boolean isCorner = RecurBoard.cornerSquares.contains(i*9 + j);
+                boolean isCorner = RuleSets.cornerSquares.contains(i*9 + j);
 
-                if ((RuleSets.isConstrainedKingSquares(stageModel.getRuleSet()) && RecurBoard.constrainedKingSquares.contains(i*9 + j)) ||
-                    (RuleSets.isCornerKingEscapes(stageModel.getRuleSet()) && (isEdge && !isCorner))) { // darker color for moscovite starting squares
+                if ((RuleSets.isConstrainedKingSquares(stageModel.getRuleSet()) && RuleSets.constrainedKingSquares.contains(i*9 + j)) ||
+                    (RuleSets.isCornerKingEscapes(stageModel.getRuleSet()) && (isEdge && !isCorner)) ||
+                    (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(i*9+j))) { // darker color for forbidden/camp squares
+
                     cells[i][j].setFill(SPECIAL_SQUARE);
                 } else if (i*9+j == 40) {
                     cells[i][j].setFill(THRONE_COLOR);

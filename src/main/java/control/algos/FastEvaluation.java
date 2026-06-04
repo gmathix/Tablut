@@ -53,24 +53,22 @@ public class FastEvaluation {
 
         float score = 0;
 
-        // 1. check win conditions immediately
-        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
-        if (win == VIRTUAL_INF) {
-            /** swedish won : if we are swedish this is good otherwise it's terrible
-             * we substract/add depthDiff so that less deep wins will have better score
-             */
-            return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
-        }
-        if (win == -VIRTUAL_INF) {
-            // moscovite won : if we are moscovite this is good otherwise it's terrible
-            return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
-        }
+//        // 1. check win conditions immediately
+//        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+//        if (win == VIRTUAL_INF) {
+//            /** swedish won : if we are swedish this is good otherwise it's terrible
+//             * we substract/add depthDiff so that less deep wins will have better score
+//             */
+//            return (turn == 0) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+//        }
+//        if (win == -VIRTUAL_INF) {
+//            // moscovite won : if we are moscovite this is good otherwise it's terrible
+//            return (turn == 1) ? (VIRTUAL_INF - depthDiff) : (-VIRTUAL_INF + depthDiff);
+//        }
 
 
         // 2. check delayed wins
         float delayedWin = checkDelayedWinAndPaths(board, turn, ply, depthDiff, kingPosStack, ruleSet);
-        if (Math.abs(delayedWin) >= (VIRTUAL_INF - 100) / 2)
-            return delayedWin;
 
 
 
@@ -149,9 +147,9 @@ public class FastEvaluation {
                 }
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isConstrainedKingSquares(ruleSet) && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isConstrainedKingSquares(ruleSet) && RuleSets.constrainedKingSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
-                    } else if (RuleSets.isCornerKingEscapes(ruleSet) && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isCornerKingEscapes(ruleSet) && !RuleSets.cornerSquares.contains(y * 9 + x)) {
                         edgeReachable = false;
                     }
                 }
@@ -174,10 +172,10 @@ public class FastEvaluation {
 
 
         if ((turn == 0 && nbEdgesReachable >= 1) || (turn == 1 && nbEdgesReachable >= 2)) {
-            return turn == 0 ? (VIRTUAL_INF - depthDiff) / 2 : (-VIRTUAL_INF + depthDiff) / 2;
+            return VIRTUAL_INF - depthDiff;
         }
         if (kingSurrounded) {
-            return turn == 1 ? (VIRTUAL_INF - depthDiff) / 2 : (-VIRTUAL_INF + depthDiff) / 2;
+            return -VIRTUAL_INF + depthDiff;
         }
 
 
