@@ -249,7 +249,10 @@ public class TablutStageModel extends GameStageModel {
         }
 
         // count surrounding moscovites
-        int nbSurrounging = 0;
+        int nbSurrounding = 0;
+        int surroundMask = 0;
+
+        boolean kingInCenter = kingY == 4 && kingX == 4;
         boolean hasCenterNeighbor = false;
 
 
@@ -257,11 +260,15 @@ public class TablutStageModel extends GameStageModel {
             int y = kingY + dy_vals[i];
             int x = kingX + dx_vals[i];
             if (y < 0 || y > 8 || x < 0 || x > 8) continue;
-            if (y == 4 && x == 4) hasCenterNeighbor = true;
-            if (getBoard().getElement(y, x) instanceof Pawn p) {
-                if (p.getColor() == Pawn.PAWN_MOSCOVITE) {
-                    nbSurrounging++;
-                }
+
+            if (y == 4 && x == 4) {
+                hasCenterNeighbor = true;
+                nbSurrounding++;
+                surroundMask |= 1 << i;
+            } else if ((getBoard().getElement(y, x) instanceof Pawn p && p.getColor() == Pawn.PAWN_MOSCOVITE) ||
+                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                nbSurrounding++;
+                surroundMask |= 1 << i;
             }
         }
 
@@ -269,8 +276,17 @@ public class TablutStageModel extends GameStageModel {
         /* either the king is next to the center square and is surrounded by 3 moscovites,
          * or it is surrounded by 4 moscovites.
          */
-        if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
-            idWinner = 1;
+        if (model.getIdPlayer() == 1) {
+            if (RuleSets.isAshtonRules(ruleSet)) {
+                if ((kingInCenter && nbSurrounding == 4) ||
+                        (hasCenterNeighbor && nbSurrounding == 4) ||
+                        (!kingInCenter && !hasCenterNeighbor && nbSurrounding >= 2 && ((surroundMask & 0b1010) == 0b1010 || (surroundMask & 0b0101) == 0b0101))) {
+
+                    idWinner = 1;
+                }
+            } else if ((hasCenterNeighbor && nbSurrounding == 3) || (nbSurrounding == 4)) {
+                idWinner = 1;
+            }
         }
 
 

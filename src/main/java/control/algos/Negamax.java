@@ -61,14 +61,14 @@ import java.util.Random;
  *    whenever a move causes an alpha/beta prune : store as killer
  *    later : generate killer first in move list
  */
-public class NegamaxSearchFast {
+public class Negamax {
 
-    // 2**20 * 8 bytes ~= 9MB
-    public static final int NB_TT_ENTRIES       = 1 << 20;
-    public static final int NB_POSSIBLE_MOVES   = 1296; // calculated (not in my head :( )
-    public static final int MAX_CAPTURES        = 3;
-    public static final int MAX_DEPTH           = 10;
-    public static final float VIRTUAL_INF       = Evaluation.VIRTUAL_INF;
+
+    public static final int   NB_TT_ENTRIES       = 1 << 20;
+    public static final int   NB_POSSIBLE_MOVES   = 1296; // calculated (not in my head :( )
+    public static final int   MAX_CAPTURES        = 3;
+    public static final int   MAX_DEPTH           = 10;
+    public static final float VIRTUAL_INF         = FastEvaluation.VIRTUAL_INF;
 
     // flags for TT entries
     public static final int LOWER_BOUND = 1;
@@ -80,33 +80,36 @@ public class NegamaxSearchFast {
 
     private static int startingDepth;
     private static int ruleSet;
+    private static int positionsAnalyzed;
 
 
     private static final Random rng = new Random(12345);
 
-    private static byte[]           board               = new byte[81];
-    private static final byte[]     captureCountStack   = new byte[MAX_DEPTH + 1];
-    private static final byte[]     kingPosStack        = new byte[MAX_DEPTH + 1];
-    private static final int[]      moveCountStack      = new int[MAX_DEPTH + 1];
-    private static final byte[]     materialDiffStack   = new byte[MAX_DEPTH + 1];
-    private static final int[]      bestMovesStack       = new int[MAX_DEPTH + 1];
+    private static byte[]           board               = new byte  [81];
+    private static final byte[]     captureCountStack   = new byte  [MAX_DEPTH + 1];
+    private static final byte[]     kingPosStack        = new byte  [MAX_DEPTH + 1];
+    private static final int[]      moveCountStack      = new int   [MAX_DEPTH + 1];
+    private static final byte[]     materialDiffStack   = new byte  [MAX_DEPTH + 1];
+    private static final byte[]     soldierCountStack   = new byte  [MAX_DEPTH + 1];
+    private static final byte[]     moscoviteCountStack = new byte  [MAX_DEPTH + 1];
+    private static final int[]      bestMovesStack      = new int   [MAX_DEPTH + 1];
 
-    private static final short[][]  captureStack        = new short[MAX_DEPTH + 1][MAX_CAPTURES];
-    private static final int[][]    movesStack          = new int[MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
-    private static final int[][]    killerMovesStack    = new int[MAX_DEPTH + 1][2];
+    private static final short[][]  captureStack        = new short [MAX_DEPTH + 1][MAX_CAPTURES];
+    private static final int[][]    movesStack          = new int   [MAX_DEPTH + 1][NB_POSSIBLE_MOVES];
+    private static final int[][]    killerMovesStack    = new int   [MAX_DEPTH + 1][2];
 
 
-    private static final long[][]   zobrist             = new long[4][81];
+    private static final long[][]   zobrist             = new long  [4][81];
+    private static final long[]     zobristKey          = new long  [1];
     private static final long       sideToMove          = rng.nextLong();
-    private static final long[]     zobristKey          = new long[1];
 
 
     // currently (8 + 4 + 1 + 1 + 4) * (1 << 20) ~= 14.6MB transposition table
-    private static final long[]    ttHash               = new long[NB_TT_ENTRIES];
-    private static final float[]   ttScore              = new float[NB_TT_ENTRIES];
-    private static final byte[]    ttDepth              = new byte[NB_TT_ENTRIES];
-    private static final byte[]    ttFlag               = new byte[NB_TT_ENTRIES];
-    private static final int[]     ttBestMove           = new int[NB_TT_ENTRIES];
+    private static final long[]    ttHash               = new long  [NB_TT_ENTRIES];
+    private static final float[]   ttScore              = new float [NB_TT_ENTRIES];
+    private static final byte[]    ttDepth              = new byte  [NB_TT_ENTRIES];
+    private static final byte[]    ttFlag               = new byte  [NB_TT_ENTRIES];
+    private static final int[]     ttBestMove           = new int   [NB_TT_ENTRIES];
 
 
 
@@ -121,7 +124,10 @@ public class NegamaxSearchFast {
         Arrays.fill(captureCountStack, (byte) 0);
         Arrays.fill(moveCountStack, 0);
         Arrays.fill(materialDiffStack, (byte) 0);
+        Arrays.fill(soldierCountStack, (byte) 0);
+        Arrays.fill(moscoviteCountStack, (byte) 0);
         Arrays.fill(bestMovesStack, 0);
+
 
         for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
         for (int[] moves : movesStack) Arrays.fill(moves, 0);
@@ -153,9 +159,11 @@ public class NegamaxSearchFast {
         TablutStageModel stageModel = (TablutStageModel) tablutBoard.getModel().getGameStage();
         ruleSet = stageModel.getRuleSet();
 
-        board = FastBoard.fromTablutBoard(tablutBoard);
-        kingPosStack[0]   = FastBoard.getKingPos(board);
-        materialDiffStack[0] = FastEvaluation.countMaterialDiff(board);
+        board                   = FastBoard.fromTablutBoard(tablutBoard);
+        kingPosStack[0]         = FastBoard.getKingPos(board);
+        materialDiffStack[0]    = FastEvaluation.countMaterialDiff(board);
+        soldierCountStack[0]    = FastEvaluation.countPieces(board, FastEvaluation.SWEDISH);
+        moscoviteCountStack[0]  = FastEvaluation.countPieces(board, FastEvaluation.MOSCOVITE);
 
         // initialize random numbers
         for (int pieceType : FastBoard.pieceTypes) {
@@ -181,33 +189,37 @@ public class NegamaxSearchFast {
 
 
         int currentBestMove = 0;
+        positionsAnalyzed = 0;
 
 
         for (int depth = 0; depth < startingDepth; depth++) { // iterative deepening
 
-            float alpha = Float.NEGATIVE_INFINITY;
-            float beta = Float.POSITIVE_INFINITY;
-
+            float alpha     = Float.NEGATIVE_INFINITY;
+            float beta      = Float.POSITIVE_INFINITY;
             float bestScore = Float.NEGATIVE_INFINITY;
 
             // generate moves with the first move in the list being the current best one
             if (depth == 0) FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
             else FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, currentBestMove, true, ruleSet);
 
+
             if (moveCountStack[0] == 0) return -1;
 
             for (int i = 0; i < moveCountStack[0]; i++) {
                 int move = movesStack[0][i];
 
-                kingPosStack[1] = kingPosStack[0];
-                materialDiffStack[1] = materialDiffStack[0];
-                FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack);
+                kingPosStack[1]         = kingPosStack[0];
+                materialDiffStack[1]    = materialDiffStack[0];
+                moscoviteCountStack[1]  = moscoviteCountStack[0];
+                soldierCountStack[1]    = soldierCountStack[0];
+
+                FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack, ruleSet);
                 FastBoard.makeMove(
-                        board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                        board, move, 0, captureCountStack, captureStack, materialDiffStack, soldierCountStack, moscoviteCountStack,
                         kingPosStack, zobrist, zobristKey, sideToMove
                 );
 
-                float score = -negamax(depth, 1, (turn+1) % 2, -beta, -alpha);
+                float score = -negamax(startingDepth, 1, (turn+1) % 2, -beta, -alpha);
 
                 FastBoard.undoMove(
                         board, move, 0, captureCountStack, captureStack, materialDiffStack,
@@ -215,15 +227,20 @@ public class NegamaxSearchFast {
                 );
 
                 if (score > bestScore) {
-                    bestScore = score;
+                    bestScore       = score;
                     currentBestMove = move;
-                    BestMove bm = new BestMove(move, score);
-                    bestMoves.add(bm);
+                    BestMove bm     = new BestMove(move, score);
+                    boolean movePresent = false;
+                    for (BestMove bestMove : bestMoves) if (bestMove.move == move) movePresent = true;
+                    if (!movePresent) bestMoves.add(bm);
                 }
                 alpha = Math.max(alpha, score);
                 if (alpha >= beta) break;
             }
         }
+
+
+        System.out.printf("Analyzed %d positions\n", positionsAnalyzed);
 
 
         bestMoves = bestMoves.stream().sorted(
@@ -242,6 +259,7 @@ public class NegamaxSearchFast {
 
     public static float negamax(int depth, int ply, int turn, float alpha, float beta) {
         float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+        if (win != 0) positionsAnalyzed++;
         if (win > 0) return turn == 0 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
         if (win < 0) return turn == 1 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
 
@@ -249,20 +267,31 @@ public class NegamaxSearchFast {
         int bestTTMove = 0;
 
         int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
-        if (ttFlag[ttIndex] != 0 && zobristKey[0] == ttHash[ttIndex]) {
-            if (ttDepth[ttIndex] >= depth) {
-                if (ttFlag[ttIndex] == EXACT) return ttScore[ttIndex];
-                else if (ttFlag[ttIndex] == LOWER_BOUND) alpha = Math.max(alpha, ttScore[ttIndex]);
-                else if (ttFlag[ttIndex] == UPPER_BOUND) beta = Math.min(beta, ttScore[ttIndex]);
-                if (alpha >= beta) return ttScore[ttIndex];
+        if (ttFlag[ttIndex] != 0 && zobristKey[0] == ttHash[ttIndex] && ttDepth[ttIndex] >= depth) {
+            float score = ttScore[ttIndex];
 
-                bestTTMove = ttBestMove[ttIndex];
-                hasTTBestMove = true;
+            // re-adjust cached winning/losing values relative to the current ply
+            if (score > VIRTUAL_INF - 100) {
+                score -= ply;
+            } else if (score < -VIRTUAL_INF + 100) {
+                score += ply;
             }
+
+            switch (ttFlag[ttIndex]) {
+                case EXACT:       return score;
+                case LOWER_BOUND: alpha = Math.max(alpha, score); break;
+                case UPPER_BOUND: beta  = Math.min(beta, score); break;
+            }
+            if (alpha >= beta) return score;
+
+            bestTTMove    = ttBestMove[ttIndex];
+            hasTTBestMove = true;
         }
 
+
         if (depth == 0) {
-            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, kingPosStack, ruleSet);
+            positionsAnalyzed++;
+            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
         }
 
         float maxScore = -VIRTUAL_INF;
@@ -271,7 +300,7 @@ public class NegamaxSearchFast {
         FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, bestTTMove, hasTTBestMove, ruleSet);
 
         if (moveCountStack[ply] == 0) { // can't make moves, automatically lose
-            return -VIRTUAL_INF - depth;
+            return -VIRTUAL_INF + depth;
         }
 
         byte flag;
@@ -280,11 +309,15 @@ public class NegamaxSearchFast {
         for (int i = 0; i < moveCountStack[ply]; i++) {
             int move = movesStack[ply][i];
 
-            kingPosStack[ply+1] = kingPosStack[ply];
-            materialDiffStack[ply+1] = materialDiffStack[ply];
-            FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack);
+            // init variables for next ply to same as current ply
+            kingPosStack[ply+1]         = kingPosStack[ply];
+            materialDiffStack[ply+1]    = materialDiffStack[ply];
+            moscoviteCountStack[ply+1]  = moscoviteCountStack[ply];
+            soldierCountStack[ply+1]    = soldierCountStack[ply];
+
+            FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack, ruleSet);
             FastBoard.makeMove(
-                    board, move, ply, captureCountStack, captureStack, materialDiffStack,
+                    board, move, ply, captureCountStack, captureStack, materialDiffStack, soldierCountStack, moscoviteCountStack,
                     kingPosStack, zobrist, zobristKey, sideToMove
             );
 
@@ -305,10 +338,13 @@ public class NegamaxSearchFast {
                     killerMovesStack[ply][1] = killerMovesStack[ply][0];
                     killerMovesStack[ply][0] = move;
                 }
-                ttScore[ttIndex] = score;
-                ttHash[ttIndex] = zobristKey[0];
-                ttDepth[ttIndex] = (byte) depth;
-                ttFlag[ttIndex] = LOWER_BOUND;
+                float storeScore = score;
+                if (storeScore > VIRTUAL_INF - 100) storeScore += ply;
+                else if (storeScore < -VIRTUAL_INF + 100) storeScore -= ply;
+                ttScore[ttIndex]  = storeScore;
+                ttHash[ttIndex]   = zobristKey[0];
+                ttDepth[ttIndex]  = (byte) depth;
+                ttFlag[ttIndex]   = LOWER_BOUND;
                 break;
             }
         }
@@ -316,6 +352,11 @@ public class NegamaxSearchFast {
         if (maxScore <= alphaOrig) flag = UPPER_BOUND;
         else if (maxScore >= beta) flag = LOWER_BOUND;
         else                       flag = EXACT;
+
+
+        float storeMaxScore = maxScore;
+        if (storeMaxScore > VIRTUAL_INF - 100)      storeMaxScore += ply;
+        else if (storeMaxScore < -VIRTUAL_INF + 100) storeMaxScore -= ply;
 
         ttScore[ttIndex]    = maxScore;
         ttHash[ttIndex]     = zobristKey[0];

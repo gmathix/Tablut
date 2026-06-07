@@ -1,5 +1,6 @@
 package control.algos;
 
+import javafx.css.Rule;
 import model.Pawn;
 import model.RuleSets;
 
@@ -12,7 +13,7 @@ public class FastEvaluation {
     // weights for each evaluation criteria
     public static final float BLOCKING_MOSCOVITES_WEIGHT = 15;
     public static final float ENCERCLEMENT_WEIGHT        = 20;
-    public static final float MATERIAL_WEIGHT            = 30;
+    public static final float MATERIAL_WEIGHT            = 50;
     public static final float POSITION_WEIGHT            = 7;
 
     public static final byte EMPTY = 0;
@@ -48,7 +49,8 @@ public class FastEvaluation {
      * @return
      */
     public static float evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth,
-                                 byte[] materialDiffStack, byte[] kingPosStack, int ruleSet) {
+                                 byte[] materialDiffStack, byte[] soldierCountStack, byte[] moscoviteCountStack,
+                                 byte[] kingPosStack, int ruleSet) {
         int depthDiff = baseDepth - currDepth;
 
         float score = 0;
@@ -69,7 +71,9 @@ public class FastEvaluation {
 
         // 2. check delayed wins
         float delayedWin = checkDelayedWinAndPaths(board, turn, ply, depthDiff, kingPosStack, ruleSet);
-
+        if (delayedWin > VIRTUAL_INF - 100 || delayedWin < -VIRTUAL_INF + 100) {
+            return delayedWin;
+        }
 
 
 
@@ -79,7 +83,9 @@ public class FastEvaluation {
 
         // 4. count material difference
         byte  materialDiff = (byte) (materialDiffStack[ply] / 3.2f);
+//        byte materialDiff = (byte) ((soldierCountStack[ply]*4 - moscoviteCountStack[ply]*2) / 3.2f);
 
+;
         float boardControl = evaluateBoardControl(board);
 
 
@@ -109,8 +115,10 @@ public class FastEvaluation {
 
         int nbEdgesReachable = 0;
         int surroundingMoscovites = 0;
+        int surroundMask = 0;
         boolean kingSurrounded = false;
         int kingObstructions = 0;
+
 
 
         boolean kingOnThrone = (kingX == 4 && kingY == 4);
@@ -120,9 +128,10 @@ public class FastEvaluation {
             maxDistance = 4;
         }
 
+
         for (int i = 0; i < 4; i++) {
-            int dy = RecurBoard.DY_VALS[i];
-            int dx = RecurBoard.DX_VALS[i];
+            int dy = FastBoard.DY_VALS[i];
+            int dx = FastBoard.DX_VALS[i];
             int x = kingX;
             int y = kingY;
             boolean edgeReachable = true;
@@ -134,13 +143,15 @@ public class FastEvaluation {
 
                 int piece = board[y*9+x];
 
-                if (j == 1) {
-                    if (piece == MOSCOVITE || (x == 4 && y == 4)) {
-                        surroundingMoscovites++;
-                    }
+                if (edgeReachable && piece == MOSCOVITE ||  // that moscovite can come and bite the king
+                        (j == 1 && RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) { // or it's a direct neighbor camp square
+
+                    surroundingMoscovites++;
+                    surroundMask |= 1 << i;
                 }
 
-                if (piece != EMPTY) {
+
+                if (piece != EMPTY || (y*9+x == 40) || RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x)) {
                     edgeReachable = false;
                     kingObstructions++;
                     if (piece == MOSCOVITE) kingObstructions++; // moscovites that block count double
@@ -167,15 +178,18 @@ public class FastEvaluation {
                 || (kingY == 4 && (kingX == 3 || kingX == 5))) {
             if (surroundingMoscovites >= 3) kingSurrounded = true;
         } else {
-            if (surroundingMoscovites >= 4) kingSurrounded = true;
+            if (RuleSets.isAshtonRules(ruleSet)) {
+                if (surroundingMoscovites >= 2 && ((surroundMask & 0b1010) == 0b1010 || (surroundMask & 0b0101) == 0b0101))
+                    kingSurrounded = true;
+            } else if (surroundingMoscovites >= 4) kingSurrounded = true;
         }
 
 
         if ((turn == 0 && nbEdgesReachable >= 1) || (turn == 1 && nbEdgesReachable >= 2)) {
-            return VIRTUAL_INF - depthDiff;
+            return VIRTUAL_INF - ply;
         }
         if (kingSurrounded) {
-            return -VIRTUAL_INF + depthDiff;
+            return -VIRTUAL_INF + ply;
         }
 
 
@@ -244,6 +258,12 @@ public class FastEvaluation {
         return (byte) (nbSwedishPawns * 4 - nbMoscovitePawns * 2);
     }
 
+    public static byte countPieces(byte[] board, int pieceType) {
+        byte nb = 0;
+        for (int i = 0; i < 81; i++) if (board[i] == pieceType) nb++;
+        return nb;
+    }
+
 
     public static float evaluateBoardControl(byte[] board) {
         float score = 0;
@@ -283,5 +303,27 @@ public class FastEvaluation {
         }
 
         return nbMoscovites;
+    }
+
+
+    public static boolean kingCanEscapeIn1(byte[] board, int kingPos, int ruleSet) {
+        for (int d = 0; d < 4; d++) {
+            int dy = FastBoard.DY_VALS[d];
+            int dx = FastBoard.DX_VALS[d];
+            int y = kingPos / 9 + dy;
+            int x = kingPos % 9 + dx;
+
+            boolean isOpenWay = true;
+            for (int i = 0; i < 9; i++) {
+                if (y < 0 || y > 8 || x < 0 || x > 8) break;
+                if (board[y*9+x] != EMPTY ||
+                        (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                    isOpenWay = false;
+                    break;
+                }
+            }
+            if (isOpenWay) return true;
+        }
+        return false;
     }
 }

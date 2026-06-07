@@ -1,15 +1,13 @@
 package control.algos;
 
-import javafx.css.Rule;
 import model.Pawn;
 import model.RuleSets;
 import model.TablutBoard;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class FastBoard {
-    public static final float VIRTUAL_INF = Evaluation.VIRTUAL_INF;
+    public static final float VIRTUAL_INF = FastEvaluation.VIRTUAL_INF;
 
 
     public static final byte EMPTY     = 0;
@@ -25,9 +23,9 @@ public class FastBoard {
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
 
     public static int[] killerMoves = new int[2];
-    public static int[] captures    = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-    public static int[] kingMoves   = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
-    public static int[] otherMoves  = new int[NegamaxSearchFast.NB_POSSIBLE_MOVES];
+    public static int[] captures    = new int[Negamax.NB_POSSIBLE_MOVES];
+    public static int[] kingMoves   = new int[Negamax.NB_POSSIBLE_MOVES];
+    public static int[] otherMoves  = new int[Negamax.NB_POSSIBLE_MOVES];
 
 
     public static final List<Integer> constrainedKingSquares = List.of(
@@ -110,7 +108,11 @@ public class FastBoard {
 
                             if (currY < 0 || currY > 8 || currX < 0 || currX > 8) break;
                             if (!isEmpty(board[currY*9+currX])) break; // stop when path is occupied
-                            if (currY == 4 && currX == 4) continue; // skip throne
+                            if (currY == 4 && currX == 4) break; // throne blocks
+
+                            if (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(currY*9 + currX)) {
+                                if (!(board[i*9+j] == MOSCOVITE && RuleSets.campsSquares.contains(i*9+j))) break;
+                            }
 
                             int move = (i*9 + j) | ((currY*9 + currX) << 7);
 
@@ -123,7 +125,7 @@ public class FastBoard {
                             } else if (move == killerMovesStack[ply][1]) {
                                 killerMoves[nbKillerMoves] = move;
                                 nbKillerMoves++;
-                            } else if (isCapture(board, move, ply)) {
+                            } else if (isCapture(board, move, ply, ruleSet)) {
                                 captures[nbCaptures] = move;
                                 nbCaptures++;
                             } else if (isKing(board[i * 9 + j])) {
@@ -162,7 +164,7 @@ public class FastBoard {
         moveCountStack[ply] = nbMoves;
     }
 
-    public static boolean isCapture(byte[] board, int move, int ply) {
+    public static boolean isCapture(byte[] board, int move, int ply, int ruleSet) {
         int src = move & 0x7F;
         int dst = (move >> 7) & 0x7F;
 
@@ -179,10 +181,20 @@ public class FastBoard {
             if (dstY + 2*dy < 0 || dstY + 2*dy > 8) continue;
             if (dstX + 2*dx < 0 || dstX + 2*dx > 8) continue;
 
-            byte n = board[(dstY + dy) * 9 + (dstX + dx)];
-            byte n2 = board[(dstY + 2*dy) * 9 + (dstX + 2*dx)];
-            if ((isMoscovite(selPiece) && isSwedish(n) && isMoscovite(n2) && !isKing(n)) ||
-                    (isSwedish(selPiece) && isMoscovite(n) && isSwedish(n2))) {
+            int nCoord = (dstY + dy) * 9 + (dstX + dx);
+            int n2Coord = (dstY + 2*dy) * 9 + (dstX + 2*dx);
+
+            byte n = board[nCoord];
+            byte n2 = board[n2Coord];
+
+            boolean isNEnemy = (isMoscovite(selPiece) && isSwedish(n) && !isKing(n)) ||
+                                (isSwedish(selPiece) && isMoscovite(n));
+            boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
+                                (isSwedish(selPiece) && isSwedish(n2)) ||
+                                (n2Coord == 40) ||
+                                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(n2Coord));
+
+            if (isNEnemy && isN2Ally) {
                 return true;
             }
         }
@@ -190,7 +202,7 @@ public class FastBoard {
         return false;
     }
 
-    public static void checkCaptures(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack) {
+    public static void checkCaptures(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack, int ruleSet) {
         byte nbCaptures = 0;
         captureCountStack[ply] = 0;
 
@@ -210,12 +222,21 @@ public class FastBoard {
             if (dstY + 2*dy < 0 || dstY + 2*dy > 8) continue;
             if (dstX + 2*dx < 0 || dstX + 2*dx > 8) continue;
 
-            byte n = board[(dstY + dy) * 9 + (dstX + dx)];
-            byte n2 = board[(dstY + 2*dy) * 9 + (dstX + 2*dx)];
-            if ((isMoscovite(selPiece) && isSwedish(n) && isMoscovite(n2) && !isKing(n)) ||
-                (isSwedish(selPiece) && isMoscovite(n) && isSwedish(n2))) {
-                short coord = (short) ((dstY + dy) * 9 + (dstX + dx));
-                captureStack[ply][nbCaptures] = (short) ((coord << 3) | n);
+            int nCoord = (dstY + dy) * 9 + (dstX + dx);
+            int n2Coord = (dstY + 2*dy) * 9 + (dstX + 2*dx);
+
+            byte n = board[nCoord];
+            byte n2 = board[n2Coord];
+
+            boolean isNEnemey = (isMoscovite(selPiece) && isSwedish(n) && !isKing(n)) ||
+                    (isSwedish(selPiece) && isMoscovite(n));
+            boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
+                    (isSwedish(selPiece) && isSwedish(n2)) ||
+                    (n2Coord == 40) ||
+                    (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(n2Coord));
+
+            if (isNEnemey && isN2Ally) {
+                captureStack[ply][nbCaptures] = (short) ((nCoord << 3) | n);
                 nbCaptures++;
             }
         }
@@ -225,7 +246,8 @@ public class FastBoard {
 
 
     public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] materialDiffStack, byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                byte[] materialDiffStack, byte[] soldierCountStack, byte[] moscoviteCountStack,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
                                 long sideToMove) {
         // update kingPosStack[ply+1], not kingPosStack[ply]
 
@@ -246,6 +268,9 @@ public class FastBoard {
             int capCoord = captureStack[ply][i] >> 3;
 
             // relative to swedish side : +2 for moscovite loss, -4 for swedish loss
+            if (isMoscovite(board[capCoord])) moscoviteCountStack[ply]--;
+            else soldierCountStack[ply]--;
+
             if (isMoscovite(board[capCoord])) materialDiffStack[ply+1] += 2;
             else materialDiffStack[ply+1] -= 4;
 
@@ -282,6 +307,9 @@ public class FastBoard {
         }
 
         zobristKey[0] ^= sideToMove;
+
+        kingPosStack[ply+1]         = kingPosStack[ply];
+        materialDiffStack[ply+1]    = materialDiffStack[ply];
     }
 
     public static float checkWin(byte[] board, int ply, byte[] kingPosStack, int ruleSet) {
@@ -303,15 +331,36 @@ public class FastBoard {
         }
 
         int nbSurrounding = 0;
+        int surroundMask = 0;
+
+        boolean kingInCenter = kingY == 4 && kingX == 4;
+        boolean hasCenterNeighbor = false;
+
         for (int d = 0; d < 4; d++ ) {
             int y = kingY + DY_VALS[d];
             int x = kingX + DX_VALS[d];
             if (y < 0 || y > 8 || x < 0 || x > 8) continue;
-            if (isMoscovite(board[y*9+x]) || (y == 4 && x == 4)) {
+
+            if (y == 4 && x == 4) {
+                hasCenterNeighbor = true;
                 nbSurrounding++;
+                surroundMask |= 1 << d;
+            } else if (isMoscovite(board[y*9+x]) ||
+                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+
+                nbSurrounding++;
+                surroundMask |= 1 << d;
             }
         }
-        if (nbSurrounding == 4) {
+
+        if (RuleSets.isAshtonRules(ruleSet)) {
+            if ((kingInCenter && nbSurrounding == 4) ||
+                (hasCenterNeighbor && nbSurrounding == 4) ||
+                (!kingInCenter && !hasCenterNeighbor && nbSurrounding >= 2 && ((surroundMask & 0b1010) == 0b1010 || (surroundMask & 0b0101) == 0b0101))) {
+
+                return -VIRTUAL_INF;
+            }
+        } else if ((hasCenterNeighbor && nbSurrounding == 3) || (nbSurrounding == 4)) {
             return -VIRTUAL_INF;
         }
 

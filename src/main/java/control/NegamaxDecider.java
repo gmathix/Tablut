@@ -5,9 +5,7 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import control.algos.NegamaxSearch;
-import control.algos.NegamaxSearchFast;
-import control.algos.RecurMove;
+import control.algos.Negamax;
 import model.*;
 
 public class NegamaxDecider extends Decider {
@@ -36,37 +34,36 @@ public class NegamaxDecider extends Decider {
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        control.algos.RecurBoard recurBoard = new control.algos.RecurBoard(tablutBoard, model.getGameStage());
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();
 
 
 
-        NegamaxSearchFast.resetBuffers();
-        NegamaxSearchFast.configure(level, tablutBoard);
-        int bestMoveInt = NegamaxSearchFast.findBestMove(turn, ((TablutController) control).isBoardRepeated());
+        Negamax.resetBuffers();
+        Negamax.configure(level, tablutBoard);
+        int bestMoveInt = Negamax.findBestMove(turn, ((TablutController) control).isBoardRepeated());
 
 
         int src = bestMoveInt & 0x7F;
         int dst = (bestMoveInt >> 7) & 0x7F;
-        RecurMove bestMove = new RecurMove(recurBoard, src % 9, src / 9, dst % 9, dst / 9);
 
 
-        pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
+
+        pawn = tablutBoard.getElement(src / 9, src % 9);
 
 
-        if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
-            tablutBoard.setKingY(bestMove.dstY());
-            tablutBoard.setKingX(bestMove.dstX());
+        if (((Pawn)pawn).getColor() == Pawn.PAWN_KING) {
+            tablutBoard.setKingY(dst / 9);
+            tablutBoard.setKingX(dst % 9);
         }
-        ((Pawn)pawn).setBoardX(bestMove.dstX());
-        ((Pawn)pawn).setBoardY(bestMove.dstY());
+        ((Pawn)pawn).setBoardX(dst % 9);
+        ((Pawn)pawn).setBoardY(dst / 9);
 
 
-        tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, bestMove.srcX(), bestMove.srcY(), bestMove.dstX(), bestMove.dstY()));
+        tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, src % 9, src / 9, dst % 9, dst / 9));
 
 
-        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
+        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, dst / 9, dst % 9);
     }
 }

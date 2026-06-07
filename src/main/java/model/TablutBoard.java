@@ -12,6 +12,7 @@ import boardifier.view.ContainerLook;
 import boardifier.view.ElementLook;
 import boardifier.view.GameStageView;
 import control.TablutController;
+import control.algos.FastBoard;
 import view.Constants;
 import view.PawnLook;
 import view.TablutStageView;
@@ -97,79 +98,38 @@ public class TablutBoard extends ContainerElement {
             }
         }
 
+
+
         int distanceCount = 8;
         if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
             distanceCount = 4;
         }
-        // check horizontal empty squares to the left
-        for (int x = pawnX-1; x >= 0; x--) {
-            if (distanceCount == 0) break;
-            if (!(getElement(pawnY, x) instanceof Pawn)) {
-                if (!(x == 4 && pawnY == 4)) {
-                    lst.add(new Point(x, pawnY));
-                }
-            } else {
-                // there is a pawn here, can't go further
-                break;
+
+        for (int d = 0; d < 4; d++) {
+            int dy = FastBoard.DY_VALS[d];
+            int dx = FastBoard.DX_VALS[d];
+
+            int y = pawnY + dy;
+            int x = pawnX + dx;
+
+            for (int i = 0; i < distanceCount; i++) {
+                if (y < 0 || y > 8 || x < 0 || x > 8) break;
+                if (y == 4 && x == 4) break;
+
+                if (!(getElement(y, x) instanceof Pawn p)) {
+                    if (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(y*9 + x)) {
+                        if (pawn.getColor() == Pawn.PAWN_MOSCOVITE && RuleSets.campsSquares.contains(pawnY*9 + pawnX)) {
+                            lst.add(new Point(x, y));
+                        }
+                    } else {
+                        lst.add(new Point(x, y));
+                    }
+                } else break;
+
+                y += dy;
+                x += dx;
             }
-            distanceCount--;
         }
-
-        distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
-            distanceCount = 4;
-        }
-        // check horizontal empty squares to the right
-        for (int x = pawnX+1; x < BOARD_SIZE; x++) {
-            if (distanceCount == 0) break;
-            if (!(getElement(pawnY, x) instanceof Pawn)) {
-                if (!(x == 4 && pawnY == 4)) {
-                    lst.add(new Point(x, pawnY));
-                }
-            } else {
-                // there is a pawn here, can't go further
-                break;
-            }
-            distanceCount--;
-        }
-
-        distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
-            distanceCount = 4;
-        }
-        // check vertical empty squares up
-        for (int y = pawnY-1; y >= 0; y--) {
-            if (distanceCount == 0) break;
-            if (!(getElement(y, pawnX) instanceof Pawn)) {
-                if (!(x == 4 && pawnY == 4)) {
-                    lst.add(new Point(pawnX, y));
-                }
-            } else {
-                // there is a pawn here, can't go further
-                break;
-            }
-            distanceCount--;
-        }
-
-        distanceCount = 8;
-        if (pawn.getColor() == Pawn.PAWN_KING && RuleSets.isConstrainedKingMoves(stageModel.getRuleSet())) {
-            distanceCount = 4;
-        }
-        // check vertical empty squares down
-        for (int y = pawnY+1; y < BOARD_SIZE; y++) {
-            if (distanceCount == 0) break;
-            if (!(getElement(y, pawnX) instanceof Pawn)) {
-                if (!(x == 4 && pawnY == 4)) {
-                    lst.add(new Point(pawnX, y));
-                }
-            } else {
-                // there is a pawn here, can't go further
-                break;
-            }
-            distanceCount--;
-        }
-
-
 
         return lst;
     }
@@ -292,15 +252,21 @@ public class TablutBoard extends ContainerElement {
             GameElement sideEl = getElement(dstY1, dstX1);
             GameElement sideEl2 = getElement(dstY2, dstX2);
 
-            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-                if (isMoscovite) {
-                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
-                } else {
-                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
+
+            boolean isN2Ally = (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(dstY2 * 9 + dstX2)) ||
+                                (dstY2 == 4 && dstX2 == 4);
+
+            if ((sideEl instanceof Pawn sideP)) {
+                boolean isNEnemy = (isMoscovite && sideP.getColor() == Pawn.PAWN_SOLDIER) ||
+                                    (!isMoscovite && sideP.getColor() == Pawn.PAWN_MOSCOVITE);
+                if ((sideEl2 instanceof Pawn sideP2)) {
+                    isN2Ally = isN2Ally || (isMoscovite && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) ||
+                            (!isMoscovite && sideP2.getColor() != Pawn.PAWN_MOSCOVITE);
+                }
+
+
+                if (isNEnemy && isN2Ally) {
+                    captures.add(dstY1 * 9 + dstX1);
                 }
             }
         }

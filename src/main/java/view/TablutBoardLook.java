@@ -3,8 +3,6 @@ package view;
 import boardifier.model.ContainerElement;
 import boardifier.model.GameStageModel;
 import boardifier.view.ClassicBoardLook;
-import control.algos.RecurBoard;
-import javafx.css.Rule;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
