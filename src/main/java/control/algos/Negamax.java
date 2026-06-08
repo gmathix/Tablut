@@ -71,6 +71,7 @@ public class Negamax {
     public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA = 35;
 
+
     // flags for TT entries
     public static final int LOWER_BOUND = 1;
     public static final int UPPER_BOUND = 2;
@@ -149,11 +150,9 @@ public class Negamax {
             case 1 -> 1;
             case 2 -> 2;
             case 3,4 -> 3;
-            case 5 -> 4;
-            case 6,7 -> 5;
-            case 8 -> 6;
-            case 9 -> 7;
-            case 10 -> 8;
+            case 5,6 -> 4;
+            case 7,8 -> 5;
+            case 9,10 -> 6;
             default -> 4;
         };
 
@@ -259,6 +258,8 @@ public class Negamax {
         if (findAlternativeMode && bestMoves.size() > 1) {
             bestMove = bestMoves.get(1).move;
         }
+
+
 
         return bestMove;
     }
