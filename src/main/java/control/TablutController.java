@@ -321,6 +321,14 @@ public class TablutController extends Controller {
                     freeWay = false;
                     break;
                 }
+                if (y*9+x == 40) {
+                    freeWay = false;
+                    break;
+                }
+                if (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(y*9+x)) {
+                    freeWay = false;
+                    break;
+                }
             }
             if (freeWay) {
                 nbEdgesReachable++;
@@ -554,10 +562,7 @@ public class TablutController extends Controller {
             processBoardRepetition();
         } else {
             model.stopStage();
-            String message = String.format("Game over : %s\n",
-                    model.getIdWinner() == 0
-                            ? "the king has reached an edge"
-                            : "the king has been encircled");
+            String message = String.format("Game over : %s\n", ((TablutStageModel)model.getGameStage()).getWinMessage());
             ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);
             moveHistory.setWinningSide(model.getIdWinner());
 

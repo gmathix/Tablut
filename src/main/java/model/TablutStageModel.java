@@ -2,6 +2,11 @@ package model;
 
 import boardifier.model.*;
 
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
  * there are no levels in this game: a party starts and when it's done, the game is also done.
@@ -57,12 +62,14 @@ public class TablutStageModel extends GameStageModel {
     private int state;
     private int mode;
     private int ruleSet;
+    private String winMessage;
 
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
         state = STATE_SELECTPAWN;
         ruleSet = RuleSets.RULESET_NORMAL;
+        this.winMessage = "";
         setupCallbacks();
     }
 
@@ -70,6 +77,7 @@ public class TablutStageModel extends GameStageModel {
     public int getState() { return state; }
     public int getMode() { return mode; }
     public int getRuleSet() { return ruleSet; }
+    public String getWinMessage() { return winMessage; }
     public TablutBoard getBoard() { return board; }
     public Pawn[] getMoscovitePawns() { return moscovitePawns; }
     public Pawn[] getSoldierPawns() { return soldierPawns; }
@@ -172,6 +180,11 @@ public class TablutStageModel extends GameStageModel {
             if (gridDest != board) return;
             computePartyResult();
         });
+
+        onRemoveFromContainer((el, gridDest, rowDest, colDest) -> {
+            if (gridDest != board) return;
+            computePartyResult();
+        });
     }
 
 
@@ -179,7 +192,6 @@ public class TablutStageModel extends GameStageModel {
 
     private void computePartyResult() {
         int idWinner = -1;
-        String winMessage = "";
 
 
         // dy and dx vals for clockwise rotation
@@ -237,14 +249,17 @@ public class TablutStageModel extends GameStageModel {
                 if (RuleSets.isCornerKingEscapes(ruleSet)) {
                     if (RuleSets.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
+                        winMessage = "the king has reached an edge";
                     }
                 } else if (RuleSets.isConstrainedKingSquares(ruleSet)) {
                     if (!RuleSets.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
+                        winMessage = "the king has reached an edge";
                     }
                 }
             } else {
                 idWinner = 0;
+                winMessage = "the king has reached an edge";
             }
         }
 
@@ -283,11 +298,38 @@ public class TablutStageModel extends GameStageModel {
                         (!kingInCenter && !hasCenterNeighbor && nbSurrounding >= 2 && ((surroundMask & 0b1010) == 0b1010 || (surroundMask & 0b0101) == 0b0101))) {
 
                     idWinner = 1;
+                    winMessage = "the king has been encircled";
                 }
             } else if ((hasCenterNeighbor && nbSurrounding == 3) || (nbSurrounding == 4)) {
                 idWinner = 1;
+                winMessage = "the king has been encircled";
             }
         }
+
+
+        /**
+         * check if a player has no legal moves left
+         */
+        for (int i = 0; i < 2; i++) {
+            List<Point> legalMoves = new ArrayList<>();
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    if (board.getElement(y, x) instanceof Pawn p) {
+                        if ((i == 0 && p.getColor() != Pawn.PAWN_MOSCOVITE) ||
+                            (i == 1 && p.getColor() == Pawn.PAWN_MOSCOVITE)) {
+
+                            legalMoves.addAll(board.computeValidCells(p.getNumber()));
+                        }
+                    }
+                }
+            }
+            if (legalMoves.isEmpty()) {
+                idWinner = (i + 1) % 2; // winner is the other player
+                winMessage = (i == 0 ? "Swedish" : "Moscovite") + " has no legal moves";
+            }
+        }
+
+
 
 
         if (idWinner != -1) {
