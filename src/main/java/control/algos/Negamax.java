@@ -70,6 +70,7 @@ public class Negamax {
     public static final int   MAX_DEPTH               = 10;
     public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA = 35;
+    public static final int   SECOND_BEST_SCORE_TRESHOLD = 20;
 
 
     // flags for TT entries
@@ -255,9 +256,17 @@ public class Negamax {
                 )
         ).toList();
         int bestMove = bestMoves.getFirst().move;
+
+        boolean useOtherMove = Math.random() < 0.1;
+        if (useOtherMove && Math.abs(bestMoves.get(1).score - bestMoves.getFirst().score) <= SECOND_BEST_SCORE_TRESHOLD) {
+            bestMove = bestMoves.get(1).move;
+        }
+
         if (findAlternativeMode && bestMoves.size() > 1) {
             bestMove = bestMoves.get(1).move;
         }
+
+
 
 
 
