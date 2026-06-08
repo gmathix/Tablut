@@ -10,6 +10,40 @@ import static control.algos.Negamax.VIRTUAL_INF;
 
 
 
+/**
+ *    The weakest thing in pure MCTS (MonteCarlo) is step 3 (simulation). as tablut has very
+ * "sudden-death" like conditions (for example the king goes to an edge or gets surrounded), a simulation
+ * making completely random moves is very blind. it very well might miss a 1-move win or 1-move loss, which
+ * completely biases the win/loss stats.
+ *    This is where Negamax comes : instead of running a long and vry chaotic random playout until a game over,
+ * we can stop early and use Negamax to evaluate the board.
+ *
+ * Instead of simulating until a random win/loss, we change step 3 like this :
+ *    1. from the new expanded node, instead of running a random game, we execute a simple Negamax search(
+ *       (depth 2-3)
+ *    2. the search returns a relative score
+ *    3. we map this score to a simulated value between 0.0 (forced loss) and 1.0 (forced win).
+ *       a nice and common way to do map a large range of such score to a probability is using a
+ *       sigmoig function like in logistic regression (ML) : https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function
+ *       sim value = 1 / (1 + exp(-score))
+ *    4. instead of backpropagating a strict int (0 or 1) we backpropagate this fractional score up the tree
+ *
+ *
+ * This is much better for tablut because :
+ *    - if the new expanded node allows a sneaky and vicious king escape while swedish has 2 pawns remaining 2 moves
+ *      down the line, a random simulation will certainly miss it, when the depth-2/3 negamax will spawn kill it,
+ *      return a massively crushing score (MAX_VALUE ~ 1e7) and propagate an almost perfect 1.0 value,
+ *      which MCTS will recognize as very valuable
+ *    - running a random simulation of tablut could take 120+ moves, when a depth-1/2/3 nega takes the blink of an eye.
+ *    - if the evaluation function used by negamax is not perfectly tuned for tablut (which is a
+ *      pretty complicated game, by the way, and can get very tactical very quickly), it doesn't matter as much as in the
+ *      actual negamax search alone. negamax ensures immediate survival while MCTS handles the long term strategy
+ *      of surrounding the king or opening ways to the edges.
+ *
+ *
+ *  TL;DR:
+ *      this is MonteCarlo, but better.:)
+ */
 
 public class NegaMonteCarlo {
 
@@ -120,7 +154,7 @@ public class NegaMonteCarlo {
             default ->  5000;
         };
 
-        negamaxDepth = 2;
+        negamaxDepth = 1;
 
         TablutStageModel stageModel = (TablutStageModel) tablutBoard.getModel().getGameStage();
         ruleSet = stageModel.getRuleSet();
@@ -276,7 +310,7 @@ public class NegaMonteCarlo {
         }
 
         SearchResult best = chooseBestMove(root, findAlternativeMove);
-//        System.out.printf("performed %d iterations/n", nbEvals);
+        System.out.printf("performed %d iterations\n", nbEvals);
         return best.move;
     }
 
@@ -418,10 +452,10 @@ public class NegaMonteCarlo {
                 Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
 
 //        // map the leaf score to a smooth win probability (tanh, same idea as AlphaZero)
-        float normalized = (float) Math.tanh(negaScore / LEAF_SCORE_SCALE);
-        return Math.max(0f, Math.min(1f, .5f + .5f * normalized));
+//        float normalized = (float) Math.tanh(negaScore / LEAF_SCORE_SCALE);
+//        return Math.max(0f, Math.min(1f, .5f + .5f * normalized));
 
-//        return (float) (1.0 / (1.0 + Math.exp(-negaScore / 100)));
+        return (float) (1.0 / (1.0 + Math.exp(-negaScore / 100)));
     }
 
     private static float negamax(int depth, int rootDepth, int ply, int turn, float alpha, float beta) {

@@ -54,7 +54,7 @@ public class TablutBoardLook extends ClassicBoardLook {
 
                 if ((RuleSets.isConstrainedKingSquares(stageModel.getRuleSet()) && RuleSets.constrainedKingSquares.contains(i*9 + j)) ||
                     (RuleSets.isCornerKingEscapes(stageModel.getRuleSet()) && (isEdge && !isCorner)) ||
-                    (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(i*9+j))) { // darker color for forbidden/camp squares
+                    (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(i*9+j))) { // darker color for forbidden/camp squares
 
                     cells[i][j].setFill(SPECIAL_SQUARE);
                 } else if (i*9+j == 40) {

@@ -22,10 +22,10 @@ public class FastBoard {
     public static final int[] DY_VALS = new int[]{-1, 0, 1, 0};
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
 
-    public static int[] killerMoves = new int[2];
-    public static int[] captures    = new int[Negamax.NB_POSSIBLE_MOVES];
-    public static int[] kingMoves   = new int[Negamax.NB_POSSIBLE_MOVES];
-    public static int[] otherMoves  = new int[Negamax.NB_POSSIBLE_MOVES];
+    public static int[][] killerMovesGenStack = new int[Negamax.MAX_DEPTH][2];
+    public static int[][] capturesGenStack    = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
+    public static int[][] kingMovesGenStack   = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
+    public static int[][] otherMovesGenStack  = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
 
 
     public static final List<Integer> constrainedKingSquares = List.of(
@@ -110,9 +110,14 @@ public class FastBoard {
                             if (!isEmpty(board[currY*9+currX])) break; // stop when path is occupied
                             if (currY == 4 && currX == 4) break; // throne blocks
 
-                            if (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(currY*9 + currX)) {
-                                if (!(board[i*9+j] == MOSCOVITE && RuleSets.campsSquares.contains(i*9+j))) break;
+                            if (RuleSets.isAshtonRules(ruleSet)) {
+                                if (RuleSets.isCampSquare(currY*9+currX)) {
+                                    if (!(board[i*9+j] == MOSCOVITE && RuleSets.isCampSquare(i*9+j))) {
+                                        break;
+                                    }
+                                }
                             }
+
 
                             int move = (i*9 + j) | ((currY*9 + currX) << 7);
 
@@ -120,19 +125,19 @@ public class FastBoard {
 
                             if (move == bestTTMove) continue; // will be added after, avoid duplication in otherMoves
                             if (move == killerMovesStack[ply][0]) {
-                                killerMoves[nbKillerMoves] = move;
+                                killerMovesGenStack[ply][nbKillerMoves] = move;
                                 nbKillerMoves++;
                             } else if (move == killerMovesStack[ply][1]) {
-                                killerMoves[nbKillerMoves] = move;
+                                killerMovesGenStack[ply][nbKillerMoves] = move;
                                 nbKillerMoves++;
                             } else if (isCapture(board, move, ply, ruleSet)) {
-                                captures[nbCaptures] = move;
+                                capturesGenStack[ply][nbCaptures] = move;
                                 nbCaptures++;
                             } else if (isKing(board[i * 9 + j])) {
-                                kingMoves[nbKingMoves] = move;
+                                kingMovesGenStack[ply][nbKingMoves] = move;
                                 nbKingMoves++;
                             } else {
-                                otherMoves[nbOtherMoves] = move;
+                                otherMovesGenStack[ply][nbOtherMoves] = move;
                                 nbOtherMoves++;
                             }
                         }
@@ -149,16 +154,16 @@ public class FastBoard {
             movesStack[ply][0] = bestTTMove;
         }
         for (int i = 0; i < nbKillerMoves; i++) {
-            movesStack[ply][i + nbTTBestMove] = killerMoves[i];
+            movesStack[ply][i + nbTTBestMove] = killerMovesGenStack[ply][i];
         }
         for (int i = 0; i < nbCaptures; i++) {
-            movesStack[ply][i + nbTTBestMove + nbKillerMoves] = captures[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves] = capturesGenStack[ply][i];
         }
         for (int i = 0; i < nbKingMoves; i++) {
-            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures] = kingMoves[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures] = kingMovesGenStack[ply][i];
         }
         for (int i = 0; i < nbOtherMoves; i++) {
-            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures + nbKingMoves] = otherMoves[i];
+            movesStack[ply][i + nbTTBestMove + nbKillerMoves + nbCaptures + nbKingMoves] = otherMovesGenStack[ply][i];
         }
 
         moveCountStack[ply] = nbMoves;
@@ -192,7 +197,7 @@ public class FastBoard {
             boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
                                 (isSwedish(selPiece) && isSwedish(n2)) ||
                                 (n2Coord == 40) ||
-                                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(n2Coord));
+                                (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(n2Coord));
 
             if (isNEnemy && isN2Ally) {
                 return true;
@@ -233,7 +238,7 @@ public class FastBoard {
             boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
                     (isSwedish(selPiece) && isSwedish(n2)) ||
                     (n2Coord == 40) ||
-                    (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(n2Coord));
+                    (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(n2Coord));
 
             if (isNEnemey && isN2Ally) {
                 captureStack[ply][nbCaptures] = (short) ((nCoord << 3) | n);
@@ -346,7 +351,7 @@ public class FastBoard {
                 nbSurrounding++;
                 surroundMask |= 1 << d;
             } else if (isMoscovite(board[y*9+x]) ||
-                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(y*9+x))) {
 
                 nbSurrounding++;
                 surroundMask |= 1 << d;

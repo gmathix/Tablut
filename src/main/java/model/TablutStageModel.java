@@ -266,7 +266,7 @@ public class TablutStageModel extends GameStageModel {
                 nbSurrounding++;
                 surroundMask |= 1 << i;
             } else if ((getBoard().getElement(y, x) instanceof Pawn p && p.getColor() == Pawn.PAWN_MOSCOVITE) ||
-                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(y*9+x))) {
                 nbSurrounding++;
                 surroundMask |= 1 << i;
             }

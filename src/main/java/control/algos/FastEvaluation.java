@@ -1,6 +1,5 @@
 package control.algos;
 
-import javafx.css.Rule;
 import model.Pawn;
 import model.RuleSets;
 
@@ -144,14 +143,14 @@ public class FastEvaluation {
                 int piece = board[y*9+x];
 
                 if (edgeReachable && piece == MOSCOVITE ||  // that moscovite can come and bite the king
-                        (j == 1 && RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) { // or it's a direct neighbor camp square
+                        (j == 1 && RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(y*9+x))) { // or it's a direct neighbor camp square
 
                     surroundingMoscovites++;
                     surroundMask |= 1 << i;
                 }
 
 
-                if (piece != EMPTY || (y*9+x == 40) || RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x)) {
+                if (piece != EMPTY || (y*9+x == 40) || RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(y*9+x)) {
                     edgeReachable = false;
                     kingObstructions++;
                     if (piece == MOSCOVITE) kingObstructions++; // moscovites that block count double
@@ -317,7 +316,7 @@ public class FastEvaluation {
             for (int i = 0; i < 9; i++) {
                 if (y < 0 || y > 8 || x < 0 || x > 8) break;
                 if (board[y*9+x] != EMPTY ||
-                        (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                        (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(y*9+x))) {
                     isOpenWay = false;
                     break;
                 }
