@@ -113,6 +113,8 @@ public class TablutBoard extends ContainerElement {
                     if (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(y*9 + x)) {
                         if (pawn.getColor() == Pawn.PAWN_MOSCOVITE && RuleSets.isCampSquare(pawnY*9 + pawnX)) {
                             lst.add(new Point(x, y));
+                        } else {
+                            break;
                         }
                     } else {
                         lst.add(new Point(x, y));

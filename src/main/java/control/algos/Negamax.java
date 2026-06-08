@@ -69,8 +69,8 @@ public class Negamax {
     public static final int   MAX_CAPTURES            = 3;
     public static final int   MAX_DEPTH               = 10;
     public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
-    public static final int   ASPIRATION_WINDOW_DELTA = 35;
-    public static final float SECOND_BEST_SCORE_TRESHOLD = 15f;
+    public static final int   ASPIRATION_WINDOW_DELTA = 100;
+    public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
 
 
     // flags for TT entries
@@ -151,7 +151,8 @@ public class Negamax {
             case 3,4 -> 3;
             case 5,6 -> 4;
             case 7,8 -> 5;
-            case 9,10 -> 6;
+            case 9 -> 6;
+            case 10 -> 7;
             default -> 4;
         };
 
@@ -218,7 +219,7 @@ public class Negamax {
                         kingPosStack, zobrist, zobristKey, sideToMove
                 );
 
-                float score = -negamax(startingDepth, 1, (turn+1) % 2, -beta, -alpha);
+                float score = -negamax(depth + 1, 1, (turn+1) % 2, -beta, -alpha);
 
                 FastBoard.undoMove(
                         board, move, 0, captureCountStack, captureStack,
@@ -369,7 +370,7 @@ public class Negamax {
         if (storeMaxScore > VIRTUAL_INF - 100)      storeMaxScore += ply;
         else if (storeMaxScore < -VIRTUAL_INF + 100) storeMaxScore -= ply;
 
-        ttScore[ttIndex]    = maxScore;
+        ttScore[ttIndex]    = storeMaxScore;
         ttHash[ttIndex]     = zobristKey[0];
         ttDepth[ttIndex]    = (byte) depth;
         ttFlag[ttIndex]     = flag;

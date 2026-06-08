@@ -29,7 +29,7 @@ public class TablutController extends Controller {
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
-    public static final int NB_BOARDS_IN_MEMORY = 50;
+    public static final int NB_BOARDS_IN_MEMORY = 300;
     public static final int NB_BOARD_REPETITION_TRESHOLD = 3;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}

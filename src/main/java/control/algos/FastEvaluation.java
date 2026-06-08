@@ -12,8 +12,8 @@ public class FastEvaluation {
     // weights for each evaluation criteria
     public static final float BLOCKING_MOSCOVITES_WEIGHT      = 25;
     public static final float ENCERCLEMENT_WEIGHT             = 60;
-    public static final float EARLY_KING_SECURITY_WEIGHT      = 50;
-    public static final float MIDDLEGAME_KING_SECURITY_WEIGHT = 50;
+    public static final float EARLY_KING_SECURITY_WEIGHT      = 30;
+    public static final float MIDDLEGAME_KING_SECURITY_WEIGHT = 30;
     public static final float MATERIAL_WEIGHT                 = 40;
     public static final float POSITION_WEIGHT                 = 20;
 
@@ -77,14 +77,10 @@ public class FastEvaluation {
 
         // 4. early-game king security
         float earlyKingSecurity = evaluateEarlyKingSecurity(board, ply, kingPosStack, moscoviteCountStack, soldierCountStack);
-        if (turn == 1) earlyKingSecurity = 0;
 
 
         // 5. middlegame king security
         float middlegameKingSecurity = evaluateMiddlegameKingSecurity(board, ply, kingPosStack, moscoviteCountStack, soldierCountStack);
-        if (turn == 1) middlegameKingSecurity = 0;
-        // only use this criteria when analyzing for swedish, otherwise moscovites might be tempted to throw material away,
-        // just for the sake of triggering this evaluation and getting a better score
 
 
         // 6. board control (more centered pieces = better score)
