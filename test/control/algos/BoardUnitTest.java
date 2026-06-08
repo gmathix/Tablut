@@ -31,7 +31,7 @@ public class BoardUnitTest {
         RuleSets.currentRuleset = savedRuleset;
     }
 
-    // --- Tests isMoscovite / isGreen / isKing / isSoldier / isEmpty ---
+    // --- Tests isMoscovite / isSwedish / isKing / isSoldier / isEmpty ---
 
     @Test
     void testIsMoscoviteReturnsTrue() {
@@ -66,15 +66,15 @@ public class BoardUnitTest {
     }
 
     @Test
-    void testIsGreenForSoldier() {
+    void testIsSwedishForSoldier() {
         Board b = TestBoardFactory.empty();
-        Assertions.assertTrue(b.isGreen(Board.SOLDIER));
+        Assertions.assertTrue(b.isSwedish(Board.SOLDIER));
     }
 
     @Test
-    void testIsGreenForKing() {
+    void testIsSwedishForKing() {
         Board b = TestBoardFactory.empty();
-        Assertions.assertTrue(b.isGreen(Board.KING));
+        Assertions.assertTrue(b.isSwedish(Board.KING));
     }
 
     // --- Tests checkWin ---

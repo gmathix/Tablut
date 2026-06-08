@@ -25,6 +25,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import model.RuleSets;
+import model.TablutStageModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +44,10 @@ public final class TablutNewGameMenus {
             int mode,
             int rulesetMask,
             Integer humanSide,
-            int greenBotType,
-            int greenBotLevel,
-            int yellowBotType,
-            int yellowBotLevel
+            int swedishBotType,
+            int swedishBotLevel,
+            int moscoviteBotType,
+            int moscoviteBotLevel
     ) {
     }
 
@@ -97,30 +98,29 @@ public final class TablutNewGameMenus {
         for (RuleSets.RuleOption option : RuleSets.ruleOptions) {
             CheckBox checkBox = new CheckBox(option.description());
             checkBox.setUserData(option.bit());
-            checkBox.setSelected((RuleSets.currentRuleset & option.bit()) != 0);
             checkBox.setFont(Font.font(14));
             ruleBoxes.add(checkBox);
             ruleBoxColumn.getChildren().add(checkBox);
         }
 
         ToggleGroup sideGroup = new ToggleGroup();
-        RadioButton greenSide = createSideButton("Green / defenders", "The king and his allies", 0, sideGroup);
-        RadioButton yellowSide = createSideButton("Yellow / attackers", "Moscovites and siege", 1, sideGroup);
-        greenSide.setSelected(true);
+        RadioButton swedishSide = createSideButton("Swedish / defenders", "The king and his allies", 0, sideGroup);
+        RadioButton moscoviteSide = createSideButton("Moscovite / attackers", "Moscovites and siege", 1, sideGroup);
+        swedishSide.setSelected(true);
 
         VBox sideSection = new VBox(10,
                 sectionTitle("Side selection"),
-                createSideRow(greenSide),
-                createSideRow(yellowSide)
+                createSideRow(swedishSide),
+                createSideRow(moscoviteSide)
         );
 
-        BotSection greenBotSection = createBotSection(controller, 0);
-        BotSection yellowBotSection = createBotSection(controller, 1);
+        BotSection swedishBotSection = createBotSection(controller, 0);
+        BotSection moscoviteBotSection = createBotSection(controller, 1);
 
         VBox botSection = new VBox(16,
                 sectionTitle("Bot implementation"),
-                greenBotSection.root,
-                yellowBotSection.root
+                swedishBotSection.root,
+                moscoviteBotSection.root
         );
 
         VBox content = new VBox(18);
@@ -153,8 +153,8 @@ public final class TablutNewGameMenus {
 
             setManagedAndVisible(sideSection, isPvB);
             setManagedAndVisible(botSection, showBots);
-            setManagedAndVisible(greenBotSection.root, isBvB || (isPvB && selectedInt(sideGroup) != null && selectedInt(sideGroup) == 1));
-            setManagedAndVisible(yellowBotSection.root, isBvB || (isPvB && selectedInt(sideGroup) != null && selectedInt(sideGroup) == 0));
+            setManagedAndVisible(swedishBotSection.root, isBvB || (isPvB && selectedInt(sideGroup) != null && selectedInt(sideGroup) == 1));
+            setManagedAndVisible(moscoviteBotSection.root, isBvB || (isPvB && selectedInt(sideGroup) != null && selectedInt(sideGroup) == 0));
         };
 
         modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> refreshVisibility.run());
@@ -177,19 +177,19 @@ public final class TablutNewGameMenus {
 
             Integer humanSide = mode == 1 ? selectedInt(sideGroup) : null;
 
-            int greenBotType = greenBotSection.selectedBotType();
-            int greenBotLevel = greenBotSection.levelSpinner.getValue();
-            int yellowBotType = yellowBotSection.selectedBotType();
-            int yellowBotLevel = yellowBotSection.levelSpinner.getValue();
+            int swedishBotType = swedishBotSection.selectedBotType();
+            int swedishBotLevel = swedishBotSection.levelSpinner.getValue();
+            int moscoviteBotType = moscoviteBotSection.selectedBotType();
+            int moscoviteBotLevel = moscoviteBotSection.levelSpinner.getValue();
 
             return new NewGameSelection(
                     mode,
                     rulesetMask,
                     humanSide,
-                    greenBotType,
-                    greenBotLevel,
-                    yellowBotType,
-                    yellowBotLevel
+                    swedishBotType,
+                    swedishBotLevel,
+                    moscoviteBotType,
+                    moscoviteBotLevel
             );
         });
 
@@ -199,7 +199,7 @@ public final class TablutNewGameMenus {
     private static void applySelection(Model model, TablutController controller, NewGameSelection selection) {
         controller.setGameMode(selection.mode());
         controller.setInputFile("");
-        RuleSets.currentRuleset = selection.rulesetMask();
+        controller.setConfigRuleSet(selection.rulesetMask());
 
         model.getPlayers().clear();
 
@@ -212,15 +212,15 @@ public final class TablutNewGameMenus {
 
         if (selection.mode() > 0) {
             if (selection.mode() == 2 || Integer.valueOf(1).equals(selection.humanSide())) {
-                controller.setBotPlayer(0, selection.greenBotType());
-                controller.setBotLevel(0, selection.greenBotLevel());
-                model.addComputerPlayer(controller.getAvailableBots()[0].get(selection.greenBotType()).name());
+                controller.setBotPlayer(0, selection.swedishBotType());
+                controller.setBotLevel(0, selection.swedishBotLevel());
+                model.addComputerPlayer(controller.getAvailableBots()[0].get(selection.swedishBotType()).name());
             }
 
             if (selection.mode() == 2 || Integer.valueOf(0).equals(selection.humanSide())) {
-                controller.setBotPlayer(1, selection.yellowBotType());
-                controller.setBotLevel(1, selection.yellowBotLevel());
-                model.addComputerPlayer(controller.getAvailableBots()[1].get(selection.yellowBotType()).name());
+                controller.setBotPlayer(1, selection.moscoviteBotType());
+                controller.setBotLevel(1, selection.moscoviteBotLevel());
+                model.addComputerPlayer(controller.getAvailableBots()[1].get(selection.moscoviteBotType()).name());
             }
         }
 
@@ -276,7 +276,7 @@ public final class TablutNewGameMenus {
     }
 
     private static BotSection createBotSection(TablutController controller, int color) {
-        String sideName = color == 0 ? "Green bot" : "Yellow bot";
+        String sideName = color == 0 ? "Swedish bot" : "Moscovite bot";
 
         ToggleGroup botGroup = new ToggleGroup();
         VBox radios = new VBox(8);

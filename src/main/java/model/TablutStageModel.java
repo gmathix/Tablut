@@ -1,10 +1,6 @@
 package model;
 
 import boardifier.model.*;
-import control.algos.RecurBoard;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * TablutStageModel defines the model for the single stage in "The Tablut". Indeed,
@@ -59,19 +55,21 @@ public class TablutStageModel extends GameStageModel {
     private TextElement panelBackdrop;
 
     private int state;
-
     private int mode;
+    private int ruleSet;
 
 
     public TablutStageModel(String name, Model model) {
         super(name, model);
         state = STATE_SELECTPAWN;
+        ruleSet = RuleSets.RULESET_NORMAL;
         setupCallbacks();
     }
 
     // GETTERS
     public int getState() { return state; }
     public int getMode() { return mode; }
+    public int getRuleSet() { return ruleSet; }
     public TablutBoard getBoard() { return board; }
     public Pawn[] getMoscovitePawns() { return moscovitePawns; }
     public Pawn[] getSoldierPawns() { return soldierPawns; }
@@ -91,6 +89,7 @@ public class TablutStageModel extends GameStageModel {
     // SETTERS
     public void setState(int state) { this.state = state; }
     public void setMode(int mode) { this.mode = mode; }
+    public void setRuleSet(int ruleSet) { this.ruleSet = ruleSet; }
     public void setBoard(TablutBoard board) {
         this.board = board;
         addContainer(board);
@@ -176,64 +175,7 @@ public class TablutStageModel extends GameStageModel {
     }
 
 
-    /**
-     * Returns a list of the pawns that get captured with the current move
-     * Returned values are pawn indexes in raster order (y * 9 + x)
-     */
-    public List<Integer> checkCaptures(boolean isYellow, int colSrc, int colDest, int rowSrc, int rowDest) {
-        List<Integer> captures = new ArrayList<>();
 
-
-        // check capture
-        int horizontalDirection = 0;
-        int verticalDirection = 0;
-
-        if (colSrc - colDest != 0)
-            horizontalDirection = colDest - colSrc > 0 ? 1 : -1; // 1 for right, -1 for left
-        if (rowSrc - rowDest != 0)
-            verticalDirection = rowDest - rowSrc > 0 ? 1 : -1;   // 1 for down, -1 for up
-
-        int[] dy_vals = {-1, 0, 1, 0};
-        int[] dx_vals = {0, -1, 0, 1};
-
-        for (int i = 0; i < 4; i++) {
-            int dy = dy_vals[i];
-            int dx = dx_vals[i];
-
-            // do not check the squares on the path the pawn came from
-            if (dx == -horizontalDirection && horizontalDirection != 0) continue;
-            if (dy == -verticalDirection && verticalDirection != 0) continue;
-
-
-            int dstY1 = rowDest + dy;
-            int dstX1 = colDest + dx;
-
-            int dstY2 = rowDest + 2*dy;
-            int dstX2 = colDest + 2*dx;
-
-            // check bounds for pawn 2 squares away
-            if (dstY2 < 0 || dstY2 >= 9) continue;
-            if (dstX2 < 0 || dstX2 >= 9) continue;
-
-
-            GameElement sideEl = getBoard().getElement(dstY1, dstX1);
-            GameElement sideEl2 = getBoard().getElement(dstY2, dstX2);
-
-            if ((sideEl instanceof Pawn sideP) && (sideEl2 instanceof Pawn sideP2)) {
-                if (isYellow) {
-                    if (sideP.getColor() == Pawn.PAWN_SOLDIER && sideP2.getColor() == Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
-                } else {
-                    if (sideP.getColor() == Pawn.PAWN_MOSCOVITE && sideP2.getColor() != Pawn.PAWN_MOSCOVITE) {
-                        captures.add(dstY1 * 9 + dstX1);
-                    }
-                }
-            }
-        }
-
-        return captures;
-    }
 
     private void computePartyResult() {
         int idWinner = -1;
@@ -253,7 +195,7 @@ public class TablutStageModel extends GameStageModel {
         // check if the king can reach one edge or two
         int nbEdgesRechable = 0;
         int maxDistance = 8;
-        if (RuleSets.isConstrainedKingMoves()) {
+        if (RuleSets.isConstrainedKingMoves(ruleSet)) {
             maxDistance = 4;
         }
         for (int i = 0; i < 4; i++) {
@@ -266,10 +208,10 @@ public class TablutStageModel extends GameStageModel {
                 x += dx_vals[i];
 
                 if (x == 0 || x == 8 || y == 0 || y == 8) { // king on edge
-                    if (RuleSets.isCornerKingEscapes() && !RecurBoard.cornerSquares.contains(y * 9 + x)) {
+                    if (RuleSets.isCornerKingEscapes(ruleSet) && !RuleSets.cornerSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
-                    } else if (RuleSets.isConstrainedKingSquares() && RecurBoard.constrainedKingSquares.contains(y * 9 + x)) {
+                    } else if (RuleSets.isConstrainedKingSquares(ruleSet) && RuleSets.constrainedKingSquares.contains(y * 9 + x)) {
                         isFreeWay = false;
                         break;
                     }
@@ -291,13 +233,13 @@ public class TablutStageModel extends GameStageModel {
 
         // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
-            if (RuleSets.isConstrainedKingSquares() || RuleSets.isCornerKingEscapes()) {
-                if (RuleSets.isCornerKingEscapes()) {
-                    if (RecurBoard.cornerSquares.contains(kingY * 9 + kingX)) {
+            if (RuleSets.isConstrainedKingSquares(ruleSet) || RuleSets.isCornerKingEscapes(ruleSet)) {
+                if (RuleSets.isCornerKingEscapes(ruleSet)) {
+                    if (RuleSets.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
-                } else if (RuleSets.isConstrainedKingSquares()) {
-                    if (!RecurBoard.constrainedKingSquares.contains(kingY * 9 + kingX)) {
+                } else if (RuleSets.isConstrainedKingSquares(ruleSet)) {
+                    if (!RuleSets.constrainedKingSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                     }
                 }
@@ -307,7 +249,10 @@ public class TablutStageModel extends GameStageModel {
         }
 
         // count surrounding moscovites
-        int nbSurrounging = 0;
+        int nbSurrounding = 0;
+        int surroundMask = 0;
+
+        boolean kingInCenter = kingY == 4 && kingX == 4;
         boolean hasCenterNeighbor = false;
 
 
@@ -315,11 +260,15 @@ public class TablutStageModel extends GameStageModel {
             int y = kingY + dy_vals[i];
             int x = kingX + dx_vals[i];
             if (y < 0 || y > 8 || x < 0 || x > 8) continue;
-            if (y == 4 && x == 4) hasCenterNeighbor = true;
-            if (getBoard().getElement(y, x) instanceof Pawn p) {
-                if (p.getColor() == Pawn.PAWN_MOSCOVITE) {
-                    nbSurrounging++;
-                }
+
+            if (y == 4 && x == 4) {
+                hasCenterNeighbor = true;
+                nbSurrounding++;
+                surroundMask |= 1 << i;
+            } else if ((getBoard().getElement(y, x) instanceof Pawn p && p.getColor() == Pawn.PAWN_MOSCOVITE) ||
+                (RuleSets.isAshtonRules(ruleSet) && RuleSets.campsSquares.contains(y*9+x))) {
+                nbSurrounding++;
+                surroundMask |= 1 << i;
             }
         }
 
@@ -327,10 +276,18 @@ public class TablutStageModel extends GameStageModel {
         /* either the king is next to the center square and is surrounded by 3 moscovites,
          * or it is surrounded by 4 moscovites.
          */
-        if ((hasCenterNeighbor && nbSurrounging == 3) || (nbSurrounging == 4)) {
-            idWinner = 1;
-        }
+        if (model.getIdPlayer() == 1) {
+            if (RuleSets.isAshtonRules(ruleSet)) {
+                if ((kingInCenter && nbSurrounding == 4) ||
+                        (hasCenterNeighbor && nbSurrounding == 4) ||
+                        (!kingInCenter && !hasCenterNeighbor && nbSurrounding >= 2 && ((surroundMask & 0b1010) == 0b1010 || (surroundMask & 0b0101) == 0b0101))) {
 
+                    idWinner = 1;
+                }
+            } else if ((hasCenterNeighbor && nbSurrounding == 3) || (nbSurrounding == 4)) {
+                idWinner = 1;
+            }
+        }
 
 
         if (idWinner != -1) {

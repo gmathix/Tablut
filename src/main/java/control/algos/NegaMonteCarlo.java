@@ -1,111 +1,111 @@
 package control.algos;
 
 
-import model.Move;
+import model.TablutBoard;
+import model.TablutStageModel;
 
 import java.util.*;
 
-/**
- *    The weakest thing in pure MCTS (MonteCarlo) is step 3 (simulation). as tablut has very
- * "sudden-death" like conditions (for example the king goes to an edge or gets surrounded), a simulation
- * making completely random moves is very blind. it very well might miss a 1-move win or 1-move loss, which
- * completely biases the win/loss stats.
- *    This is where Negamax comes : instead of running a long and vry chaotic random playout until a game over,
- * we can stop early and use Negamax to evaluate the board.
- *
- * Instead of simulating until a random win/loss, we change step 3 like this :
- *    1. from the new expanded node, instead of running a random game, we execute a simple Negamax search(
- *       (depth 2-3)
- *    2. the search returns a relative score
- *    3. we map this score to a simulated value between 0.0 (forced loss) and 1.0 (forced win).
- *       a nice and common way to do map a large range of such score to a probability is using a
- *       sigmoig function like in logistic regression (ML) : https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function
- *       sim value = 1 / (1 + exp(-score))
- *    4. instead of backpropagating a strict int (0 or 1) we backpropagate this fractional score up the tree
- *
- *
- * This is much better for tablut because :
- *    - if the new expanded node allows a sneaky and vicious king escape while green has 2 pawns remaining 2 moves
- *      down the line, a random simulation will certainly miss it, when the depth-2/3 negamax will spawn kill it,
- *      return a massively crushing score (MAX_VALUE ~ 1e7) and propagate an almost perfect 1.0 value,
- *      which MCTS will recognize as very valuable
- *    - running a random simulation of tablut could take 120+ moves, when a depth-2/3 nega takes the blink of an eye.
- *    - if the evaluation function used by negamax is not perfectly tuned for tablut (which is a
- *      pretty complicated game, by the way, and can get very tactical very quickly), it doesn't matter as much as in the
- *      actual negamax search alone. negamax ensures immediate survival while MCTS handles the long term strategy
- *      of surrounding the king or opening ways to the edges.
- *
- *
- *  TL;DR:
- *      this is MonteCarlo, but better. sorry damien ;)
- */
+import static control.algos.Negamax.VIRTUAL_INF;
+
 
 
 
 public class NegaMonteCarlo {
 
     // constant that balances exploitation vs exploration (win/visits ratio vs visits/parent visits "ratio")
-    public static final double C = Math.sqrt(2);
+    public static final float C = 0.4f;
 
     // constant that balances (exploitation and exploration) vs prior score (which children look more promising)
-    public static final double W = 0.5;
+    public static final float W = 1.5f;
+
+    // leaf negamax scores are mapped to [0,1] with a soft scale so the tree keeps
+    // meaningful separation between "good", "great", and "catastrophic".
+    private static final float LEAF_SCORE_SCALE = 500f;
+    private static final int   MAX_SEARCH_PLY   = 256;
+    private static final int   MAX_PATH_LEN     = 256;
 
 
+    private static long timeLimitMs;
+    private static int  negamaxDepth;
+    private static int  ruleSet;
+    private static int  nbEvals;
 
-    private long timeLimitMs;
-    private int negamaxDepth;
 
-    private NegamaxSearch negamaxSearch;
+    /**
+     *  Use static reusable buffers across a game to avoid reallocating them each time we call a decide()
+     *  Allocated once, have to zeroed out before calling findBestMove()
+     */
 
+    private static final Random rng = new Random(12345);
+
+    private static final byte[]    board               = new byte  [81];
+    private static final byte[]    kingPosStack        = new byte  [MAX_SEARCH_PLY + 1];
+    private static final byte[]    captureCountStack   = new byte  [MAX_SEARCH_PLY + 1];
+    private static final int[]     moveCountStack      = new int   [MAX_SEARCH_PLY];
+    private static final byte[]    materialDiffStack   = new byte  [MAX_SEARCH_PLY + 1];
+    private static final byte[]    moscoviteCountStack = new byte  [MAX_SEARCH_PLY + 1];
+    private static final byte[]    soldierCountStack   = new byte  [MAX_SEARCH_PLY + 1];
+
+    private static final short[][] captureStack        = new short [MAX_SEARCH_PLY + 1][Negamax.MAX_CAPTURES];
+    private static final int[][]   movesStack          = new int   [MAX_SEARCH_PLY + 1][Negamax.NB_POSSIBLE_MOVES];
+    private static final int[][]   killerMovesStack    = new int   [MAX_SEARCH_PLY + 1][2];
+
+    // [FIX-3] zobrist is initialised ONCE in configure() and never touched by resetBuffers().
+    private static final long[][]  zobrist             = new long  [4][81];
+    private static final long[]    zobristKey          = new long  [1];
+    private static final long      sideToMove          = rng.nextLong();
+
+
+    // currently (8 + 4 + 1 + 1 + 4) * (1 << 20) ~= 14.6MB transposition table
+    private static final long[]    ttHash              = new long  [Negamax.NB_TT_ENTRIES];
+    private static final float[]   ttScore             = new float [Negamax.NB_TT_ENTRIES];
+    private static final byte[]    ttDepth             = new byte  [Negamax.NB_TT_ENTRIES];
+    private static final byte[]    ttFlag              = new byte  [Negamax.NB_TT_ENTRIES];
+    private static final int[]     ttBestMove          = new int   [Negamax.NB_TT_ENTRIES];
 
 
     private static class Node {
-        boolean isRoot;
-        public Node parent;
-        public Map<Move, Node> children;
+        Node parent;
+        int  moveFromParent;
+        int  turn;
+        int  ply;
 
-        public int turn;
-        public RecurBoard recurBoard;
-        public List<Move> unvisitedMoves;
-        public int nbTotalLegalMoves;
+        int[]   legalMoves;
+        Node[]  children;
+        boolean isTerminal;
+
+        int   expandedChildren;
+        int   visits;  // n
+        float wins; // float to support fractional scores from negamax
 
 
-        public double wins; // double to support fractional scores from negamax
-        public int visits;  // n
-
-        public Node(boolean isRoot, Node parent, RecurBoard recurBoard, int turn) {
-            this.isRoot = isRoot;
-            this.parent = parent;
-            this.children = new HashMap<>();
-            this.recurBoard = recurBoard;
-            this.turn = turn;
-
-            // check if board is already terminal before getting moves over there
-            if (recurBoard.checkWin() != 0) {
-                this.unvisitedMoves = new ArrayList<>();
-            } else {
-                this.unvisitedMoves = this.recurBoard.getLegalMoves(this.turn);
-            }
-            this.nbTotalLegalMoves = this.unvisitedMoves.size();
-
-            this.wins = 0;
-            this.visits = 0;
+        public Node(Node parent, int moveFromParent, int turn, int ply, int[] legalMoves, boolean isTerminal) {
+            this.parent           = parent;
+            this.moveFromParent   = moveFromParent;
+            this.turn             = turn;
+            this.ply              = ply;
+            this.legalMoves       = legalMoves;
+            this.children         = new Node[legalMoves.length];
+            this.isTerminal       = isTerminal;
+            this.expandedChildren = 0;
+            this.visits           = 0;
+            this.wins             = 0.0f;
         }
 
-        public boolean isFullyExpanded() {
-            return nbTotalLegalMoves == children.size();
-        }
-        public boolean isTerminal() {
-            return recurBoard.checkWin() != 0 || (nbTotalLegalMoves == 0 && !isRoot);
+        boolean isFullyExpanded() {
+            return expandedChildren >= legalMoves.length;
         }
     }
+
+    private record SearchResult(int move, float score, int visits) {}
 
 
 
 
     // level between 0 and 10
-    public NegaMonteCarlo(int level) {
-        this.timeLimitMs = switch (level) {
+    public static void configure(int level, TablutBoard tablutBoard) {
+        timeLimitMs = switch (level) {
             case  0 ->   500;
             case  1 ->  1000;
             case  2 ->  2000;
@@ -120,192 +120,391 @@ public class NegaMonteCarlo {
             default ->  5000;
         };
 
-        /** going from depth 2 -> 3 gives much better information to the backprop
-         *  the tradeoff is that we do less iterations but high-quality ones beat shallow evaluations in a tactical game like tablut
-         */
-        this.negamaxDepth = switch (level) {
-            case 1,2,3,4,5 -> 2;
-            case 6,7,8,9,10 -> 2;
-            default -> 2;
-        };
+        negamaxDepth = 2;
 
-        this.negamaxSearch = new NegamaxSearch(this.negamaxDepth);
+        TablutStageModel stageModel = (TablutStageModel) tablutBoard.getModel().getGameStage();
+        ruleSet = stageModel.getRuleSet();
+
+        for (int piece : FastBoard.pieceTypes) {
+            for (int i = 0; i < 81; i++) {
+                zobrist[piece][i] = rng.nextLong();
+            }
+        }
+        zobristKey[0] = 0;
     }
 
 
-    private double UCB(Node node, double priorScore) {
-        if (node.visits == 0) return Double.POSITIVE_INFINITY; // should be impossible but let's avoid having to debug a NaN
+    public static void resetBuffers() {
+        Arrays.fill(board, (byte) 0);
+        Arrays.fill(kingPosStack, (byte) 0);
+        Arrays.fill(captureCountStack, (byte) 0);
+        Arrays.fill(moveCountStack, 0);
+        Arrays.fill(materialDiffStack, (byte) 0);
+        Arrays.fill(moscoviteCountStack, (byte) 0);
+        Arrays.fill(soldierCountStack, (byte) 0);
 
-        /** W add a prior policy score like AlphaZero does :
-         *  a light score that biases which children get selected
-         *  it can be sth cheap :
-         *     - does the move threaten capture ? (for both sides)
-         *     - does the move open an escape path ? (for green)
-         *     - does the move close an escape path ? (for yellow)
-         *     - etc
-         *  calculated fast (preferably O(1)) and applied at every selection step in the loop
-         */
-        return (node.wins / (double) node.visits)
-                + C * Math.sqrt(Math.log(node.parent.visits) / node.visits)
-                + W * (priorScore / (1 + node.visits));
+        for (short[] cap : captureStack) Arrays.fill(cap, (short) 0);
+        for (int[] moves : movesStack) Arrays.fill(moves, 0);
+        for (int[] moves : killerMovesStack) Arrays.fill(moves, 0);
+
+        Arrays.fill(ttHash, 0);
+        Arrays.fill(ttScore, 0);
+        Arrays.fill(ttDepth, (byte) 0);
+        Arrays.fill(ttFlag, (byte) 0);
+        Arrays.fill(ttBestMove, 0);
+
+        zobristKey[0] = 0;
     }
 
-    public Move findBestMove(RecurBoard recurBoard, int turn, boolean findAlternativeMove) {
-        Move bestMove = recurBoard.getLegalMoves(turn).getFirst();
 
 
-        Node root = new Node(true, null, recurBoard, turn);
-        root.parent = root; // just to avoid null pointer errors
 
-        Node currentNode;
+    public static int findBestMove(TablutBoard tablutBoard, int turn, boolean findAlternativeMove) {
+        byte[] rootBoard  = FastBoard.fromTablutBoard(tablutBoard);
+        int kingPos       = FastBoard.getKingPos(rootBoard);
+        int materialDiff  = FastEvaluation.countMaterialDiff(rootBoard);
 
-        int nbEvals = 0;
+        return findBestMove(rootBoard, kingPos, materialDiff, turn, findAlternativeMove);
+    }
+
+    public static int findBestMove(byte[] rootBoard, int kingPos, int materialDiff, int turn, boolean findAlternativeMove) {
+        loadRootState(rootBoard, kingPos, materialDiff);
+
+        Node root = createNode(null, -1, turn, 0);
+        if (root.isTerminal || root.legalMoves.length == 0) {
+            return -1;
+        }
 
         long startTimeMillis = System.currentTimeMillis();
+        nbEvals = 0;
+
+        int[] pathMoves = new int[MAX_PATH_LEN];
 
         while (System.currentTimeMillis() - startTimeMillis <= timeLimitMs) {
+            Node currentNode = root;
+            int ply = 0;
+            int pathLen = 0;
 
-            /*
-             * 1. Selection
-             */
-            currentNode = root;
-            while (currentNode.isFullyExpanded() && !currentNode.isTerminal()) {
-                double bestScore = Double.NEGATIVE_INFINITY;
-                Node bestNode = null;
-                for (Map.Entry<Move, Node> entry : currentNode.children.entrySet()) {
-                    Move move = entry.getKey();
-                    Node child = entry.getValue();
+            // 1. Selection
+            while (currentNode.isFullyExpanded() && !currentNode.isTerminal) {
+                int childIdx    = 0;
+                float bestScore = Float.NEGATIVE_INFINITY;
+                int bestIdx     = -1;
 
-                    double priorScore = 0;
-                    if (!currentNode.recurBoard.checkCaptures(move).isEmpty()) priorScore += 0.5;
-                    if (currentNode.turn != turn) priorScore *= -1;
+                for (int i = 0; i < currentNode.legalMoves.length; i++) {
+                    Node child = currentNode.children[i];
+                    if (child == null || child.visits == 0) {
+                        bestIdx = i;
+                        break;
+                    }
 
-                    double score = UCB(child, priorScore);
-                    if (score > bestScore) {
+
+                    float exploit = 1f - child.wins / (float) child.visits;
+                    float explore = (float) (C * Math.sqrt(Math.log(Math.max(1, currentNode.visits)) / child.visits));
+                    float prior   = (float) (W * (movePrior(currentNode, currentNode.legalMoves[i], ply) / (1.0 + child.visits)));
+                    float score   = exploit + explore + prior;
+
+                    if (score >= bestScore) {
                         bestScore = score;
-                        bestNode = child;
+                        bestIdx = i;
                     }
                 }
-                if (bestNode == null) break;
-                currentNode = bestNode; // step into best node
+                childIdx = bestIdx;
+
+                if (childIdx < 0) {
+                    break;
+                }
+
+                int move = currentNode.legalMoves[childIdx];
+                applyMove(move, ply);
+                pathMoves[pathLen++] = move;
+
+                currentNode = currentNode.children[childIdx];
+                ply++;
             }
 
-            /**
-             * 2. Expansion
-             */
-            // only expand if the selected node isn't a game over state
-            if (!currentNode.isTerminal() && !currentNode.unvisitedMoves.isEmpty()) {
-                int moveIndex = (int) (Math.random() * currentNode.unvisitedMoves.size());
-                Move randomMove = currentNode.unvisitedMoves.get(moveIndex);
+            // 2. Expansion
+            if (!currentNode.isTerminal && currentNode.expandedChildren < currentNode.legalMoves.length) {
+                int remaining = currentNode.legalMoves.length - currentNode.expandedChildren;
+                if (remaining <= 0) {
+                    return -1;
+                }
+                int expandIdx = 0;
 
-                RecurBoard childRecurBoard = new RecurBoard(currentNode.recurBoard);
-                childRecurBoard.makeMove(randomMove);
+                for (int i = 0; i < currentNode.legalMoves.length; i++) {
+                    if (currentNode.children[i] == null) {
+                        expandIdx = i;
+                        break;
+                    }
+                }
 
-                Node childNode = new Node(false, currentNode, childRecurBoard, (currentNode.turn + 1) % 2);
-                currentNode.children.put(randomMove, childNode);
-                currentNode.unvisitedMoves.remove(moveIndex);
-                currentNode = childNode;
+                int move = currentNode.legalMoves[expandIdx];
+
+                applyMove(move, ply);
+                pathMoves[pathLen++] = move;
+
+                Node child = createNode(currentNode, move, (currentNode.turn + 1) % 2, ply + 1);
+                currentNode.children[expandIdx] = child;
+                currentNode.expandedChildren++;
+                currentNode = child;
+                ply++;
             }
 
-
-            /**
-             * 3. Simulation (replaced with low depth negamax)
-             * all nodes run a search at depth a least two
-             * when green is playing :
-             *    - if there are 4 or 5 moscovites in the same 5x5 region as the king, run at depth 3
-             *    - there are less than 4 moscovites in the same 5x5 region, run at depth 4
-             *    because those situations are more promising.
-             * when yellow is playing :
-             *    depending on the king encerclement score :
-             *    - when it is lower than -20 (~2 moscovites surrounding the king orthogonally), increment depth by 1
-             *    - when it is lower than -30 (~3 moscovites surrounding the king orthogonally), increment depth by 1
-             */
-            double score;
-
-            int depthBonus = 0;
-            if (turn == 0) {
-                int nbMoscovitesIn5x5Region = Evaluation.countMoscovitesIn5x5Region(currentNode.recurBoard);
-                if (nbMoscovitesIn5x5Region == 4 || nbMoscovitesIn5x5Region == 5) depthBonus += 1;
-                if (nbMoscovitesIn5x5Region < 4) depthBonus += 2;
-            } else if (turn == 1) {
-                double kingEncerclement = Evaluation.countKingEncerclement(currentNode.recurBoard);
-                if (kingEncerclement <= -20) depthBonus += 1;
-                if (kingEncerclement <= -30) depthBonus += 1;
-            }
-
-            double negamaxScore = negamaxSearch.negamax(currentNode.recurBoard, this.negamaxDepth + depthBonus, currentNode.turn, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
-
-            // green needs one escape path, yellow needs full encerclement.
-            // the value of the score means different stuff depending on who's playing, so we use different "temperatures"
-            double temp = currentNode.turn == 0 ? 80 : 120;
-            score = 1 / (1 + Math.exp(-negamaxScore / temp));
+            // 3. Simulation using shallow fast negamax from the current leaf
+            float score = evaluateLeaf(currentNode, ply);
             nbEvals++;
 
 
-
-            /**
-             * 4. Backpropagation
-             */
+            // 4. Backpropagation
             int leafTurn = currentNode.turn;
-            while (currentNode != root) {
-                currentNode.visits++;
-
-
-                if (currentNode.turn == leafTurn) {
-                    currentNode.wins += 1 - score;
+            Node back = currentNode;
+            while (back != null) {
+                back.visits++;
+                if (back.turn == leafTurn) {
+                    back.wins += score;
                 } else {
-                    currentNode.wins += score;
+                    back.wins += 1 - score;
                 }
 
-
-                currentNode = currentNode.parent;
+                back = back.parent;
             }
-            root.visits++;
+
+            // 5. Undo to root
+            for (int i = pathLen - 1; i >= 0; i--) {
+                undoMove(pathMoves[i], i);
+            }
         }
 
+        SearchResult best = chooseBestMove(root, findAlternativeMove);
+//        System.out.printf("performed %d iterations/n", nbEvals);
+        return best.move;
+    }
 
-        List<Map.Entry<Move, Node>> sorted = root.children.entrySet().stream()
-                .sorted((e1, e2) ->
-                        Integer.compare(
-                                e2.getValue().visits,
-                                e1.getValue().visits
-                        )
-                ).toList();
+    private static void loadRootState(byte[] rootBoard, int kingPos, int materialDiff) {
+        System.arraycopy(rootBoard, 0, board, 0, 81);
 
+        kingPosStack[0]         = (byte) kingPos;
+        materialDiffStack[0]    = (byte) materialDiff;
+        moscoviteCountStack[0]  = FastEvaluation.countPieces(board, FastBoard.MOSCOVITE);
+        soldierCountStack[0]    = FastEvaluation.countPieces(board, FastBoard.SWEDISH);
 
-        bestMove = sorted.getFirst().getKey();
-        if (findAlternativeMove && sorted.size() > 1) {
-            bestMove = sorted.get(1).getKey();
+        for (int i = 0; i < 81; i++) {
+            if (board[i] != FastBoard.EMPTY) {
+                zobristKey[0] ^= zobrist[board[i]][i];
+            }
+        }
+        zobristKey[0] ^= sideToMove;
+    }
+
+    private static Node createNode(Node parent, int moveFromParent, int turn, int ply) {
+        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+
+        if (win != 0) {
+            return new Node(parent, moveFromParent, turn, ply, new int[0], true);
         }
 
-//        System.out.printf("evaluated %d positions\n", nbEvals);
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
+        int legalCount   = moveCountStack[ply];
+        int[] legalMoves = Arrays.copyOf(movesStack[ply], legalCount);
 
-        return bestMove;
+        boolean terminal = legalCount == 0;
+        return new Node(parent, moveFromParent, turn, ply, legalMoves, terminal);
     }
 
 
-    /**
-     * helper low-depth negamax tailored for MCTS leaf tracking
-     */
-    private double smallNegamax(RecurBoard recurBoard, int depth, int turn, double alpha, double beta) {
-        double win = recurBoard.checkWin();
-        if (win != 0 || depth == 0) {
-            return Evaluation.evaluate(recurBoard, turn, depth, negamaxDepth);
+
+    private static double movePrior(Node node, int move, int ply) {
+        float prior = 0.0f;
+        if (FastBoard.isCapture(board, move, node.ply, ruleSet)) {
+            prior += 0.5f;
         }
 
-        double bestScore = Double.NEGATIVE_INFINITY;
-        List<Move> moves = recurBoard.getLegalMoves(turn);
-        if (moves.isEmpty()) return turn == 0 ? -1000 : 1000;
 
-        for (Move m : moves) {
-            RecurBoard newRecurBoard = new RecurBoard(recurBoard);
-            newRecurBoard.makeMove(m);
-            double score = -smallNegamax(newRecurBoard, depth-1, (turn+1) % 2, -beta, -alpha);
-            bestScore = Math.max(bestScore, score);
+        boolean kingCanEscape = FastEvaluation.kingCanEscapeIn1(board, kingPosStack[ply], ruleSet);
+        if (node.turn == 0) {
+            int dst = (move >> 7) & 0x7F;
+            if (dst == 0 || dst == 8 || dst == 72 || dst == 80 ||
+                    dst / 9 == 0 || dst / 9 == 8 || dst % 9 == 0 || dst % 9 == 8) {
+                prior += 2.0f;
+            }
+        } else {
+            if (kingCanEscape) {
+                applyMove(move, ply);
+                boolean stillEscapes = FastEvaluation.kingCanEscapeIn1(board, kingPosStack[ply + 1], ruleSet);
+                undoMove(move, ply);
+                if (!stillEscapes) prior += 2.5f;   // successfully blocks escape
+                else               prior -= 0.5f;    // doesn't block, penalise
+            }
+        }
+
+
+        return prior;
+    }
+
+    private static void applyMove(int move, int ply) {
+        FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack, ruleSet);
+        kingPosStack[ply+1]         = kingPosStack[ply];
+        materialDiffStack[ply+1]    = materialDiffStack[ply];
+        moscoviteCountStack[ply+1]  = moscoviteCountStack[ply];
+        soldierCountStack[ply+1]    = soldierCountStack[ply];
+
+        FastBoard.makeMove(
+                board, move, ply, captureCountStack, captureStack,
+                materialDiffStack, soldierCountStack, moscoviteCountStack, kingPosStack, zobrist, zobristKey, sideToMove
+        );
+    }
+
+    private static void undoMove(int move, int ply) {
+        FastBoard.undoMove(
+                board, move, ply, captureCountStack, captureStack,
+                materialDiffStack, kingPosStack, zobrist, zobristKey, sideToMove
+        );
+    }
+
+    private static SearchResult chooseBestMove(Node root, boolean findAlternativeMove) {
+        if (root.legalMoves.length == 0) {
+            return new SearchResult(-1, Float.NEGATIVE_INFINITY, 0);
+        }
+
+        int bestIdx       = -1;
+        int secondIdx     = -1;
+        int bestVisits    = -1;
+        int secondVisits  = -1;
+
+        for (int i = 0; i < root.legalMoves.length; i++) {
+            Node child = root.children[i];
+            if (child == null) continue;
+            if (child.visits > bestVisits) {
+                secondIdx     = bestIdx;
+                secondVisits  = bestVisits;
+                bestIdx       = i;
+                bestVisits    = child.visits;
+            } else if (child.visits > secondVisits) {
+                secondIdx    = i;
+                secondVisits = child.visits;
+            }
+        }
+
+        int chosenIdx = bestIdx;
+        if (findAlternativeMove && secondIdx >= 0) {
+            chosenIdx = secondIdx;
+        }
+
+        int chosenMove    = chosenIdx >= 0 ? root.legalMoves[chosenIdx] : -1;
+        float chosenScore = chosenIdx >= 0 && root.children[chosenIdx] != null
+                ? (float) (1.0 - root.children[chosenIdx].wins / Math.max(1.0, root.children[chosenIdx].visits))
+                : Float.NEGATIVE_INFINITY;
+        int chosenVisits  = chosenIdx >= 0 && root.children[chosenIdx] != null ? root.children[chosenIdx].visits : 0;
+
+        return new SearchResult(chosenMove, chosenScore, chosenVisits);
+    }
+
+    private static float evaluateLeaf(Node leaf, int ply) {
+        int depthBonus = 0;
+        if (leaf.turn == 0) {
+            // search deeper for swedish when there are few moscovites near the king (potentially easier exit)
+            int nbMoscovitesIn5x5Region = FastEvaluation.countMoscovitesIn5x5Region(board, ply, kingPosStack);
+            if (nbMoscovitesIn5x5Region == 4 || nbMoscovitesIn5x5Region == 5) depthBonus += 1;
+            if (nbMoscovitesIn5x5Region < 4)                                  depthBonus += 2;
+        } else {
+            // search deeper for moscovites when the king is under pressure
+            double kingEncerclement = FastEvaluation.countKingEncerclement(board, ply, kingPosStack);
+            if (kingEncerclement <= -4) depthBonus += 1;
+            if (kingEncerclement <= -7) depthBonus += 1;
+        }
+
+        int bonusDepth = negamaxDepth + depthBonus;
+        float negaScore = negamax(bonusDepth, bonusDepth, ply, leaf.turn,
+                Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+
+//        // map the leaf score to a smooth win probability (tanh, same idea as AlphaZero)
+        float normalized = (float) Math.tanh(negaScore / LEAF_SCORE_SCALE);
+        return Math.max(0f, Math.min(1f, .5f + .5f * normalized));
+
+//        return (float) (1.0 / (1.0 + Math.exp(-negaScore / 100)));
+    }
+
+    private static float negamax(int depth, int rootDepth, int ply, int turn, float alpha, float beta) {
+        float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
+        if (win > 0) return turn == 0 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
+        if (win < 0) return turn == 1 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
+
+
+        boolean hasTTBestMove = false;
+        int bestTTMove        = 0;
+        int ttIndex           = (int) (zobristKey[0] & (Negamax.NB_TT_ENTRIES - 1));
+
+        if (ttFlag[ttIndex] != 0 && ttHash[ttIndex] == zobristKey[0] && ttDepth[ttIndex] >= depth) {
+            switch (ttFlag[ttIndex]) {
+                case Negamax.EXACT:
+                    return ttScore[ttIndex];
+                case Negamax.LOWER_BOUND:
+                    alpha = Math.max(alpha, ttScore[ttIndex]);
+                    break;
+                case Negamax.UPPER_BOUND:
+                    beta = Math.min(beta, ttScore[ttIndex]);
+                    break;
+            }
+            if (alpha >= beta) return ttScore[ttIndex];
+
+            bestTTMove = ttBestMove[ttIndex];
+            if (bestTTMove != 0) hasTTBestMove = true;
+        }
+
+        if (depth == 0) {
+            return FastEvaluation.evaluate(board, turn, ply, depth, rootDepth, materialDiffStack, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
+        }
+
+        float maxScore = Float.NEGATIVE_INFINITY;
+        int   bestMove = 0;
+
+        FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, bestTTMove, hasTTBestMove, ruleSet);
+        if (moveCountStack[ply] == 0) {
+            return -FastEvaluation.VIRTUAL_INF + depth;
+        }
+
+        float alphaOrig = alpha;
+        boolean cutoff  = false;
+
+        for (int i = 0; i < moveCountStack[ply]; i++) {
+            int move = movesStack[ply][i];
+
+            applyMove(move, ply);
+
+            float score = -negamax(depth - 1, rootDepth, ply + 1, (turn + 1) % 2, -beta, -alpha);
+
+            undoMove(move, ply);
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestMove = move;
+            }
             alpha = Math.max(alpha, score);
-            if (alpha >= beta) break;
+
+            if (alpha >= beta) {
+                cutoff = true;
+                ttScore   [ttIndex]  = score;
+                ttHash    [ttIndex]  = zobristKey[0];
+                ttDepth   [ttIndex]  = (byte) depth;
+                ttFlag    [ttIndex]  = (byte) Negamax.LOWER_BOUND;
+                ttBestMove[ttIndex]  = move;  // preserve the refutation move
+                break;
+            }
         }
 
-        return bestScore;
+        if (!cutoff) {
+            byte flag;
+            if (maxScore <= alphaOrig) flag = (byte) Negamax.UPPER_BOUND;
+            else if (maxScore >= beta) flag = (byte) Negamax.LOWER_BOUND;
+            else                       flag = (byte) Negamax.EXACT;
+
+            ttScore   [ttIndex]  = maxScore;
+            ttHash    [ttIndex]  = zobristKey[0];
+            ttDepth   [ttIndex]  = (byte) depth;
+            ttFlag    [ttIndex]  = flag;
+            ttBestMove[ttIndex]  = bestMove;
+        }
+
+        return maxScore;
     }
 }

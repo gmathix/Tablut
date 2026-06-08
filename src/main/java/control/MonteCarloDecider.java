@@ -5,10 +5,9 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import control.algos.RecurBoard;
 import control.algos.MonteCarlo;
-import javafx.scene.control.Tab;
 import model.Move;
+import model.Pawn;
 import model.TablutBoard;
 import model.TablutStageModel;
 
@@ -34,31 +33,35 @@ public class MonteCarloDecider extends Decider  {
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard tablutBoard = stage.getBoard(); // get the board
-        RecurBoard recurBoard = new RecurBoard(tablutBoard);
         GameElement pawn = null; // the pawn that is moved
 
         int turn = model.getIdPlayer();
 
-        MonteCarlo monteCarlo = new MonteCarlo(level);
 
 
+        MonteCarlo.resetBuffers();
+        MonteCarlo.configure(level, tablutBoard);
+        int bestMoveInt = MonteCarlo.findBestMove(tablutBoard, turn, ((TablutController) control).isBoardRepeated());
 
-        Move bestMove = monteCarlo.findBestMove(recurBoard, turn, ((TablutController) control).isBoardRepeated());
+
+        int src = bestMoveInt & 0x7F;
+        int dst = (bestMoveInt >> 7) & 0x7F;
 
 
+        pawn = tablutBoard.getElement(src / 9, src % 9);
 
-        pawn = tablutBoard.getElement(bestMove.srcY(), bestMove.srcX());
 
-        stage.checkCaptures(turn == 1, bestMove.srcX(), bestMove.dstX(), bestMove.srcY(), bestMove.dstY());
-        if (recurBoard.isKing(recurBoard.getBoard()[bestMove.srcY()][bestMove.srcX()])) {
-            tablutBoard.setKingY(bestMove.dstY());
-            tablutBoard.setKingX(bestMove.dstX());
+        if (((Pawn)pawn).getColor() == Pawn.PAWN_KING) {
+            tablutBoard.setKingY(dst / 9);
+            tablutBoard.setKingX(dst % 9);
         }
+        ((Pawn)pawn).setBoardX(dst % 9);
+        ((Pawn)pawn).setBoardY(dst / 9);
 
 
-        tablutControl.getMoveHistory().addMove(bestMove);
+        tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, src % 9, src / 9, dst % 9, dst / 9));
 
 
-        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, bestMove.dstY(), bestMove.dstX());
+        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, dst / 9, dst % 9);
     }
 }

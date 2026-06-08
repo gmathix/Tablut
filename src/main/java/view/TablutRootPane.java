@@ -1,17 +1,15 @@
 package view;
 
-import boardifier.view.BackgroundLook;
 import boardifier.view.RootPane;
-import control.algos.RecurBoard;
 import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import model.Pawn;
+import model.RuleSets;
 import model.TablutBoard;
 
 import java.util.ArrayList;
@@ -76,7 +74,8 @@ public class TablutRootPane extends RootPane {
         );
 
         Label body2 = createBodyLabel(
-                "The king escapes by reaching a legal exit square.",
+                "The king escapes by reaching a legal exit square : an edge square that is not brown" +
+                        "(depends on current ruleset)",
                 Constants.SECTION_START_Y + Constants.SECTION_SPACING
         );
 
@@ -151,7 +150,7 @@ public class TablutRootPane extends RootPane {
                 square.setY(startY + i*squareSize);
                 square.setFill(((i+j)%2 == 0) ? TablutBoardLook.LIGHT_SQUARE : TablutBoardLook.DARK_SQUARE);
 
-                if (RecurBoard.constrainedKingSquares.contains(i*9 + j)) {
+                if (RuleSets.constrainedKingSquares.contains(i*9 + j)) {
                     square.setFill(TablutBoardLook.SPECIAL_SQUARE);
                 }
                 if (i*9 + j == 40) {
