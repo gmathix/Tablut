@@ -70,7 +70,7 @@ public class Negamax {
     public static final int   MAX_DEPTH               = 10;
     public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA = 35;
-    public static final int   SECOND_BEST_SCORE_TRESHOLD = 10;
+    public static final float SECOND_BEST_SCORE_TRESHOLD = 15f;
 
 
     // flags for TT entries
@@ -92,7 +92,6 @@ public class Negamax {
     private static final byte[]     captureCountStack   = new byte  [MAX_DEPTH + 1];
     private static final byte[]     kingPosStack        = new byte  [MAX_DEPTH + 1];
     private static final int[]      moveCountStack      = new int   [MAX_DEPTH + 1];
-    private static final byte[]     materialDiffStack   = new byte  [MAX_DEPTH + 1];
     private static final byte[]     soldierCountStack   = new byte  [MAX_DEPTH + 1];
     private static final byte[]     moscoviteCountStack = new byte  [MAX_DEPTH + 1];
     private static final int[]      bestMovesStack      = new int   [MAX_DEPTH + 1];
@@ -126,7 +125,6 @@ public class Negamax {
         Arrays.fill(kingPosStack, (byte) 0);
         Arrays.fill(captureCountStack, (byte) 0);
         Arrays.fill(moveCountStack, 0);
-        Arrays.fill(materialDiffStack, (byte) 0);
         Arrays.fill(soldierCountStack, (byte) 0);
         Arrays.fill(moscoviteCountStack, (byte) 0);
         Arrays.fill(bestMovesStack, 0);
@@ -162,8 +160,7 @@ public class Negamax {
 
         board                   = FastBoard.fromTablutBoard(tablutBoard);
         kingPosStack[0]         = FastBoard.getKingPos(board);
-        materialDiffStack[0]    = FastEvaluation.countMaterialDiff(board);
-        soldierCountStack[0]    = FastEvaluation.countPieces(board, FastEvaluation.SWEDISH);
+        soldierCountStack[0]    = FastEvaluation.countPieces(board, FastEvaluation.SOLDIER);
         moscoviteCountStack[0]  = FastEvaluation.countPieces(board, FastEvaluation.MOSCOVITE);
 
         // initialize random numbers
@@ -212,20 +209,19 @@ public class Negamax {
                 int move = movesStack[0][i];
 
                 kingPosStack[1]         = kingPosStack[0];
-                materialDiffStack[1]    = materialDiffStack[0];
                 moscoviteCountStack[1]  = moscoviteCountStack[0];
                 soldierCountStack[1]    = soldierCountStack[0];
 
                 FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack, ruleSet);
                 FastBoard.makeMove(
-                        board, move, 0, captureCountStack, captureStack, materialDiffStack, soldierCountStack, moscoviteCountStack,
+                        board, move, 0, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
                         kingPosStack, zobrist, zobristKey, sideToMove
                 );
 
                 float score = -negamax(startingDepth, 1, (turn+1) % 2, -beta, -alpha);
 
                 FastBoard.undoMove(
-                        board, move, 0, captureCountStack, captureStack, materialDiffStack,
+                        board, move, 0, captureCountStack, captureStack,
                         kingPosStack, zobrist, zobristKey, sideToMove
                 );
 
@@ -307,7 +303,7 @@ public class Negamax {
 
         if (depth == 0) {
             positionsAnalyzed++;
-            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, materialDiffStack, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
+            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
         }
 
         float maxScore = -VIRTUAL_INF;
@@ -327,21 +323,20 @@ public class Negamax {
 
             // init variables for next ply to same as current ply
             kingPosStack[ply+1]         = kingPosStack[ply];
-            materialDiffStack[ply+1]    = materialDiffStack[ply];
             moscoviteCountStack[ply+1]  = moscoviteCountStack[ply];
             soldierCountStack[ply+1]    = soldierCountStack[ply];
 
             FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack, ruleSet);
             FastBoard.makeMove(
-                    board, move, ply, captureCountStack, captureStack, materialDiffStack, soldierCountStack, moscoviteCountStack,
+                    board, move, ply, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
                     kingPosStack, zobrist, zobristKey, sideToMove
             );
 
             float score = -negamax(depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
 
             FastBoard.undoMove(
-                    board, move, ply, captureCountStack, captureStack, kingPosStack
-                    , materialDiffStack, zobrist, zobristKey, sideToMove
+                    board, move, ply, captureCountStack, captureStack, kingPosStack ,
+                    zobrist, zobristKey, sideToMove
             );
 
             if (score > maxScore) {

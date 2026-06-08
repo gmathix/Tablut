@@ -76,7 +76,6 @@ public class MonteCarlo {
     private static final byte[]    kingPosStack        = new byte  [MAX_SEARCH_PLY + 1];
     private static final byte[]    captureCountStack   = new byte  [MAX_SEARCH_PLY + 1];
     private static final int[]     moveCountStack      = new int   [MAX_SEARCH_PLY];
-    private static final byte[]    materialDiffStack   = new byte  [MAX_SEARCH_PLY + 1];
     private static final byte[]    moscoviteCountStack = new byte  [MAX_SEARCH_PLY + 1];
     private static final byte[]    soldierCountStack   = new byte  [MAX_SEARCH_PLY + 1];
     private static final int []    selectedMoveIndexStack = new int[MAX_SEARCH_PLY + 1];
@@ -163,7 +162,6 @@ public class MonteCarlo {
         Arrays.fill(kingPosStack, (byte) 0);
         Arrays.fill(captureCountStack, (byte) 0);
         Arrays.fill(moveCountStack, 0);
-        Arrays.fill(materialDiffStack, (byte) 0);
         Arrays.fill(moscoviteCountStack, (byte) 0);
         Arrays.fill(soldierCountStack, (byte) 0);
         Arrays.fill(selectedMoveIndexStack, (byte) 0);
@@ -181,13 +179,12 @@ public class MonteCarlo {
     public static int findBestMove(TablutBoard tablutBoard, int turn, boolean findAlternativeMove) {
         byte[] rootBoard  = FastBoard.fromTablutBoard(tablutBoard);
         int kingPos       = FastBoard.getKingPos(rootBoard);
-        int materialDiff  = FastEvaluation.countMaterialDiff(rootBoard);
 
-        return findBestMove(rootBoard, kingPos, materialDiff, turn, findAlternativeMove);
+        return findBestMove(rootBoard, kingPos, turn, findAlternativeMove);
     }
 
-    public static int findBestMove(byte[] rootBoard, int kingPos, int materialDiff, int turn, boolean findAlternativeMove) {
-        loadRootState(rootBoard, kingPos, materialDiff);
+    public static int findBestMove(byte[] rootBoard, int kingPos, int turn, boolean findAlternativeMove) {
+        loadRootState(rootBoard, kingPos);
 
         Node root = createNode(null, -1, turn, 0);
         if (root.isTerminal || root.legalMoves.length == 0) {
@@ -295,11 +292,10 @@ public class MonteCarlo {
         return best.move;
     }
 
-    private static void loadRootState(byte[] rootBoard, int kingPos, int materialDiff) {
+    private static void loadRootState(byte[] rootBoard, int kingPos) {
         System.arraycopy(rootBoard, 0, board, 0, 81);
 
         kingPosStack[0]         = (byte) kingPos;
-        materialDiffStack[0]    = (byte) materialDiff;
         moscoviteCountStack[0]  = FastEvaluation.countPieces(board, FastBoard.MOSCOVITE);
         soldierCountStack[0]    = FastEvaluation.countPieces(board, FastBoard.SWEDISH);
 
@@ -359,20 +355,19 @@ public class MonteCarlo {
     private static void applyMove(int move, int ply) {
         FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack, ruleSet);
         kingPosStack[ply+1]         = kingPosStack[ply];
-        materialDiffStack[ply+1]    = materialDiffStack[ply];
         moscoviteCountStack[ply+1]  = moscoviteCountStack[ply];
         soldierCountStack[ply+1]    = soldierCountStack[ply];
 
         FastBoard.makeMove(
                 board, move, ply, captureCountStack, captureStack,
-                materialDiffStack, soldierCountStack, moscoviteCountStack, kingPosStack, zobrist, zobristKey, sideToMove
+                soldierCountStack, moscoviteCountStack, kingPosStack, zobrist, zobristKey, sideToMove
         );
     }
 
     private static void undoMove(int move, int ply) {
         FastBoard.undoMove(
                 board, move, ply, captureCountStack, captureStack,
-                materialDiffStack, kingPosStack, zobrist, zobristKey, sideToMove
+                kingPosStack, zobrist, zobristKey, sideToMove
         );
     }
 

@@ -251,7 +251,7 @@ public class FastBoard {
 
 
     public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] materialDiffStack, byte[] soldierCountStack, byte[] moscoviteCountStack,
+                                byte[] soldierCountStack, byte[] moscoviteCountStack,
                                 byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
                                 long sideToMove) {
         // update kingPosStack[ply+1], not kingPosStack[ply]
@@ -268,16 +268,11 @@ public class FastBoard {
         zobristKey[0] ^= zobrist[board[dst]][src];
         zobristKey[0] ^= zobrist[board[dst]][dst];
 
-        materialDiffStack[ply+1] = materialDiffStack[ply];
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
 
-            // relative to swedish side : +2 for moscovite loss, -4 for swedish loss
-            if (isMoscovite(board[capCoord])) moscoviteCountStack[ply]--;
-            else soldierCountStack[ply]--;
-
-            if (isMoscovite(board[capCoord])) materialDiffStack[ply+1] += 2;
-            else materialDiffStack[ply+1] -= 4;
+            if (isMoscovite(board[capCoord])) moscoviteCountStack[ply+1]--;
+            else soldierCountStack[ply+1]--;
 
             zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
             board[capCoord] = EMPTY;
@@ -287,7 +282,7 @@ public class FastBoard {
     }
 
     public static void undoMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] materialDiffStack, byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
                                 long sideToMove) {
         int src = move & 0x7F;
         int dst = (move >> 7) & 0x7F;
@@ -314,7 +309,6 @@ public class FastBoard {
         zobristKey[0] ^= sideToMove;
 
         kingPosStack[ply+1]         = kingPosStack[ply];
-        materialDiffStack[ply+1]    = materialDiffStack[ply];
     }
 
     public static float checkWin(byte[] board, int ply, byte[] kingPosStack, int ruleSet) {
