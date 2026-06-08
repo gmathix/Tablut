@@ -1,21 +1,14 @@
 package model;
 
 import boardifier.control.Controller;
-import boardifier.model.Coord2D;
 import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
 import boardifier.model.ContainerElement;
-import boardifier.model.action.ActionList;
-import boardifier.model.action.MoveWithinContainerAction;
-import boardifier.model.animation.AnimationTypes;
-import boardifier.view.ContainerLook;
-import boardifier.view.ElementLook;
 import boardifier.view.GameStageView;
 import control.TablutController;
 import control.algos.FastBoard;
 import view.Constants;
 import view.PawnLook;
-import view.TablutStageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,8 +110,8 @@ public class TablutBoard extends ContainerElement {
                 if (y == 4 && x == 4) break;
 
                 if (!(getElement(y, x) instanceof Pawn p)) {
-                    if (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(y*9 + x)) {
-                        if (pawn.getColor() == Pawn.PAWN_MOSCOVITE && RuleSets.campsSquares.contains(pawnY*9 + pawnX)) {
+                    if (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(y*9 + x)) {
+                        if (pawn.getColor() == Pawn.PAWN_MOSCOVITE && RuleSets.isCampSquare(pawnY*9 + pawnX)) {
                             lst.add(new Point(x, y));
                         }
                     } else {
@@ -253,7 +246,7 @@ public class TablutBoard extends ContainerElement {
             GameElement sideEl2 = getElement(dstY2, dstX2);
 
 
-            boolean isN2Ally = (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.campsSquares.contains(dstY2 * 9 + dstX2)) ||
+            boolean isN2Ally = (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(dstY2 * 9 + dstX2)) ||
                                 (dstY2 == 4 && dstX2 == 4);
 
             if ((sideEl instanceof Pawn sideP)) {

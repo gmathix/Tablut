@@ -64,11 +64,13 @@ import java.util.Random;
 public class Negamax {
 
 
-    public static final int   NB_TT_ENTRIES       = 1 << 20;
-    public static final int   NB_POSSIBLE_MOVES   = 1296; // calculated (not in my head :( )
-    public static final int   MAX_CAPTURES        = 3;
-    public static final int   MAX_DEPTH           = 10;
-    public static final float VIRTUAL_INF         = FastEvaluation.VIRTUAL_INF;
+    public static final int   NB_TT_ENTRIES           = 1 << 20;
+    public static final int   NB_POSSIBLE_MOVES       = 1296; // calculated (not in my head :( )
+    public static final int   MAX_CAPTURES            = 3;
+    public static final int   MAX_DEPTH               = 10;
+    public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
+    public static final int   ASPIRATION_WINDOW_DELTA = 35;
+
 
     // flags for TT entries
     public static final int LOWER_BOUND = 1;
@@ -145,14 +147,12 @@ public class Negamax {
 
     public static void configure(int level, TablutBoard tablutBoard) {
         startingDepth = switch (level) {
-            case 0, 1 -> 1;
+            case 1 -> 1;
             case 2 -> 2;
             case 3,4 -> 3;
-            case 5 -> 4;
-            case 6,7 -> 5;
-            case 8 -> 6;
-            case 9 -> 7;
-            case 10 -> 8;
+            case 5,6 -> 4;
+            case 7,8 -> 5;
+            case 9,10 -> 6;
             default -> 4;
         };
 
@@ -191,12 +191,14 @@ public class Negamax {
         int currentBestMove = 0;
         positionsAnalyzed = 0;
 
+        float alpha     = Float.NEGATIVE_INFINITY;
+        float beta      = Float.POSITIVE_INFINITY;
+        float bestScore = Float.NEGATIVE_INFINITY;
+
 
         for (int depth = 0; depth < startingDepth; depth++) { // iterative deepening
 
-            float alpha     = Float.NEGATIVE_INFINITY;
-            float beta      = Float.POSITIVE_INFINITY;
-            float bestScore = Float.NEGATIVE_INFINITY;
+
 
             // generate moves with the first move in the list being the current best one
             if (depth == 0) FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
@@ -237,10 +239,14 @@ public class Negamax {
                 alpha = Math.max(alpha, score);
                 if (alpha >= beta) break;
             }
+
+            alpha = bestScore - ASPIRATION_WINDOW_DELTA;
+            beta  = bestScore + ASPIRATION_WINDOW_DELTA;
+
         }
 
 
-        System.out.printf("Analyzed %d positions\n", positionsAnalyzed);
+//        System.out.printf("Analyzed %d positions\n", positionsAnalyzed);
 
 
         bestMoves = bestMoves.stream().sorted(
@@ -252,6 +258,8 @@ public class Negamax {
         if (findAlternativeMode && bestMoves.size() > 1) {
             bestMove = bestMoves.get(1).move;
         }
+
+
 
         return bestMove;
     }

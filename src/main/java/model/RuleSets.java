@@ -71,12 +71,24 @@ public class RuleSets {
     );
 
 
-    public static final List<Integer> campsSquares = List.of(
+    public static final List<Integer> campSquaresList = List.of(
             3, 4, 5, 13, // D1, E1, F1
             27, 36, 45, 37, // A4, A5, A6
             35, 44, 53, 43, // I4, I5, I6
             75, 76, 77, 67  // D9, E9, F9
     );
+
+    // bit masks for camp squares
+    // (1 << square) & campSquares > 0 means that square is a camp Square
+    // campSquaresLow has squares 0..63 and campSquareHigh has square 64..80
+    public static final long campSquaresLow = 9069012558291000L;
+    public static long campSquaresHigh      = 14344L;
+
+
+    public static boolean isCampSquare(int square) {
+        return (square < 64 && (campSquaresLow & (1L << square)) > 0) ||
+                (square >= 64 && (campSquaresHigh & (1L << (square - 64))) > 0);
+    }
 
 
 
