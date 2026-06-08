@@ -209,6 +209,11 @@ public class Negamax {
             do {
                 retry = false;
                 bestScore = Float.NEGATIVE_INFINITY;
+                iterBestMoves.clear();
+
+                // store for aspiration window test before the loop changes them
+                float origAlpha = iterAlpha;
+                float origBeta  = iterBeta;
 
 
                 for (int i = 0; i < moveCountStack[0]; i++) {
@@ -241,10 +246,10 @@ public class Negamax {
                 }
 
 
-                if (bestScore <= iterAlpha - ASPIRATION_WINDOW_DELTA) { // failed low: widen down
+                if (bestScore <= origAlpha) { // failed low: widen down
                     iterAlpha = Float.NEGATIVE_INFINITY;
                     retry = true;
-                } else if (bestScore >= iterBeta + ASPIRATION_WINDOW_DELTA) { // failed high : widen up
+                } else if (bestScore >= origBeta) { // failed high : widen up
                     iterBeta = Float.POSITIVE_INFINITY;
                     retry = true;
                 }
