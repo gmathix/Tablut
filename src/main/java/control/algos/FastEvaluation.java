@@ -287,7 +287,7 @@ public class FastEvaluation {
         }
 
         // we use a surround mask to ensure that surrounding soldiers are placed orthogonally
-        if ( ! ((surroundMask & 0b1010) == 0b1010) || ((surroundMask & 0b0101) == 0b0101)) {
+        if ( ! (((surroundMask & 0b1010) == 0b1010) || ((surroundMask & 0b0101) == 0b0101))) {
             score = -5f;
         }
         if (kingPos != 40) score -= 5f;
