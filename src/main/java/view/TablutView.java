@@ -13,6 +13,7 @@ public class TablutView extends View {
     private MenuItem menuStart;
     private MenuItem menuIntro;
     private MenuItem menuQuit;
+    private MenuItem menuRules;
 
 
     private MenuItem menuImportGame;
@@ -24,28 +25,34 @@ public class TablutView extends View {
     }
 
     @Override
+
     protected void createMenuBar() {
         menuBar = new MenuBar();
+
         Menu menuGame = new Menu("Game");
         menuStart = new MenuItem("New game");
         menuIntro = new MenuItem("Intro");
         menuQuit = new MenuItem("Quit");
-
-        Menu menuFile = new Menu("File");
-        menuImportGame = new MenuItem("Import Game");
-        menuExportGame = new MenuItem("Export Game");
-
         menuGame.getItems().add(menuStart);
         menuGame.getItems().add(menuIntro);
         menuGame.getItems().add(menuQuit);
 
+        Menu menuFile = new Menu("File");
+        menuImportGame = new MenuItem("Import Game");
+        menuExportGame = new MenuItem("Export Game");
         menuFile.getItems().add(menuImportGame);
         menuFile.getItems().add(menuExportGame);
 
+        Menu menuHelp = new Menu("Help");
+        menuRules = new MenuItem("Rules");
+        menuHelp.getItems().add(menuRules);
 
         menuBar.getMenus().add(menuFile);
         menuBar.getMenus().add(menuGame);
+        menuBar.getMenus().add(menuHelp);
     }
+
+
 
     public MenuItem getMenuStart() {
         return menuStart;
@@ -62,4 +69,8 @@ public class TablutView extends View {
     public MenuItem getMenuImportGame() { return menuImportGame; }
 
     public MenuItem getMenuExportGame() { return menuExportGame; }
+
+    public MenuItem getMenuRules() { return menuRules; }
+
+
 }

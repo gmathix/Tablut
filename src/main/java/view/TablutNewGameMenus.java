@@ -71,6 +71,7 @@ public final class TablutNewGameMenus {
                 ButtonType.CANCEL
         );
         dialog.getDialogPane().setPrefSize(920, 760);
+        dialog.getDialogPane().setStyle("-fx-background-color: #1a2318;");
 
         ToggleGroup modeGroup = new ToggleGroup();
         RadioButton pvp = createModeButton("PvP", "Human vs human", 0, modeGroup);
@@ -99,6 +100,7 @@ public final class TablutNewGameMenus {
             CheckBox checkBox = new CheckBox(option.description());
             checkBox.setUserData(option.bit());
             checkBox.setFont(Font.font(14));
+            checkBox.setStyle("-fx-text-fill: #dde8d8;");
             ruleBoxes.add(checkBox);
             ruleBoxColumn.getChildren().add(checkBox);
         }
@@ -126,7 +128,7 @@ public final class TablutNewGameMenus {
         VBox content = new VBox(18);
         content.setPadding(new Insets(18));
         content.setFillWidth(true);
-
+        content.setStyle("-fx-background-color: #1a2318;");
 
         content.getChildren().addAll(
                 modeSection,
@@ -143,6 +145,7 @@ public final class TablutNewGameMenus {
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroller.setPannable(true);
+        scroller.setStyle("-fx-background: #1a2318; -fx-background-color: #1a2318;");
         dialog.getDialogPane().setContent(scroller);
 
         Runnable refreshVisibility = () -> {
@@ -237,6 +240,7 @@ public final class TablutNewGameMenus {
         button.setToggleGroup(group);
         button.setFont(Font.font(14));
         button.setWrapText(true);
+        button.setStyle("-fx-text-fill: #dde8d8;");
         return button;
     }
 
@@ -246,6 +250,7 @@ public final class TablutNewGameMenus {
         button.setToggleGroup(group);
         button.setFont(Font.font(14));
         button.setWrapText(true);
+        button.setStyle("-fx-text-fill: #dde8d8;");
         return button;
     }
 
@@ -292,6 +297,7 @@ public final class TablutNewGameMenus {
                 button.setUserData(entry.getKey());
                 button.setToggleGroup(botGroup);
                 button.setFont(Font.font(14));
+                button.setStyle("-fx-text-fill: #dde8d8;");
                 radios.getChildren().add(button);
                 if (entry.getKey().equals(defaultBot)) {
                     button.setSelected(true);
@@ -314,6 +320,7 @@ public final class TablutNewGameMenus {
 
         Label levelLabel = new Label("Bot level");
         levelLabel.setFont(Font.font(13));
+        levelLabel.setStyle("-fx-text-fill: #dde8d8;");
 
         VBox box = new VBox(10);
         box.getChildren().addAll(
@@ -339,14 +346,14 @@ public final class TablutNewGameMenus {
     private static Label sectionTitle(String text) {
         Label label = new Label(text);
         label.setFont(Font.font(18));
-        label.setStyle("-fx-font-weight: bold;");
+        label.setStyle("-fx-font-weight: bold; -fx-text-fill: #c8a76a;");
         return label;
     }
 
     private static Label createInfoLabel(String text) {
         Label label = new Label(text);
         label.setWrapText(true);
-        label.setStyle("-fx-text-fill: rgba(255,255,255,0.72);");
+        label.setStyle("-fx-text-fill: #dde8d8;");
         return label;
     }
 

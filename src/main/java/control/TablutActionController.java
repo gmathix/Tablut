@@ -8,7 +8,9 @@ import boardifier.view.View;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import model.TablutStageFactory;
+import view.TablutHelpView;
 import view.TablutView;
+
 
 public class TablutActionController extends ControllerAction implements EventHandler<ActionEvent> {
     private TablutView tablutView;
@@ -62,6 +64,9 @@ public class TablutActionController extends ControllerAction implements EventHan
         tablutView.getMenuExportGame().setOnAction(e -> {
             TablutController tablutControl = (TablutController) control;
             tablutControl.exportGame(tablutControl.getMoveHistory().buildGameString());
+        });
+        tablutView.getMenuRules().setOnAction(e -> {
+            TablutHelpView.show(tablutView.getStage());
         });
     }
 
