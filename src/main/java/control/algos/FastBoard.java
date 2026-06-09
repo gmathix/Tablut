@@ -22,10 +22,13 @@ public class FastBoard {
     public static final int[] DY_VALS = new int[]{-1, 0, 1, 0};
     public static final int[] DX_VALS = new int[]{0, 1, 0, -1};
 
-    public static int[][] killerMovesGenStack = new int[Negamax.MAX_DEPTH][2];
-    public static int[][] capturesGenStack    = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
-    public static int[][] kingMovesGenStack   = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
-    public static int[][] otherMovesGenStack  = new int[Negamax.MAX_DEPTH][Negamax.NB_POSSIBLE_MOVES];
+
+    public static final int MAX_DEPTH = Math.max(Negamax.MAX_DEPTH, Math.max(MonteCarlo.MAX_SEARCH_PLY, NegaMonteCarlo.MAX_SEARCH_PLY));
+
+    public static int[][] killerMovesGenStack = new int[MAX_DEPTH+1][2];
+    public static int[][] capturesGenStack    = new int[MAX_DEPTH+1][Negamax.NB_POSSIBLE_MOVES];
+    public static int[][] kingMovesGenStack   = new int[MAX_DEPTH+1][Negamax.NB_POSSIBLE_MOVES];
+    public static int[][] otherMovesGenStack  = new int[MAX_DEPTH+1][Negamax.NB_POSSIBLE_MOVES];
 
 
     public static final List<Integer> constrainedKingSquares = List.of(

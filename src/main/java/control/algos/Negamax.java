@@ -64,13 +64,17 @@ import java.util.Random;
 public class Negamax {
 
 
-    public static final int   NB_TT_ENTRIES           = 1 << 20;
-    public static final int   NB_POSSIBLE_MOVES       = 1296; // calculated (not in my head :( )
-    public static final int   MAX_CAPTURES            = 3;
-    public static final int   MAX_DEPTH               = 10;
-    public static final float VIRTUAL_INF             = FastEvaluation.VIRTUAL_INF;
-    public static final int   ASPIRATION_WINDOW_DELTA = 400;
+    public static final int   NB_TT_ENTRIES              = 1 << 20;
+    public static final int   NB_POSSIBLE_MOVES          = 1296; // calculated (not in my head :( )
+    public static final int   MAX_CAPTURES               = 3;
+    public static final int   MAX_DEPTH                  = 10;
+    public static final float VIRTUAL_INF                = FastEvaluation.VIRTUAL_INF;
+    public static final int   ASPIRATION_WINDOW_DELTA    = 400;
     public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
+
+    public static final int   OPENING_STAGE_DURATION     = 4;
+    public static final int   NB_OPENING_MOVES_CHOICE    = 8;
+    public static final float OPENING_SCORE_TRESHOLD     = 40f;
 
 
     // flags for TT entries
@@ -84,6 +88,8 @@ public class Negamax {
     private static int startingDepth;
     private static int ruleSet;
     private static int positionsAnalyzed;
+
+    private static int currentMoveNumber = 0;
 
 
     private static final Random rng = new Random(12345);
@@ -268,21 +274,36 @@ public class Negamax {
                         bm2.score, bm1.score
                 )
         ).toList();
-        int bestMove = bestMoves.getFirst().move;
+        BestMove bestMove = bestMoves.getFirst();
 
         if (bestMoves.size() > 1) {
-            boolean useOtherMove = Math.random() < 0.1;
-            if (useOtherMove && Math.abs(bestMoves.get(1).score - bestMoves.getFirst().score) <= SECOND_BEST_SCORE_TRESHOLD) {
-                bestMove = bestMoves.get(1).move;
+            BestMove secondBestMove = new BestMove(-1, Float.NEGATIVE_INFINITY);
+            if (currentMoveNumber < OPENING_STAGE_DURATION) {
+                int maxIndex = Math.min(bestMoves.size(), NB_OPENING_MOVES_CHOICE) - 1;
+                List<BestMove> subList = bestMoves.subList(0, maxIndex);
+                while (!subList.isEmpty()) {
+                    int index = (int) (Math.random() * maxIndex);
+                    secondBestMove = subList.get(index);
+                    if (Math.abs(bestMove.score - secondBestMove.score) <= OPENING_SCORE_TRESHOLD) {
+                        break;
+                    } else {
+                        BestMove b = subList.remove(index);
+                    }
+                }
+                if (!subList.isEmpty()) {
+                    bestMove = secondBestMove;
+                }
             }
 
             if (findAlternativeMode && bestMoves.size() > 1) {
-                bestMove = bestMoves.get(1).move;
+                bestMove = bestMoves.get(1);
             }
         }
 
+        currentMoveNumber++;
 
-        return bestMove;
+
+        return bestMove.move;
     }
 
 

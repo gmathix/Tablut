@@ -55,9 +55,9 @@ public class NegaMonteCarlo {
 
     // leaf negamax scores are mapped to [0,1] with a soft scale so the tree keeps
     // meaningful separation between "good", "great", and "catastrophic".
-    private static final float LEAF_SCORE_SCALE = 500f;
-    private static final int   MAX_SEARCH_PLY   = 256;
-    private static final int   MAX_PATH_LEN     = 256;
+    public static final float LEAF_SCORE_SCALE = 500f;
+    public static final int   MAX_SEARCH_PLY   = 256;
+    public static final int   MAX_PATH_LEN     = 256;
 
 
     private static long timeLimitMs;
