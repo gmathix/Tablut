@@ -1,7 +1,7 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 .kotlin
-
+src/main/java/out/
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
