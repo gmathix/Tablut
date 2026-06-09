@@ -67,7 +67,7 @@ public class Negamax {
     public static final int   NB_TT_ENTRIES              = 1 << 20;
     public static final int   NB_POSSIBLE_MOVES          = 1296; // calculated (not in my head :( )
     public static final int   MAX_CAPTURES               = 3;
-    public static final int   MAX_DEPTH                  = 10;
+    public static final int   MAX_DEPTH                  = 15;
     public static final float VIRTUAL_INF                = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA    = 400;
     public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
@@ -85,9 +85,12 @@ public class Negamax {
 
 
 
-    private static int startingDepth;
+
     private static int ruleSet;
+    private static int searchTimeSeconds;
     private static int positionsAnalyzed;
+
+    private static long searchDeadlineNs;
 
     private static int currentMoveNumber = 0;
 
@@ -120,6 +123,7 @@ public class Negamax {
     private static final int[]     ttBestMove           = new int   [NB_TT_ENTRIES];
 
 
+    private static final SearchTimeoutException TIMEOUT = new SearchTimeoutException();
 
 
     private record BestMove(int move, float score) {}
@@ -151,16 +155,7 @@ public class Negamax {
     }
 
     public static void configure(int level, TablutBoard tablutBoard) {
-        startingDepth = switch (level) {
-            case 1 -> 1;
-            case 2 -> 2;
-            case 3,4 -> 3;
-            case 5,6 -> 4;
-            case 7,8 -> 5;
-            case 9 -> 6;
-            case 10 -> 7;
-            default -> 4;
-        };
+        searchTimeSeconds = level * 2;
 
         TablutStageModel stageModel = (TablutStageModel) tablutBoard.getModel().getGameStage();
         ruleSet = stageModel.getRuleSet();
@@ -194,75 +189,81 @@ public class Negamax {
         float prevBestScore = Float.NEGATIVE_INFINITY;
 
         positionsAnalyzed = 0;
+        searchDeadlineNs = System.nanoTime() + searchTimeSeconds * 1000000000L;
+
+        try {
+            for (int depth = 0; depth < MAX_DEPTH; depth++) { // iterative deepening
+                if (System.nanoTime() >= searchDeadlineNs) break;
+
+                // generate moves with the first move in the list being the current best one
+                if (depth == 0)
+                    FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
+                else
+                    FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, currentBestMove, true, ruleSet);
+
+                if (moveCountStack[0] == 0) return -1;
 
 
-        for (int depth = 0; depth < startingDepth; depth++) { // iterative deepening
+                float iterAlpha = (depth == 0) ? Float.NEGATIVE_INFINITY : prevBestScore - ASPIRATION_WINDOW_DELTA;
+                float iterBeta = (depth == 0) ? Float.POSITIVE_INFINITY : prevBestScore + ASPIRATION_WINDOW_DELTA;
+                List<BestMove> iterBestMoves = new ArrayList<>();
+                float bestScore = Float.NEGATIVE_INFINITY;
+                boolean retry; // retry loop that widens the aspiration window on failure
 
-            // generate moves with the first move in the list being the current best one
-            if (depth == 0) FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
-            else            FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, currentBestMove, true, ruleSet);
+                do {
+                    retry = false;
+                    bestScore = Float.NEGATIVE_INFINITY;
+                    iterBestMoves.clear();
 
-            if (moveCountStack[0] == 0) return -1;
-
-
-
-            float iterAlpha = (depth == 0) ? Float.NEGATIVE_INFINITY : prevBestScore - ASPIRATION_WINDOW_DELTA;
-            float iterBeta  = (depth == 0) ? Float.POSITIVE_INFINITY : prevBestScore + ASPIRATION_WINDOW_DELTA;
-            List<BestMove> iterBestMoves = new ArrayList<>();
-            float bestScore = Float.NEGATIVE_INFINITY;
-            boolean retry; // retry loop that widens the aspiration window on failure
-
-            do {
-                retry = false;
-                bestScore = Float.NEGATIVE_INFINITY;
-                iterBestMoves.clear();
-
-                // store for aspiration window test before the loop changes them
-                float origAlpha = iterAlpha;
-                float origBeta  = iterBeta;
+                    // store for aspiration window test before the loop changes them
+                    float origAlpha = iterAlpha;
+                    float origBeta = iterBeta;
 
 
-                for (int i = 0; i < moveCountStack[0]; i++) {
-                    int move = movesStack[0][i];
+                    for (int i = 0; i < moveCountStack[0]; i++) {
+                        int move = movesStack[0][i];
 
-                    kingPosStack[1] = kingPosStack[0];
-                    moscoviteCountStack[1] = moscoviteCountStack[0];
-                    soldierCountStack[1] = soldierCountStack[0];
+                        kingPosStack[1] = kingPosStack[0];
+                        moscoviteCountStack[1] = moscoviteCountStack[0];
+                        soldierCountStack[1] = soldierCountStack[0];
 
-                    FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack, ruleSet);
-                    FastBoard.makeMove(
-                            board, move, 0, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
-                            kingPosStack, zobrist, zobristKey, sideToMove
-                    );
+                        FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack, ruleSet);
+                        FastBoard.makeMove(
+                                board, move, 0, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
+                                kingPosStack, zobrist, zobristKey, sideToMove
+                        );
 
-                    float score = -negamax(depth + 1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
+                        float score = -negamax(depth + 1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
 
-                    FastBoard.undoMove(
-                            board, move, 0, captureCountStack, captureStack,
-                            kingPosStack, zobrist, zobristKey, sideToMove
-                    );
+                        FastBoard.undoMove(
+                                board, move, 0, captureCountStack, captureStack,
+                                kingPosStack, zobrist, zobristKey, sideToMove
+                        );
 
-                    if (score > bestScore) {
-                        bestScore = score;
-                        currentBestMove = move;
-                        iterBestMoves.add(new BestMove(move, score));
+                        if (score > bestScore) {
+                            bestScore = score;
+                            currentBestMove = move;
+                            iterBestMoves.add(new BestMove(move, score));
+                        }
+                        iterAlpha = Math.max(iterAlpha, score);
+                        if (iterAlpha >= iterBeta) break;
                     }
-                    iterAlpha = Math.max(iterAlpha, score);
-                    if (iterAlpha >= iterBeta) break;
-                }
 
 
-                if (bestScore <= origAlpha) { // failed low: widen down
-                    iterAlpha = Float.NEGATIVE_INFINITY;
-                    retry = true;
-                } else if (bestScore >= origBeta) { // failed high : widen up
-                    iterBeta = Float.POSITIVE_INFINITY;
-                    retry = true;
-                }
-            } while (retry && depth > 0);
+                    if (bestScore <= origAlpha) { // failed low: widen down
+                        iterAlpha = Float.NEGATIVE_INFINITY;
+                        retry = true;
+                    } else if (bestScore >= origBeta) { // failed high : widen up
+                        iterBeta = Float.POSITIVE_INFINITY;
+                        retry = true;
+                    }
+                } while (retry && depth > 0);
 
-            bestMoves = iterBestMoves; // replace the best moves list, don't accumulate
-            prevBestScore = bestScore;
+                bestMoves = iterBestMoves; // replace the best moves list, don't accumulate
+                prevBestScore = bestScore;
+            }
+        } catch (SearchTimeoutException e) {
+            // ignore, keep the last fully completed iteration
         }
 
 
@@ -308,6 +309,8 @@ public class Negamax {
 
 
     public static float negamax(int depth, int ply, int turn, float alpha, float beta) {
+        if (System.nanoTime() >= searchDeadlineNs) throw TIMEOUT;
+
         float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
         if (win != 0) positionsAnalyzed++;
         if (win > 0) return turn == 0 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
@@ -341,7 +344,7 @@ public class Negamax {
 
         if (depth == 0) {
             positionsAnalyzed++;
-            return FastEvaluation.evaluate(board, turn, ply, depth, startingDepth, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
+            return FastEvaluation.evaluate(board, turn, ply, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
         }
 
         float maxScore = -VIRTUAL_INF;
