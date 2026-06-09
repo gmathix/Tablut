@@ -72,7 +72,7 @@ public class Negamax {
     public static final int   ASPIRATION_WINDOW_DELTA    = 400;
     public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
 
-    public static final int   OPENING_STAGE_DURATION     = 4;
+    public static final int   OPENING_STAGE_DURATION     = 6;
     public static final int   NB_OPENING_MOVES_CHOICE    = 8;
     public static final float OPENING_SCORE_TRESHOLD     = 40f;
 
@@ -188,7 +188,7 @@ public class Negamax {
     }
 
 
-    public static int findBestMove(int turn, boolean findAlternativeMode) {
+    public static int findBestMove(int turn, boolean findAlternativeMove) {
         List<BestMove> bestMoves = new ArrayList<>();
         int currentBestMove = 0;
         float prevBestScore = Float.NEGATIVE_INFINITY;
@@ -277,26 +277,26 @@ public class Negamax {
         BestMove bestMove = bestMoves.getFirst();
 
         if (bestMoves.size() > 1) {
-            BestMove secondBestMove = new BestMove(-1, Float.NEGATIVE_INFINITY);
-            if (currentMoveNumber < OPENING_STAGE_DURATION) {
-                int maxIndex = Math.min(bestMoves.size(), NB_OPENING_MOVES_CHOICE) - 1;
-                List<BestMove> subList = bestMoves.subList(0, maxIndex);
-                while (!subList.isEmpty()) {
-                    int index = (int) (Math.random() * maxIndex);
-                    secondBestMove = subList.get(index);
-                    if (Math.abs(bestMove.score - secondBestMove.score) <= OPENING_SCORE_TRESHOLD) {
-                        break;
-                    } else {
-                        BestMove b = subList.remove(index);
+            if (findAlternativeMove) {
+                bestMove = bestMoves.get(1);
+            } else {
+                BestMove secondBestMove = new BestMove(-1, Float.NEGATIVE_INFINITY);
+                if (currentMoveNumber < OPENING_STAGE_DURATION) {
+                    int maxIndex = Math.min(bestMoves.size(), NB_OPENING_MOVES_CHOICE) - 1;
+                    List<BestMove> subList = bestMoves.subList(0, maxIndex);
+                    while (!subList.isEmpty()) {
+                        int index = (int) (Math.random() * (subList.size() - 1));
+                        secondBestMove = subList.get(index);
+                        if (Math.abs(bestMove.score - secondBestMove.score) <= OPENING_SCORE_TRESHOLD) {
+                            break;
+                        } else {
+                            subList.remove(index);
+                        }
+                    }
+                    if (!subList.isEmpty()) {
+                        bestMove = secondBestMove;
                     }
                 }
-                if (!subList.isEmpty()) {
-                    bestMove = secondBestMove;
-                }
-            }
-
-            if (findAlternativeMode && bestMoves.size() > 1) {
-                bestMove = bestMoves.get(1);
             }
         }
 
