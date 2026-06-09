@@ -43,7 +43,7 @@ public class Tablut extends Application {
         control.setInputFile(inputFile);
         control.setFirstStageName("tablut");
 
-        stage.setTitle("Tablut : the fucking viking game");
+        stage.setTitle("Tablut");
         stage.show();
     }
 }
