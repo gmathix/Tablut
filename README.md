@@ -14,7 +14,8 @@ Swedishs (green) must put their king on one of the board's border without being 
 - Negamax
 - Monte-Carlo
 - Nega-Monte-Carlo (a mix of the two previous ones)
-- Osarracino
+- O(sarracino) (https://github.com/federico-terzi/osarracino)
+
 
 ## Start a game
 In order to start a new game, you have to ensure you have java >11 installed with the javaFX SDK corresponding.<br>

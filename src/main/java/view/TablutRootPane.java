@@ -150,7 +150,7 @@ public class TablutRootPane extends RootPane {
                 square.setY(startY + i*squareSize);
                 square.setFill(((i+j)%2 == 0) ? TablutBoardLook.LIGHT_SQUARE : TablutBoardLook.DARK_SQUARE);
 
-                if (RuleSets.constrainedKingSquares.contains(i*9 + j)) {
+                if (RuleSets.isCampSquare(i*9+j)) {
                     square.setFill(TablutBoardLook.SPECIAL_SQUARE);
                 }
                 if (i*9 + j == 40) {
