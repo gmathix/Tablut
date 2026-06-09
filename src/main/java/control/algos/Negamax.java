@@ -74,7 +74,7 @@ public class Negamax {
 
     public static final int   OPENING_STAGE_DURATION     = 6;
     public static final int   NB_OPENING_MOVES_CHOICE    = 8;
-    public static final float OPENING_SCORE_TRESHOLD     = 40f;
+    public static final float OPENING_SCORE_TRESHOLD     = 20f;
 
 
     // flags for TT entries
@@ -269,11 +269,11 @@ public class Negamax {
 //        System.out.printf("Analyzed %d positions\n", positionsAnalyzed);
 
 
-        bestMoves = bestMoves.stream().sorted(
-                (bm1, bm2) -> Double.compare(
-                        bm2.score, bm1.score
-                )
-        ).toList();
+        bestMoves = new ArrayList<>(
+                bestMoves.stream()
+                .sorted((bm1, bm2) -> Double.compare(bm2.score, bm1.score))
+                .toList()
+        );
         BestMove bestMove = bestMoves.getFirst();
 
         if (bestMoves.size() > 1) {

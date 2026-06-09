@@ -8,6 +8,7 @@ import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
 import boardifier.view.*;
 
+import control.algos.OsarracinoBridge;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.TextArea;
@@ -28,6 +29,7 @@ public class TablutController extends Controller {
     public static final int NEGAMAX_PLAYER = 0;
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
+    public static final int OSARRACINO_PLAYER = 3;
 
     public static final int NB_BOARDS_IN_MEMORY = 300;
     public static final int NB_BOARD_REPETITION_TRESHOLD = 3;
@@ -160,6 +162,8 @@ public class TablutController extends Controller {
                 () -> new MonteCarloDecider(model, this, level)));
         availableBots[color].put(NEGAMONTECARLO_PLAYER, new BotSelection(NEGAMONTECARLO_PLAYER, "Nega-Monte-Carlo",
                 () -> new NegaMonteCarloDecider(model, this, level)));
+        availableBots[color].put(OSARRACINO_PLAYER, new BotSelection(OSARRACINO_PLAYER, "O(sarracino)",
+                () -> new OsarracinoDecider(model, this, level)));
         this.botLevels[color] = level;
     }
 
@@ -396,6 +400,8 @@ public class TablutController extends Controller {
                 botLevel = d.getLevel();
             } else if (decider instanceof NegaMonteCarloDecider d) {
                 botLevel = d.getLevel();
+            } else if (decider instanceof OsarracinoDecider d) {
+                botLevel = d.getLevel();
             }
 
             String[] sentenceArray;
@@ -562,6 +568,7 @@ public class TablutController extends Controller {
             processBoardRepetition();
         } else {
             model.stopStage();
+            OsarracinoBridge.stop();
             String message = String.format("Game over : %s\n", ((TablutStageModel)model.getGameStage()).getWinMessage());
             ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);
             moveHistory.setWinningSide(model.getIdWinner());
