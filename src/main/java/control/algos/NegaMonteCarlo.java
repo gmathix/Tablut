@@ -481,7 +481,7 @@ public class NegaMonteCarlo {
         }
 
         if (depth == 0) {
-            return FastEvaluation.evaluate(board, turn, ply, depth, rootDepth, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
+            return FastEvaluation.evaluate(board, turn, ply, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
         }
 
         float maxScore = Float.NEGATIVE_INFINITY;
