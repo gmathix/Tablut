@@ -319,8 +319,6 @@ public class TablutController extends Controller {
             Platform.runLater(this::startTimer);
         }
 
-        Platform.runLater(this::triggerCurrentPlayerTurn);
-        if (model.isStageStarted()) stopGame();
 
         GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
         gameStageModel.createElements(gameStageModel.getDefaultElementFactory());
@@ -529,6 +527,7 @@ public class TablutController extends Controller {
             stageModel.getBotSentenceText().setText(sentence);
 
             updateStatusPanel();
+
 
             ActionPlayer play = new ActionPlayer(model, this, decider, null);
             play.start();

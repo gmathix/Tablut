@@ -248,8 +248,8 @@ public class TablutBoard extends ContainerElement {
             GameElement sideEl2 = getElement(dstY2, dstX2);
 
 
-            boolean isN2Ally = (RuleSets.isAshtonRules(stageModel.getRuleSet()) && RuleSets.isCampSquare(dstY2 * 9 + dstX2)) ||
-                                (dstY2 == 4 && dstX2 == 4);
+            boolean isN2Ally = (RuleSets.isAshtonRules(stageModel.getRuleSet()) &&
+                                (RuleSets.isCampSquare(dstY2 * 9 + dstX2) || (dstY2 == 4 && dstX2 == 4)));
 
             if ((sideEl instanceof Pawn sideP)) {
                 boolean isNEnemy = (isMoscovite && sideP.getColor() == Pawn.PAWN_SOLDIER) ||

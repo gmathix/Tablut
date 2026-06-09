@@ -199,7 +199,7 @@ public class FastBoard {
                                 (isSwedish(selPiece) && isMoscovite(n));
             boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
                                 (isSwedish(selPiece) && isSwedish(n2)) ||
-                                (n2Coord == 40) ||
+                                (RuleSets.isAshtonRules(ruleSet) && n2Coord == 40) ||
                                 (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(n2Coord));
 
             if (isNEnemy && isN2Ally) {
@@ -240,7 +240,7 @@ public class FastBoard {
                     (isSwedish(selPiece) && isMoscovite(n));
             boolean isN2Ally = (isMoscovite(selPiece) && isMoscovite(n2)) ||
                     (isSwedish(selPiece) && isSwedish(n2)) ||
-                    (n2Coord == 40) ||
+                    (RuleSets.isAshtonRules(ruleSet) && n2Coord == 40) ||
                     (RuleSets.isAshtonRules(ruleSet) && RuleSets.isCampSquare(n2Coord));
 
             if (isNEnemey && isN2Ally) {
