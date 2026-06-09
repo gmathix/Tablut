@@ -48,14 +48,9 @@ public class FastEvaluation {
      *
      *   5. Middlegame king security :
      *      - In middlegame (8 <= number of moscovites < 12), the king should keep at least 2 orthogonally placed soldiers
-     *
-     *
-     * @param turn 0 for swedish, 1 for moscovite
-     * @param currDepth the depth of the current node (should be 0)
-     * @param baseDepth the total depth of the whole tree
-     * @return
+
      */
-    public static float evaluate(byte[] board, int turn, int ply, int currDepth, int baseDepth,
+    public static float evaluate(byte[] board, int turn, int ply,
                                  byte[] soldierCountStack, byte[] moscoviteCountStack,
                                  byte[] kingPosStack, int ruleSet) {
 
