@@ -8,14 +8,19 @@ import boardifier.model.action.RemoveFromContainerAction;
 import boardifier.model.animation.AnimationTypes;
 import boardifier.view.*;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import model.*;
 import view.Constants;
 
+import javax.swing.Timer;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,7 +34,7 @@ public class TablutController extends Controller {
     public static final int MONTECARLO_PLAYER = 1;
     public static final int NEGAMONTECARLO_PLAYER = 2;
 
-    public static final int NB_BOARDS_IN_MEMORY = 300;
+    public static final int NB_BOARDS_IN_MEMORY = 50;
     public static final int NB_BOARD_REPETITION_TRESHOLD = 3;
 
     public static record BotSelection(int type, String name, Supplier<Decider> supplier) {}
@@ -63,6 +68,14 @@ public class TablutController extends Controller {
 
     private int configRuleSet = RuleSets.RULESET_NORMAL;
 
+    private int timeLimit=0;
+    private int[] timeLeft= new int[2];
+    private Timeline timerTimeline;
+    private Label[] timerLabels = new Label[2];
+
+
+    private String player1="player1";
+    private String player2="player2";
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
                             int swedishBotPlayer, int moscoviteBotPlayer, int botLevels[]) {
@@ -147,6 +160,16 @@ public class TablutController extends Controller {
         this.configRuleSet = configRuleSet;
     }
 
+    public String getPlayer1() { return player1; }
+    public void setPlayer1(String name) { this.player1= (name == null || name.isBlank()) ? "Player 1" : name; }
+
+    public String getPlayer2() { return player2; }
+    public void setPlayer2(String name) { this.player2 = (name == null || name.isBlank()) ? "Player 2" : name; }
+
+    public int getTimeLimitMinutes() { return timeLimit; }
+    public void setTimeLimitMinutes(int minutes) { this.timeLimit = minutes; }
+
+
     public ListIterator<Move> getMoveHistoryIterator() { return moveHistoryIterator; }
 
     public Map<GameElement, ElementLook> getMapElementLook() { return mapElementLook; }
@@ -202,9 +225,98 @@ public class TablutController extends Controller {
         }
     }
 
+    private void startTimer() {
+        timeLeft[0] = timeLimit * 60;
+        timeLeft[1] = timeLimit * 60;
+
+        createTimerLabels();
+
+        timerTimeline = new Timeline(new KeyFrame(Duration.seconds(1),
+                e -> {
+                    int current = model.getIdPlayer();
+                    timeLeft[current]--;
+                    updateTimerLabels();
+                    if (timeLeft[current] <= 0) {
+                        timerTimeline.stop();
+                        timerTimeline=null;
+
+                        model.setIdWinner(1-current);
+                        Platform.runLater(this::endOfTurn);
+                    }
+                }));
+        timerTimeline.setCycleCount(Timeline.INDEFINITE);
+        timerTimeline.play();
+    }
+
+    private void createTimerLabels() {
+        removeTimerLabels();
+        for (int i=0; i<2 ; i++){
+            Label  label = new Label(formatTime(timeLeft[i]));
+            label.setStyle(buildTimerStyle(false));
+            timerLabels[i] = label;
+
+            double y =(i==0) ? Constants.BOARD_Y + Constants.BOARD_SIZE +10 :  Constants.BOARD_Y-45;
+            label.setLayoutX(Constants.BOARD_X + Constants.BOARD_SIZE - 120);
+            label.setLayoutY(y);
+
+            if (view != null && view.getRootPane()!=null ) {
+                view.getRootPane().getChildren().add(label);
+                label.toFront();
+            }
+
+        }
+        updateTimerLabels();
+    }
+    private void updateTimerLabels() {
+        for (int i = 0; i < 2; i++) {
+            if (timerLabels[i] == null) continue;
+            timerLabels[i].setText(formatTime(timeLeft[i]));
+            boolean isActive = (i == model.getIdPlayer());
+            timerLabels[i].setStyle(buildTimerStyle(isActive));
+        }
+    }
+
+    private void removeTimerLabels() {
+        for (int i = 0; i < 2; i++) {
+            if (timerLabels[i] != null && view != null && view.getRootPane() != null) {
+                view.getRootPane().getChildren().remove(timerLabels[i]);
+            }
+            timerLabels[i] = null;
+        }
+    }
+
+    private void stopTimer() {
+        if (timerTimeline != null) {
+            timerTimeline.stop();
+            timerTimeline = null;
+        }
+        removeTimerLabels();
+    }
+
+    private String formatTime(int seconds) {
+        if (seconds < 0) seconds = 0;
+        return String.format("%d:%02d", seconds / 60, seconds % 60);
+    }
+
+    private String buildTimerStyle(boolean active) {
+        String bg    = active ? "#c8a76a" : "#2e2e2e";
+        String fg    = active ? "#1a1a1a" : "#ffffff";
+        return "-fx-background-color: " + bg + ";" +
+                "-fx-text-fill: " + fg + ";" +
+                "-fx-font-size: 20px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 6 14 6 14;" +
+                "-fx-background-radius: 6;";
+    }
+
 
     @Override
     protected void startStage(String stageName) throws GameException {
+        if (timeLimit > 0) {
+            Platform.runLater(this::startTimer);
+        }
+
+        Platform.runLater(this::triggerCurrentPlayerTurn);
         if (model.isStageStarted()) stopGame();
 
         GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
@@ -380,7 +492,7 @@ public class TablutController extends Controller {
 
         if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_VIEW_GAME) return;
         if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_PLAY &&
-            moveHistoryIterator.hasNext()) return;
+                moveHistoryIterator.hasNext()) return;
 
         if (p.getType() == Player.COMPUTER) {
             int turn = model.getIdPlayer();

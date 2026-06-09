@@ -5,19 +5,7 @@ import control.TablutController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -47,7 +35,10 @@ public final class TablutNewGameMenus {
             int swedishBotType,
             int swedishBotLevel,
             int moscoviteBotType,
-            int moscoviteBotLevel
+            int moscoviteBotLevel,
+            String player2,
+            String Player1,
+            int timeLimit
     ) {
     }
 
@@ -104,6 +95,41 @@ public final class TablutNewGameMenus {
             ruleBoxes.add(checkBox);
             ruleBoxColumn.getChildren().add(checkBox);
         }
+        TextField player1Field = new TextField();
+        player1Field.setPromptText("Player 1 nickname");
+        player1Field.setStyle(
+                "-fx-background-color: #2a3a2a;" +
+                        "-fx-text-fill: #dde8d8;" + "-fx-prompt-text-fill: #7a9a7a;" + "-fx-border-color: rgba(200,167,106,0.4);" +
+                        "-fx-border-radius: 6;" + "-fx-background-radius: 6;"
+        );
+        TextField player2Field = new TextField();
+        player2Field.setPromptText("Player 2 nickname");
+        player2Field.setStyle(
+                "-fx-background-color: #2a3a2a;" + "-fx-text-fill: #dde8d8;" + "-fx-prompt-text-fill: #7a9a7a;" +
+                        "-fx-border-color: rgba(200,167,106,0.4);" + "-fx-border-radius: 6;" + "-fx-background-radius: 6;"
+        );
+
+        VBox namesSection = new VBox(
+                sectionTitle("players nicknames"),
+                createInfoLabel("you can choode your nickname for this game"),
+                player2Field,
+                player1Field
+
+        );
+        ToggleGroup timeGroup = new ToggleGroup();
+        RadioButton defaultTime = createModeButton("Default time", "unlimited time", 0, timeGroup);
+        RadioButton timer5Minutes = createModeButton("Timer 5 minutes", "limited time", 5, timeGroup);
+        RadioButton timer10Minutes = createModeButton("Timer 10 minutes", "limited time", 10, timeGroup);
+        RadioButton timer15Minutes = createModeButton("Timer 15 minutes", "limited time", 15, timeGroup);
+
+        VBox timeSection = new VBox(
+                sectionTitle("time selection"),
+                createInfoLabel("each player the same amount of time be aware!! running out of time is considered as a loss"),
+                defaultTime,
+                timer5Minutes,
+                timer10Minutes,
+                timer15Minutes
+        );
 
         ToggleGroup sideGroup = new ToggleGroup();
         RadioButton swedishSide = createSideButton("Swedish / defenders", "The king and his allies", 0, sideGroup);
@@ -133,11 +159,16 @@ public final class TablutNewGameMenus {
         content.getChildren().addAll(
                 modeSection,
                 new Separator(),
+                namesSection,
+                new Separator(),
+                timeSection,
+                new Separator(),
                 ruleBoxColumn,
                 new Separator(),
                 sideSection,
                 new Separator(),
                 botSection
+
         );
 
         ScrollPane scroller = new ScrollPane(content);
@@ -185,6 +216,13 @@ public final class TablutNewGameMenus {
             int moscoviteBotType = moscoviteBotSection.selectedBotType();
             int moscoviteBotLevel = moscoviteBotSection.levelSpinner.getValue();
 
+            String player1 = player1Field.getText().trim().isEmpty()
+                    ? "Player 1" : player1Field.getText().trim();
+            String player2 = player2Field.getText().trim().isEmpty()
+                    ? "Player 2" : player2Field.getText().trim();
+
+            int timeLimit = selectedInt(timeGroup) != null ? selectedInt(timeGroup) : 0;
+
             return new NewGameSelection(
                     mode,
                     rulesetMask,
@@ -192,7 +230,11 @@ public final class TablutNewGameMenus {
                     swedishBotType,
                     swedishBotLevel,
                     moscoviteBotType,
-                    moscoviteBotLevel
+                    moscoviteBotLevel,
+                    player2,
+                    player1,
+                    timeLimit
+
             );
         });
 
@@ -203,14 +245,17 @@ public final class TablutNewGameMenus {
         controller.setGameMode(selection.mode());
         controller.setInputFile("");
         controller.setConfigRuleSet(selection.rulesetMask());
+        controller.setPlayer1(selection.Player1());
+        controller.setPlayer2(selection.player2());
+        controller.setTimeLimitMinutes(selection.timeLimit());
 
         model.getPlayers().clear();
 
         if (selection.mode() == 0) {
-            model.addHumanPlayer("Player 1");
-            model.addHumanPlayer("Player 2");
+            model.addHumanPlayer(selection.Player1());
+            model.addHumanPlayer(selection.player2());
         } else if (selection.mode() == 1 && Integer.valueOf(0).equals(selection.humanSide())) {
-            model.addHumanPlayer("Player 1");
+            model.addHumanPlayer(selection.Player1());
         }
 
         if (selection.mode() > 0) {
@@ -219,7 +264,6 @@ public final class TablutNewGameMenus {
                 controller.setBotLevel(0, selection.swedishBotLevel());
                 model.addComputerPlayer(controller.getAvailableBots()[0].get(selection.swedishBotType()).name());
             }
-
             if (selection.mode() == 2 || Integer.valueOf(0).equals(selection.humanSide())) {
                 controller.setBotPlayer(1, selection.moscoviteBotType());
                 controller.setBotLevel(1, selection.moscoviteBotLevel());
@@ -228,7 +272,7 @@ public final class TablutNewGameMenus {
         }
 
         if (selection.mode() == 1 && Integer.valueOf(1).equals(selection.humanSide())) {
-            model.addHumanPlayer("Player 2");
+            model.addHumanPlayer(selection.player2());
         }
 
         controller.setStartingPlayerId(Math.random() > 0.5 ? 1 : 0);

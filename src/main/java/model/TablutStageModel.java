@@ -246,7 +246,7 @@ public class TablutStageModel extends GameStageModel {
         // check if the king has reached an edge
         if (kingY == 0 || kingY == 8 || kingX == 0 || kingX == 8) {
             if (RuleSets.isConstrainedKingSquares(ruleSet) || RuleSets.isCornerKingEscapes(ruleSet)) {
-                if (RuleSets.isCornerKingEscapes(ruleSet)) {
+                if (RuleSets.isConstrainedKingMoves(getRuleSet())) {
                     if (RuleSets.cornerSquares.contains(kingY * 9 + kingX)) {
                         idWinner = 0;
                         winMessage = "the king has reached an edge";
