@@ -34,5 +34,5 @@ java --module-path PATH_TO_JAVAFX/lib --add-modules javafx.controls,javafx.fxml,
 - Mohamed Bouoiararne
 - Mathis Guihot
 - Damien Lugbull
-- Antoine Mecenero--Chretien
+- Antoine Mecenero--Chretien<br>
 May 2026 - June 2026
