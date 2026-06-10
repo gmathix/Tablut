@@ -79,6 +79,7 @@ public class TablutController extends Controller {
     private String player2="player2";
 
     private Label[] nameLabels = new Label[2];
+    private Label [] sentenceLabels = new Label[2];
 
     public TablutController(Model model, View view, int gameMode, String inputFile,
                             int swedishBotPlayer, int moscoviteBotPlayer, int botLevels[]) {
@@ -234,6 +235,11 @@ public class TablutController extends Controller {
         removeNameLabels();
 
 
+
+        player1 = model.getPlayers().getFirst().getName();
+        player2 = model.getPlayers().get(1).getName();
+
+
         String[] names = { player1, player2 };
 
         for (int i = 0; i < 2; i++) {
@@ -247,9 +253,18 @@ public class TablutController extends Controller {
                     : Constants.BOARD_Y + Constants.BOARD_SIZE + 8;
             label.setLayoutY(y);
 
+            Label sentenceLabel = new Label("");
+            sentenceLabel.setStyle(buildSentenceStyle(i == model.getIdPlayer()));
+            sentenceLabels[i] = sentenceLabel;
+            sentenceLabel.setLayoutY(y + 3);
+            sentenceLabel.setLayoutX(Constants.BOARD_X + 100);
+
+
             if (view != null && view.getRootPane() != null) {
                 view.getRootPane().getChildren().add(label);
+                view.getRootPane().getChildren().add(sentenceLabel);
                 label.toFront();
+                sentenceLabel.toFront();
             }
         }
     }
@@ -285,7 +300,21 @@ public class TablutController extends Controller {
                 "-fx-border-radius: 6;" +
                 "-fx-border-width: 1.5;";
     }
+    // bot phrases new placement and style
 
+    private void updateSentence(int playerIndex, String sentence) {
+        if (sentenceLabels[playerIndex] == null) return;
+        // remove player 1 sentence while player 2 is playing
+        int other = 1 - playerIndex;
+        if (sentenceLabels[other] != null) sentenceLabels[other].setText("");
+        sentenceLabels[playerIndex].setText(sentence);
+    }
+
+    private String buildSentenceStyle(boolean active) {
+        return  "-fx-text-fill: " + (active ? "#c8d2c3" : "#555555") + ";" +
+                "-fx-font-size: 14px;";
+
+    }
 
     private void startTimer() {
         timeLeft[0] = timeLimit * 60;
@@ -532,21 +561,11 @@ public class TablutController extends Controller {
         stageModel.getMaterialText().setText(String.format("Material: Swedish %d  |  Gold %d", material[0], material[1]));
         stageModel.getThreatText().setText(buildKingThreatMessage(stageModel));
 
-        TextLook nameLook = (TextLook) view.getElementLook(stageModel.getPlayerName());
-        TextLook botLook = (TextLook) view.getElementLook(stageModel.getBotSentenceText());
+        if(timeLimit >0)
+            {
+            updateNameLabels();
+            }
 
-        if (nameLook != null) {
-            nameLook.setColor(model.getIdPlayer() == 0 ? "0x8BCB8F" : "0xE3C36A");
-        }
-        if (botLook != null) {
-            botLook.setColor("0xC8D2C3");
-        }
-        if (nameLook != null && stageModel.getBotSentenceText() != null) {
-            double gap = 12.0;
-            double x = stageModel.getPlayerName().getX() + nameLook.getTextWidth() + gap;
-            double y = stageModel.getPlayerName().getY() + 3.0;
-            stageModel.getBotSentenceText().setLocation(x, y);
-        }
     }
 
 
@@ -556,8 +575,6 @@ public class TablutController extends Controller {
         Player p = model.getCurrentPlayer();
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         if (stageModel == null) return; // could happen at the very beginning, dunno why
-
-        stageModel.getPlayerName().setText(p.getName());
 
         if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_VIEW_GAME) return;
         if (((TablutStageModel)model.getGameStage()).getMode() == TablutStageModel.MODE_PLAY &&
@@ -592,7 +609,7 @@ public class TablutController extends Controller {
 
             int sentenceIndex = (int) (Math.random() * sentenceArray.length);
             String sentence = sentenceArray[sentenceIndex];
-            stageModel.getBotSentenceText().setText(sentence);
+            updateSentence(turn, sentence);
 
             updateStatusPanel();
 
@@ -602,7 +619,6 @@ public class TablutController extends Controller {
 
 
         } else {
-            stageModel.getBotSentenceText().setText("Your Move.");
             updateStatusPanel();
         }
     }
@@ -745,6 +761,7 @@ public class TablutController extends Controller {
             triggerCurrentPlayerTurn();
             processBoardRepetition();
         } else {
+            stopTimer();
             model.stopStage();
             String message = String.format("Game over : %s\n", ((TablutStageModel)model.getGameStage()).getWinMessage());
             ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);

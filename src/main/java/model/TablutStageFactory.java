@@ -68,14 +68,6 @@ public class TablutStageFactory extends StageElementsFactory {
         subtitle.setLocation(Constants.CONTENT_X, Constants.SUBTITLE_Y);
         stageModel.setSubtitleText(subtitle);
 
-        TextElement text = new TextElement(stageModel.getCurrentPlayerName(), stageModel);
-        text.setLocation(Constants.CONTENT_X, Constants.SECTION_START_Y);
-        stageModel.setPlayerName(text);
-
-        TextElement botSentence = new TextElement("", stageModel);
-        botSentence.setClickable(false);
-        botSentence.setLocation(Constants.CONTENT_X, Constants.SECTION_START_Y+20);
-        stageModel.setBotSentenceText(botSentence);
 
         TextElement help = new TextElement("Click a pawn, then a highlighted square.", stageModel);
         help.setClickable(false);

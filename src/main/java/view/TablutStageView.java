@@ -104,28 +104,6 @@ public class TablutStageView extends GameStageView {
         subtitle.setDepth(20);
         addLook(subtitle);
 
-        TextLook currentPlayer = new TextLook(
-                24,
-                Constants.BODY_HEX,
-                Constants.FONT_FAMILY,
-                FontWeight.BOLD,
-                model.getPlayerName()
-        );
-        currentPlayer.setFont(Constants.BODY_FONT);
-        currentPlayer.setDepth(20);
-        addLook(currentPlayer);
-
-        TextLook botSentence = new TextLook(
-                15,
-                Constants.BODY_HEX.replace("#", "0x"),
-                Constants.FONT_FAMILY,
-                FontWeight.NORMAL,
-                model.getBotSentenceText()
-        );
-        botSentence.setFont(Constants.BODY_FONT);
-        botSentence.setWrappingWidth(Constants.CONTENT_WIDTH);
-        botSentence.setDepth(20);
-        addLook(botSentence);
 
         TextLook help = new TextLook(
                 15,

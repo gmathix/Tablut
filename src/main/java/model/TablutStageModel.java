@@ -47,12 +47,10 @@ public class TablutStageModel extends GameStageModel {
     private Pawn[] soldierPawns;
     private Pawn[] kingPawns;
 
-    private TextElement playerName;
     private TextElement titleText;
     private TextElement subtitleText;
     private TextElement helpText;
     private TextElement legendText;
-    private TextElement botSentenceText;
     private TextElement materialText;
     private TextElement threatText;
     private TextElement fullBackdrop;
@@ -82,12 +80,10 @@ public class TablutStageModel extends GameStageModel {
     public Pawn[] getMoscovitePawns() { return moscovitePawns; }
     public Pawn[] getSoldierPawns() { return soldierPawns; }
     public Pawn[] getKingPawns() { return kingPawns; }
-    public TextElement getPlayerName() { return playerName; }
     public TextElement getTitleText() { return titleText; }
     public TextElement getSubtitleText() { return subtitleText; }
     public TextElement getHelpText() { return helpText; }
     public TextElement getLegendText() { return legendText; }
-    public TextElement getBotSentenceText() { return botSentenceText; }
     public TextElement getMaterialText() { return materialText; }
     public TextElement getThreatText() { return threatText; }
     public TextElement getFullBackdrop() { return fullBackdrop; }
@@ -120,10 +116,6 @@ public class TablutStageModel extends GameStageModel {
             addElement(kingPawns[i]);
         }
     }
-    public void setPlayerName(TextElement playerName) {
-        this.playerName = playerName;
-        addElement(playerName);
-    }
     public void setTitleText(TextElement titleText) {
         this.titleText = titleText;
         addElement(titleText);
@@ -139,10 +131,6 @@ public class TablutStageModel extends GameStageModel {
     public void setLegendText(TextElement legendText) {
         this.legendText = legendText;
         addElement(legendText);
-    }
-    public void setBotSentenceText(TextElement botSentenceText) {
-        this.botSentenceText = botSentenceText;
-        addElement(botSentenceText);
     }
     public void setMaterialText(TextElement materialText) {
         this.materialText = materialText;
