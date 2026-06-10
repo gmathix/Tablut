@@ -288,7 +288,7 @@ public class TablutStageModel extends GameStageModel {
                     idWinner = 1;
                     winMessage = "the king has been encircled";
                 }
-            } else if ((hasCenterNeighbor && nbSurrounding == 3) || (nbSurrounding == 4)) {
+            } else if (nbSurrounding == 4) {
                 idWinner = 1;
                 winMessage = "the king has been encircled";
             }
