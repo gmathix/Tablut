@@ -78,6 +78,8 @@ public class TablutController extends Controller {
     private String player1="player1";
     private String player2="player2";
 
+    private Label[] nameLabels = new Label[2];
+
     public TablutController(Model model, View view, int gameMode, String inputFile,
                             int swedishBotPlayer, int moscoviteBotPlayer, int botLevels[]) {
         super(model, view);
@@ -167,7 +169,7 @@ public class TablutController extends Controller {
     public String getPlayer2() { return player2; }
     public void setPlayer2(String name) { this.player2 = (name == null || name.isBlank()) ? "Player 2" : name; }
 
-    public int getTimeLimitMinutes() { return timeLimit; }
+    public int getTimeLimit() { return timeLimit; }
     public void setTimeLimitMinutes(int minutes) { this.timeLimit = minutes; }
 
 
@@ -227,6 +229,63 @@ public class TablutController extends Controller {
             boardRepeated = false;
         }
     }
+
+    private void createNameLabels() {
+        removeNameLabels();
+
+
+        String[] names = { player1, player2 };
+
+        for (int i = 0; i < 2; i++) {
+            Label label = new Label(names[i]);
+            label.setStyle(buildNameStyle(i == model.getIdPlayer(), i == 0));
+            nameLabels[i] = label;
+
+            label.setLayoutX(Constants.BOARD_X);
+            double y = (i == 1)
+                    ? Constants.BOARD_Y - 38
+                    : Constants.BOARD_Y + Constants.BOARD_SIZE + 8;
+            label.setLayoutY(y);
+
+            if (view != null && view.getRootPane() != null) {
+                view.getRootPane().getChildren().add(label);
+                label.toFront();
+            }
+        }
+    }
+
+    private void updateNameLabels() {
+        for (int i = 0; i < 2; i++) {
+            if (nameLabels[i] == null) continue;
+            nameLabels[i].setStyle(buildNameStyle(i == model.getIdPlayer(), i == 0));
+        }
+    }
+
+    private void removeNameLabels() {
+        for (int i = 0; i < 2; i++) {
+            if (nameLabels[i] != null && view != null && view.getRootPane() != null) {
+                view.getRootPane().getChildren().remove(nameLabels[i]);
+            }
+            nameLabels[i] = null;
+        }
+    }
+
+    private String buildNameStyle(boolean active, boolean isSwedish) {
+        String accent = isSwedish ? "#8BCB8F" : "#E3C36A";
+        String bg = active ? accent : "#2e2e2e";
+        String fg = active ? "#1a1a1a" : "#cccccc";
+        String border = active ? accent : "#555555";
+        return  "-fx-background-color: " + bg + ";" +
+                "-fx-text-fill: " + fg + ";" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 5 12 5 12;" +
+                "-fx-background-radius: 6;" +
+                "-fx-border-color: " + border + ";" +
+                "-fx-border-radius: 6;" +
+                "-fx-border-width: 1.5;";
+    }
+
 
     private void startTimer() {
         timeLeft[0] = timeLimit * 60;
@@ -317,7 +376,15 @@ public class TablutController extends Controller {
     protected void startStage(String stageName) throws GameException {
         if (timeLimit > 0) {
             Platform.runLater(this::startTimer);
+            updateNameLabels();
         }
+
+        Platform.runLater(this::createNameLabels);
+
+
+
+
+
 
 
         GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
@@ -481,6 +548,7 @@ public class TablutController extends Controller {
             stageModel.getBotSentenceText().setLocation(x, y);
         }
     }
+
 
     private void triggerCurrentPlayerTurn() {
         if (model.isEndStage() || model.isEndGame()) return;
