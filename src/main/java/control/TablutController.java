@@ -19,6 +19,7 @@ import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import model.*;
 import view.Constants;
+import view.sounds.Sounds;
 
 import javax.swing.Timer;
 import java.io.BufferedReader;
@@ -137,9 +138,7 @@ public class TablutController extends Controller {
         this.inputFile = inputFile == null ? "" : inputFile;
     }
 
-    public int getStartingPlayerId() {
-        return startingPlayerId;
-    }
+    public int getStartingPlayerId() { return startingPlayerId; }
 
     public void setStartingPlayerId(int startingPlayerId) {
         this.startingPlayerId = startingPlayerId;
@@ -360,6 +359,7 @@ public class TablutController extends Controller {
 
         // make the bot play immediately if it has to start playing
         Platform.runLater(this::triggerCurrentPlayerTurn);
+        Sounds.playSound("src/main/java/view/sounds/game-start.wav");
     }
 
 
@@ -383,6 +383,9 @@ public class TablutController extends Controller {
                 GameElement capturedElement = board.getElement(cap / 9, cap % 9);
                 actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
             }
+            Sounds.playSound("src/main/java/view/sounds/capture.wav");
+        } else {
+            Sounds.playSound("src/main/java/view/sounds/move-self.wav");
         }
 
         actions.setDoEndOfTurn(true);
@@ -449,9 +452,11 @@ public class TablutController extends Controller {
         }
 
         if (nbEdgesReachable == 1) {
+            Sounds.playSound("src/main/java/view/sounds/move-check.wav");
             return "Threat: Raichi - the king has one escape lane.";
         }
         if (nbEdgesReachable >= 2) {
+            Sounds.playSound("src/main/java/view/sounds/move-check.wav");
             return "Threat: Tuichi - the king has two escape lanes.";
         }
         return "Threat: no Raichi or Tuichi yet.";
@@ -677,6 +682,7 @@ public class TablutController extends Controller {
             triggerCurrentPlayerTurn();
             processBoardRepetition();
         } else {
+            Sounds.playSound("src/main/java/view/sounds/game-win-long.wav");
             model.stopStage();
             String message = String.format("Game over : %s\n", ((TablutStageModel)model.getGameStage()).getWinMessage());
             ((TablutStageModel)model.getGameStage()).getThreatText().setText(message);

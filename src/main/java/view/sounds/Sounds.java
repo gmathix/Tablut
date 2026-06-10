@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class Sounds {
-    public static void Sounds(String filePath) {
+    public static void playSound(String filePath) {
         try {
             File soundFile = new File(filePath);
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
@@ -16,4 +16,4 @@ public class Sounds {
             System.err.println("Erreur lors de la lecture du son : " + e.getMessage());
         }
     }
-} // Example use : SoundPlayer.playSound("sounds/move.wav");
+} // Example use : Sounds.playSound("src/main/java/view/sounds/example_Sounds.wav");
