@@ -51,13 +51,13 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
         return true;
     }
 
-    private void executeMove(Pawn pawn, int[] dest) {
+    private void executeMove(Pawn pawn, int[] dest, boolean animated) {
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         TablutController tablutControl = (TablutController) control;
         TablutBoard board = stageModel.getBoard();
 
         if (dest != null && board.canReachCell(dest[0], dest[1])) {
-            ActionList actions = tablutControl.genMoveAnimationWithCapture(model, pawn, board, dest[0], dest[1]);
+            ActionList actions = tablutControl.genMoveAnimationWithCapture(model, pawn, board, dest[0], dest[1], animated);
             ActionPlayer play = new ActionPlayer(model, control, actions);
             play.start();
 
@@ -148,13 +148,13 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
             Pawn pawn = (Pawn) model.getSelected().getFirst();
             GridLook lookBoard = (GridLook) control.getElementLook(board);
             int[] dest = lookBoard.getCellFromSceneLocation(pos);
-            executeMove(pawn, dest);
+            executeMove(pawn, dest, false);
             draggedPawn = null;
         }
     }
 
     /*
-    Mouse dragged
+     * Mouse dragged
      */
 
     private void onDrag(MouseEvent event) {
@@ -192,10 +192,7 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
             resetDragVisual();
 
             if (dest != null && board.canReachCell(dest[0], dest[1])) {
-                // deselect pawn and reset state before executing
-                draggedPawn.toggleSelected();
-                stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
-                executeMove(draggedPawn, dest);
+                executeMove(draggedPawn, dest, true);
             } else {
                 // invalid drop - snap back and stay in SELECTDEST for a second-chance click
                 resetDragVisual();
