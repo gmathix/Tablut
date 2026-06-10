@@ -459,14 +459,16 @@ public class TablutController extends Controller {
     }
 
 
-    public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
+    public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX, boolean teleport) {
         ActionList actions = new ActionList();
 
         ElementLook elementLook = getElementLook(element);
         ContainerLook containerLook = (ContainerLook) getElementLook(board);
         Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dstY, dstX);
+        String animation = teleport ? AnimationTypes.MOVE_TELEPORT : AnimationTypes.MOVE_LINEARPROP;
+
         actions.addSingleAction(new MoveWithinContainerAction(
-                model, element, dstY, dstX, AnimationTypes.MOVE_LINEARPROP, center.getX(), center.getY(), 10
+                model, element, dstY, dstX, animation, center.getX(), center.getY(), 10
         ));
 
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
