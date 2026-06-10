@@ -21,11 +21,8 @@ import model.*;
 import view.Constants;
 import view.sounds.Sounds;
 
-import javax.swing.Timer;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -459,17 +456,8 @@ public class TablutController extends Controller {
     }
 
 
-    public ActionList genMoveAnimationWithCapture(Model model, GameElement element, TablutBoard board, int dstY, int dstX, boolean teleport) {
+    public ActionList genCapturesAction(Model model, GameElement element, TablutBoard board, int dstY, int dstX) {
         ActionList actions = new ActionList();
-
-        ElementLook elementLook = getElementLook(element);
-        ContainerLook containerLook = (ContainerLook) getElementLook(board);
-        Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dstY, dstX);
-        String animation = teleport ? AnimationTypes.MOVE_TELEPORT : AnimationTypes.MOVE_LINEARPROP;
-
-        actions.addSingleAction(new MoveWithinContainerAction(
-                model, element, dstY, dstX, animation, center.getX(), center.getY(), 10
-        ));
 
         TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
         Pawn pawn = (Pawn) element;
@@ -481,17 +469,31 @@ public class TablutController extends Controller {
                 GameElement capturedElement = board.getElement(cap / 9, cap % 9);
                 actions.addSingleAction(new RemoveFromContainerAction(model, capturedElement));
             }
-            Sounds.playSound("src/main/java/view/sounds/capture.wav");
-        } else {
-            Sounds.playSound("src/main/java/view/sounds/move-self.wav");
         }
+        actions.addSingleAction(new PlayMoveSoundAction(model, element, dstY, dstX, !captures.isEmpty()));
 
         actions.setDoEndOfTurn(true);
-        stageModel.unselectAll();
-        stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
 
         return actions;
     }
+
+    public ActionList genMoveAnimationWithCaptures(Model model, GameElement element, TablutBoard board, int dstY, int dstX, boolean teleport) {
+        ActionList actions = new ActionList();
+
+        ElementLook elementLook = getElementLook(element);
+        ContainerLook containerLook = (ContainerLook) getElementLook(board);
+        Coord2D center = containerLook.getContainerLocationForLookFromCell(elementLook, dstY, dstX);
+        String animation = teleport ? AnimationTypes.MOVE_TELEPORT : AnimationTypes.MOVE_LINEARPROP;
+
+        actions.addSingleAction(new MoveWithinContainerAction(
+                model, element, dstY, dstX, animation, center.getX(), center.getY(), 10
+        ));
+        actions.addAll(genCapturesAction(model, element, board, dstY, dstX));
+        actions.setDoEndOfTurn(true);
+
+        return actions;
+    }
+
 
 
     private int[] countMaterial(TablutStageModel stageModel) {

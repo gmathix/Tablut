@@ -12,6 +12,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import model.*;
 
+import java.util.List;
+
 public class TablutKeyController extends ControllerKey implements EventHandler<KeyEvent> {
     private boolean leftPressed = false;
 
@@ -47,7 +49,7 @@ public class TablutKeyController extends ControllerKey implements EventHandler<K
                 pawn.setBoardY(nextMove.dstY());
 
 
-                ActionList actions = tablutControl.genMoveAnimationWithCapture(model, element, board,
+                ActionList actions = tablutControl.genMoveAnimationWithCaptures(model, element, board,
                         nextMove.dstY(), nextMove.dstX(), false);
                 actions.setDoEndOfTurn(false);
                 ActionPlayer play = new ActionPlayer(model, control, actions);

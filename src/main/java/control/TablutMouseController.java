@@ -57,11 +57,23 @@ public class TablutMouseController extends ControllerMouse implements EventHandl
         TablutBoard board = stageModel.getBoard();
 
         if (dest != null && board.canReachCell(dest[0], dest[1])) {
-            ActionList actions = tablutControl.genMoveAnimationWithCapture(model, pawn, board, dest[0], dest[1], animated);
-            ActionPlayer play = new ActionPlayer(model, control, actions);
-            play.start();
-
             tablutControl.getMoveHistoryIterator().add(new Move(board, pawn.getBoardX(), pawn.getBoardY(), dest[1], dest[0]));
+
+            if (!animated) { // move by clicks
+                ActionList actions = tablutControl.genMoveAnimationWithCaptures(model, pawn, board, dest[0], dest[1], false);
+                ActionPlayer player = new ActionPlayer(model, control, actions);
+                player.start();
+            } else { // move by drag
+                // only generate the captures actions, otherwise when dropped the pawn will briefly appear on its starting square before teleporting
+                board.moveElement(pawn, dest[0], dest[1]);
+                ActionList actions = tablutControl.genCapturesAction(model, pawn, board, dest[0], dest[1]);
+                ActionPlayer player = new ActionPlayer(model, control, actions);
+                player.start();
+            }
+
+            stageModel.unselectAll();
+            stageModel.setState(TablutStageModel.STATE_SELECTPAWN);
+
 
             if (pawn.getColor() == Pawn.PAWN_KING) {
                 board.setKingX(dest[1]);

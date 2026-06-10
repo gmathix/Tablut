@@ -11,6 +11,8 @@ import model.Pawn;
 import model.TablutBoard;
 import model.TablutStageModel;
 
+import java.util.List;
+
 public class OsarracinoDecider extends Decider {
     private int level;
 
@@ -48,18 +50,19 @@ public class OsarracinoDecider extends Decider {
         int src = bestMoveInt & 0x7F;
         int dst = (bestMoveInt >> 7) & 0x7F;
 
-        GameElement pawn = tablutBoard.getElement(src / 9, src % 9);
-        if (((Pawn)pawn).getColor() == Pawn.PAWN_KING) {
+        Pawn pawn = (Pawn) tablutBoard.getElement(src / 9, src % 9);
+
+
+        if (pawn.getColor() == Pawn.PAWN_KING) {
             tablutBoard.setKingY(dst / 9);
             tablutBoard.setKingX(dst % 9);
         }
-        ((Pawn)pawn).setBoardX(dst % 9);
-        ((Pawn)pawn).setBoardY(dst / 9);
-
-
+        (pawn).setBoardX(dst % 9);
+        (pawn).setBoardY(dst / 9);
         tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, src % 9, src / 9, dst % 9, dst / 9));
 
 
-        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, dst / 9, dst % 9, false);
+
+        return tablutControl.genMoveAnimationWithCaptures(model, pawn, tablutBoard, dst / 9, dst % 9, false);
     }
 }

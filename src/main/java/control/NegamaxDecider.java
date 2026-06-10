@@ -8,6 +8,8 @@ import boardifier.model.action.ActionList;
 import control.algos.Negamax;
 import model.*;
 
+import java.util.List;
+
 public class NegamaxDecider extends Decider {
     private int level;
 
@@ -33,8 +35,7 @@ public class NegamaxDecider extends Decider {
         // do a cast get a variable of the real type to get access to the attributes of HoleStageModel
         TablutStageModel stage = (TablutStageModel)model.getGameStage();
         TablutController tablutControl = (TablutController) control;
-        TablutBoard tablutBoard = stage.getBoard(); // get the board
-        GameElement pawn = null; // the pawn that is moved
+        TablutBoard tablutBoard = stage.getBoard();
 
         int turn = model.getIdPlayer();
 
@@ -49,21 +50,19 @@ public class NegamaxDecider extends Decider {
         int dst = (bestMoveInt >> 7) & 0x7F;
 
 
+        Pawn pawn = (Pawn) tablutBoard.getElement(src / 9, src % 9);
 
-        pawn = tablutBoard.getElement(src / 9, src % 9);
 
-
-        if (((Pawn)pawn).getColor() == Pawn.PAWN_KING) {
+        if (pawn.getColor() == Pawn.PAWN_KING) {
             tablutBoard.setKingY(dst / 9);
             tablutBoard.setKingX(dst % 9);
         }
-        ((Pawn)pawn).setBoardX(dst % 9);
-        ((Pawn)pawn).setBoardY(dst / 9);
-
-
+        (pawn).setBoardX(dst % 9);
+        (pawn).setBoardY(dst / 9);
         tablutControl.getMoveHistoryIterator().add(new Move(tablutBoard, src % 9, src / 9, dst % 9, dst / 9));
 
 
-        return tablutControl.genMoveAnimationWithCapture(model, pawn, tablutBoard, dst / 9, dst % 9, false);
+
+        return tablutControl.genMoveAnimationWithCaptures(model, pawn, tablutBoard, dst / 9, dst % 9, false);
     }
 }
