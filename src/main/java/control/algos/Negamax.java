@@ -67,7 +67,7 @@ public class Negamax {
     public static final int   NB_TT_ENTRIES              = 1 << 20;
     public static final int   NB_POSSIBLE_MOVES          = 1296; // calculated (not in my head :( )
     public static final int   MAX_CAPTURES               = 3;
-    public static final int   MAX_DEPTH                  = 15;
+    public static final int   MAX_DEPTH                  = 9; // yeah we'll never reach this in acceptable time anyway
     public static final float VIRTUAL_INF                = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA    = 400;
     public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
@@ -192,7 +192,7 @@ public class Negamax {
         searchDeadlineNs = System.nanoTime() + searchTimeSeconds * 1000000000L;
 
         try {
-            for (int depth = 0; depth < MAX_DEPTH; depth++) { // iterative deepening
+            for (int depth = 0; depth < MAX_DEPTH-1; depth++) { // iterative deepening
                 if (System.nanoTime() >= searchDeadlineNs) break;
 
                 // generate moves with the first move in the list being the current best one
@@ -233,7 +233,7 @@ public class Negamax {
                                 kingPosStack, zobrist, zobristKey, sideToMove
                         );
 
-                        float score = -negamax(depth + 1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
+                        float score = -negamax(depth+1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
 
                         FastBoard.undoMove(
                                 board, move, 0, captureCountStack, captureStack,

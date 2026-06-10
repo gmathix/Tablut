@@ -108,7 +108,7 @@ public class OsarracinoBridge {
 
             String name = recv();
             System.out.printf("[OsarracinoBridge] %s connected as %s (search time ~%ds)%n",
-                    name, color.toUpperCase(), timeoutS - 2);
+                    name, color.toUpperCase(), timeoutS);
 
             boardQueue.clear();
             moveQueue.clear();
