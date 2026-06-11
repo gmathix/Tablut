@@ -671,7 +671,7 @@ public class TablutController extends Controller {
         VBox panel = new VBox(10, gameOverPgnArea);
         panel.setPadding(new Insets(8, 0, 0, 0));
         panel.setLayoutX(Constants.CONTENT_X);
-        panel.setLayoutY(Constants.THREAT_Y + 35);
+        panel.setLayoutY(Constants.THREAT_Y + Constants.WINDOW_HEIGHT * (35.0 / 820.0));
         panel.setPrefWidth(Constants.CONTENT_WIDTH);
         panel.setStyle(
                 "-fx-background-color: rgba(18, 26, 18, 0.55);" +

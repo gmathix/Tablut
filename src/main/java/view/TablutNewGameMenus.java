@@ -22,8 +22,8 @@ import java.util.Optional;
 public final class TablutNewGameMenus {
     private static final int MIN_BOT_LEVEL = 0;
     private static final int MAX_BOT_LEVEL = 10;
-    private static final double IMAGE_SLOT_WIDTH = 96;
-    private static final double IMAGE_SLOT_HEIGHT = 70;
+    private static final double IMAGE_SLOT_WIDTH  = Constants.WINDOW_WIDTH  * (96.0  / 1180.0);
+    private static final double IMAGE_SLOT_HEIGHT = Constants.WINDOW_HEIGHT * (70.0  / 820.0);
 
     private TablutNewGameMenus() {
     }
@@ -61,7 +61,9 @@ public final class TablutNewGameMenus {
                 new ButtonType("Start game", ButtonBar.ButtonData.OK_DONE),
                 ButtonType.CANCEL
         );
-        dialog.getDialogPane().setPrefSize(920, 760);
+        dialog.getDialogPane().setPrefSize(
+                Constants.WINDOW_WIDTH  * 0.78,
+                Constants.WINDOW_HEIGHT * 0.93);
         dialog.getDialogPane().setStyle("-fx-background-color: #1a2318;");
 
         ToggleGroup modeGroup = new ToggleGroup();

@@ -106,7 +106,9 @@ public class TablutHelpView {
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background: #1a2318; -fx-background-color: #1a2318;");
 
-        Scene scene = new Scene(scroll, 640, 520);
+        Scene scene = new Scene(scroll,
+                Constants.WINDOW_WIDTH  * (640.0 / 1180.0),
+                Constants.WINDOW_HEIGHT * (520.0 / 820.0));
         dialog.setScene(scene);
         dialog.show();
     }
@@ -115,23 +117,23 @@ public class TablutHelpView {
 
     private static Text makeTitle(String text) {
         Text t = new Text(text);
-        t.setFont(Font.font("Arial", FontWeight.BOLD, 26));
+        t.setFont(Font.font("Arial", FontWeight.BOLD, Constants.TITLE_FONT.getSize() * (26.0 / 42.0)));
         t.setFill(Color.web("#c8a76a"));
         return t;
     }
 
     private static Text makeHeading(String text) {
         Text t = new Text(text);
-        t.setFont(Font.font("Arial", FontWeight.BOLD, 15));
+        t.setFont(Font.font("Arial", FontWeight.BOLD, Constants.BODY_FONT.getSize()));
         t.setFill(Color.web("#c8a76a"));
         return t;
     }
 
     private static Text makeBody(String text) {
         Text t = new Text(text);
-        t.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        t.setFont(Font.font("Arial", FontWeight.NORMAL, Constants.SMALL_FONT.getSize()));
         t.setFill(Color.web("#dde8d8"));
-        t.setWrappingWidth(580);
+        t.setWrappingWidth(Constants.WINDOW_WIDTH * (580.0 / 1180.0));
         return t;
     }
 }
