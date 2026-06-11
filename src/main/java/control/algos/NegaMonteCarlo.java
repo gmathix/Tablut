@@ -86,7 +86,7 @@ public class NegaMonteCarlo {
 
     // [FIX-3] zobrist is initialised ONCE in configure() and never touched by resetBuffers().
     private static final long[][]  zobrist             = new long  [4][81];
-    private static final long[]    zobristKey          = new long  [1];
+    private static final long[]    zobristKeys         = new long  [8]; // not using the symmetry here, just for compat
     private static final long      sideToMove          = rng.nextLong();
 
 
@@ -163,7 +163,7 @@ public class NegaMonteCarlo {
                 zobrist[piece][i] = rng.nextLong();
             }
         }
-        zobristKey[0] = 0;
+        zobristKeys[0] = 0;
     }
 
 
@@ -185,7 +185,7 @@ public class NegaMonteCarlo {
         Arrays.fill(ttFlag, (byte) 0);
         Arrays.fill(ttBestMove, 0);
 
-        zobristKey[0] = 0;
+        Arrays.fill(zobristKeys, 0);
     }
 
 
@@ -320,10 +320,10 @@ public class NegaMonteCarlo {
 
         for (int i = 0; i < 81; i++) {
             if (board[i] != FastBoard.EMPTY) {
-                zobristKey[0] ^= zobrist[board[i]][i];
+                zobristKeys[0] ^= zobrist[board[i]][i];
             }
         }
-        zobristKey[0] ^= sideToMove;
+        zobristKeys[0] ^= sideToMove;
     }
 
     private static Node createNode(Node parent, int moveFromParent, int turn, int ply) {
@@ -379,14 +379,14 @@ public class NegaMonteCarlo {
 
         FastBoard.makeMove(
                 board, move, ply, captureCountStack, captureStack,
-                soldierCountStack, moscoviteCountStack, kingPosStack, zobrist, zobristKey, sideToMove
+                soldierCountStack, moscoviteCountStack, kingPosStack, zobrist, zobristKeys, sideToMove
         );
     }
 
     private static void undoMove(int move, int ply) {
         FastBoard.undoMove(
                 board, move, ply, captureCountStack, captureStack,
-                kingPosStack, zobrist, zobristKey, sideToMove
+                kingPosStack, zobrist, zobristKeys, sideToMove
         );
     }
 
@@ -461,9 +461,9 @@ public class NegaMonteCarlo {
 
         boolean hasTTBestMove = false;
         int bestTTMove        = 0;
-        int ttIndex           = (int) (zobristKey[0] & (Negamax.NB_TT_ENTRIES - 1));
+        int ttIndex           = (int) (zobristKeys[0] & (Negamax.NB_TT_ENTRIES - 1));
 
-        if (ttFlag[ttIndex] != 0 && ttHash[ttIndex] == zobristKey[0] && ttDepth[ttIndex] >= depth) {
+        if (ttFlag[ttIndex] != 0 && ttHash[ttIndex] == zobristKeys[0] && ttDepth[ttIndex] >= depth) {
             switch (ttFlag[ttIndex]) {
                 case Negamax.EXACT:
                     return ttScore[ttIndex];
@@ -513,7 +513,7 @@ public class NegaMonteCarlo {
             if (alpha >= beta) {
                 cutoff = true;
                 ttScore   [ttIndex]  = score;
-                ttHash    [ttIndex]  = zobristKey[0];
+                ttHash    [ttIndex]  = zobristKeys[0];
                 ttDepth   [ttIndex]  = (byte) depth;
                 ttFlag    [ttIndex]  = (byte) Negamax.LOWER_BOUND;
                 ttBestMove[ttIndex]  = move;  // preserve the refutation move
@@ -528,7 +528,7 @@ public class NegaMonteCarlo {
             else                       flag = (byte) Negamax.EXACT;
 
             ttScore   [ttIndex]  = maxScore;
-            ttHash    [ttIndex]  = zobristKey[0];
+            ttHash    [ttIndex]  = zobristKeys[0];
             ttDepth   [ttIndex]  = (byte) depth;
             ttFlag    [ttIndex]  = flag;
             ttBestMove[ttIndex]  = bestMove;

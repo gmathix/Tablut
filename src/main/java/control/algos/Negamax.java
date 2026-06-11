@@ -1,5 +1,6 @@
 package control.algos;
 
+import com.sun.tools.attach.spi.AttachProvider;
 import model.TablutBoard;
 import model.TablutStageModel;
 
@@ -90,6 +91,23 @@ public class Negamax {
     private static int searchTimeSeconds;
     private static int positionsAnalyzed;
 
+
+    // fun for experimenting
+    private static long totalLegalMoveCountMoscovite = 0;
+    private static long totalMoveGenerationsMoscovite = 0;
+    private static long totalLegalMoveCountSwedish = 0;
+    private static long totalMoveGenerationsSwedish = 0;
+    // results : ~33 available moves for swedish, ~72 available moves for moscovites
+
+
+    // number of TT hits that are a symmetrical representation of the current board
+    private static long nbSymTTHits;
+    private static long nbTTHits;
+
+    private static long ttProbe;
+    private static long ttHashMatch;
+    private static long ttDepthMatch;
+
     private static long searchDeadlineNs;
 
     private static int currentMoveNumber = 0;
@@ -111,7 +129,7 @@ public class Negamax {
 
 
     private static final long[][]   zobrist             = new long  [4][81];
-    private static final long[]     zobristKey          = new long  [1];
+    private static final long[]     zobristKeys         = new long  [8];
     private static final long       sideToMove          = rng.nextLong();
 
 
@@ -123,6 +141,28 @@ public class Negamax {
     private static final int[]     ttBestMove           = new int   [NB_TT_ENTRIES];
 
 
+    private static final int[][]   squareSymmetrics     = new int[8][81];
+    static {
+        // initialize all square symmetrics
+        for (int sq = 0; sq < 81; sq++) {
+            int y = sq / 9;
+            int x = sq % 9;
+
+            // rotation symmetrics (trigonometric way)
+            squareSymmetrics[0][sq] = (  y) * 9 + (  x); //   0 deg
+            squareSymmetrics[1][sq] = (8-x) * 9 + (  y); //  90 deg
+            squareSymmetrics[2][sq] = (8-y) * 9 + (8-x); // 180 deg
+            squareSymmetrics[3][sq] = (  x) * 9 + (8-y); // 270 deg
+
+            // axis symmetrics
+            squareSymmetrics[4][sq] = (  y) * 9 + (8-x); // vertical axis
+            squareSymmetrics[5][sq] = (8-y) * 9 + (  x); // horizontal axis
+            squareSymmetrics[6][sq] = (  x) * 9 + (  y); // top left  -> bottom right diagonal
+            squareSymmetrics[7][sq] = (8-x) * 9 + (8-y); // top right -> bottom left diagonal
+        }
+    }
+
+
     private static final SearchTimeoutException TIMEOUT = new SearchTimeoutException();
 
 
@@ -131,6 +171,8 @@ public class Negamax {
 
 
     public static void resetBuffers() {
+
+
         Arrays.fill(board, (byte) 0);
         Arrays.fill(kingPosStack, (byte) 0);
         Arrays.fill(captureCountStack, (byte) 0);
@@ -151,7 +193,7 @@ public class Negamax {
         Arrays.fill(ttFlag, (byte) 0);
         Arrays.fill(ttBestMove, 0);
 
-        zobristKey[0] = 0;
+        Arrays.fill(zobristKeys, 0);
     }
 
     public static void configure(int level, TablutBoard tablutBoard) {
@@ -172,15 +214,41 @@ public class Negamax {
             }
         }
 
-        zobristKey[0] = 0;
+
         // xor numbers corresponding to active pieces together
         for (int i = 0; i < 81; i++) {
             if (board[i] != FastBoard.EMPTY) {
-                zobristKey[0] ^= zobrist[board[i]][i];
+//                zobristKey[0] ^= zobrist[board[i]][i];
+                xorZobristKeys(zobrist, zobristKeys, board[i], i);
             }
         }
-        zobristKey[0] ^= sideToMove;
+        xorZorbistKeysSideToMove(zobristKeys, sideToMove);
     }
+
+
+    public static void xorZobristKeys(long[][] zobrist, long[] zobristKeys, int piece, int pos) {
+        zobristKeys[0] ^= zobrist[piece][squareSymmetrics[0][pos]];
+        zobristKeys[1] ^= zobrist[piece][squareSymmetrics[1][pos]];
+        zobristKeys[2] ^= zobrist[piece][squareSymmetrics[2][pos]];
+        zobristKeys[3] ^= zobrist[piece][squareSymmetrics[3][pos]];
+        zobristKeys[4] ^= zobrist[piece][squareSymmetrics[4][pos]];
+        zobristKeys[5] ^= zobrist[piece][squareSymmetrics[5][pos]];
+        zobristKeys[6] ^= zobrist[piece][squareSymmetrics[6][pos]];
+        zobristKeys[7] ^= zobrist[piece][squareSymmetrics[7][pos]];
+    }
+
+    public static void xorZorbistKeysSideToMove(long[] zobristKeys, long sideToMove) {
+        zobristKeys[0] ^= sideToMove; zobristKeys[1] ^= sideToMove;
+        zobristKeys[2] ^= sideToMove; zobristKeys[3] ^= sideToMove;
+        zobristKeys[4] ^= sideToMove; zobristKeys[5] ^= sideToMove;
+        zobristKeys[6] ^= sideToMove; zobristKeys[7] ^= sideToMove;
+    }
+
+    public static int moveSymmetric(int move, int z) {
+        return squareSymmetrics[z][move & 0x7F] | (squareSymmetrics[z][(move >> 7) & 0x7F] << 7);
+    }
+
+
 
 
     public static int findBestMove(int turn, boolean findAlternativeMove) {
@@ -188,8 +256,15 @@ public class Negamax {
         int currentBestMove = 0;
         float prevBestScore = Float.NEGATIVE_INFINITY;
 
+
         positionsAnalyzed = 0;
         searchDeadlineNs = System.nanoTime() + searchTimeSeconds * 1000000000L;
+        nbTTHits = 0;
+        nbSymTTHits = 0;
+
+        ttProbe = 0;
+        ttHashMatch = 0;
+        ttDepthMatch = 0;
 
         try {
             for (int depth = 0; depth < MAX_DEPTH-1; depth++) { // iterative deepening
@@ -200,6 +275,16 @@ public class Negamax {
                     FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, 0, false, ruleSet);
                 else
                     FastBoard.generateMoves(board, turn, 0, moveCountStack, movesStack, killerMovesStack, currentBestMove, true, ruleSet);
+
+                if (turn == 0) {
+                    totalLegalMoveCountSwedish += moveCountStack[0];
+                    totalMoveGenerationsSwedish++;
+                }
+                else {
+                    totalLegalMoveCountMoscovite += moveCountStack[0];
+                    totalMoveGenerationsMoscovite++;
+                }
+
 
                 if (moveCountStack[0] == 0) return -1;
 
@@ -230,14 +315,14 @@ public class Negamax {
                         FastBoard.checkCaptures(board, move, 0, captureCountStack, captureStack, ruleSet);
                         FastBoard.makeMove(
                                 board, move, 0, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
-                                kingPosStack, zobrist, zobristKey, sideToMove
+                                kingPosStack, zobrist, zobristKeys, sideToMove
                         );
 
                         float score = -negamax(depth+1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
 
                         FastBoard.undoMove(
                                 board, move, 0, captureCountStack, captureStack,
-                                kingPosStack, zobrist, zobristKey, sideToMove
+                                kingPosStack, zobrist, zobristKeys, sideToMove
                         );
 
                         if (score > bestScore) {
@@ -261,13 +346,19 @@ public class Negamax {
 
                 bestMoves = iterBestMoves; // replace the best moves list, don't accumulate
                 prevBestScore = bestScore;
+
+                System.out.printf("Done depth %d, analyzed %d positions so far\n\n", depth+1, positionsAnalyzed);
             }
+
         } catch (SearchTimeoutException e) {
             // ignore, keep the last fully completed iteration
         }
 
 
-//        System.out.printf("Analyzed %d positions\n", positionsAnalyzed);
+//        System.out.printf("Average number of legal moves for swedish : %.3f\n" +
+//                          "Average number of legal moves for moscovites : %.3f\n",
+//                    (totalLegalMoveCountSwedish / (double) totalMoveGenerationsSwedish),
+//                    (totalLegalMoveCountMoscovite / (double) totalMoveGenerationsMoscovite));
 
 
         bestMoves = new ArrayList<>(
@@ -319,8 +410,21 @@ public class Negamax {
         boolean hasTTBestMove = false;
         int bestTTMove = 0;
 
-        int ttIndex = (int) (zobristKey[0] & (NB_TT_ENTRIES - 1));
-        if (ttFlag[ttIndex] != 0 && zobristKey[0] == ttHash[ttIndex] && ttDepth[ttIndex] >= depth) {
+
+        int ttIndex = (int) (zobristKeys[0] & (NB_TT_ENTRIES - 1));
+
+        if (ttFlag[ttIndex] != 0) {
+            ttProbe++;
+            if (ttHash[ttIndex] == zobristKeys[0]) {
+                ttHashMatch++;
+                if (ttDepth[ttIndex] >= depth) {
+                    ttDepthMatch++;
+                }
+            }
+        }
+        if (ttFlag[ttIndex] != 0 && zobristKeys[0] == ttHash[ttIndex] && ttDepth[ttIndex] >= depth) {
+            nbTTHits++;
+
             float score = ttScore[ttIndex];
 
             // re-adjust cached winning/losing values relative to the current ply
@@ -352,6 +456,15 @@ public class Negamax {
 
         FastBoard.generateMoves(board, turn, ply, moveCountStack, movesStack, killerMovesStack, bestTTMove, hasTTBestMove, ruleSet);
 
+        if (turn == 0) {
+            totalLegalMoveCountSwedish += moveCountStack[ply];
+            totalMoveGenerationsSwedish++;
+        }
+        else {
+            totalLegalMoveCountMoscovite += moveCountStack[ply];
+            totalMoveGenerationsMoscovite++;
+        }
+
         if (moveCountStack[ply] == 0) { // can't make moves, automatically lose
             return -VIRTUAL_INF + depth;
         }
@@ -370,14 +483,14 @@ public class Negamax {
             FastBoard.checkCaptures(board, move, ply, captureCountStack, captureStack, ruleSet);
             FastBoard.makeMove(
                     board, move, ply, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
-                    kingPosStack, zobrist, zobristKey, sideToMove
+                    kingPosStack, zobrist, zobristKeys, sideToMove
             );
 
             float score = -negamax(depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
 
             FastBoard.undoMove(
                     board, move, ply, captureCountStack, captureStack, kingPosStack ,
-                    zobrist, zobristKey, sideToMove
+                    zobrist, zobristKeys, sideToMove
             );
 
             if (score > maxScore) {
@@ -393,10 +506,14 @@ public class Negamax {
                 float storeScore = score;
                 if (storeScore > VIRTUAL_INF - 100) storeScore += ply;
                 else if (storeScore < -VIRTUAL_INF + 100) storeScore -= ply;
-                ttScore[ttIndex]  = storeScore;
-                ttHash[ttIndex]   = zobristKey[0];
-                ttDepth[ttIndex]  = (byte) depth;
-                ttFlag[ttIndex]   = LOWER_BOUND;
+
+                for (int z = 0; z < 8; z++) { // store position info for every symmetric of the current board
+                    ttIndex = (int) (zobristKeys[z] & (NB_TT_ENTRIES - 1));
+                    ttScore[ttIndex] = storeScore;
+                    ttHash[ttIndex]  = zobristKeys[z];
+                    ttDepth[ttIndex] = (byte) depth;
+                    ttFlag[ttIndex]  = LOWER_BOUND;
+                }
                 break;
             }
         }
@@ -410,11 +527,14 @@ public class Negamax {
         if (storeMaxScore > VIRTUAL_INF - 100)      storeMaxScore += ply;
         else if (storeMaxScore < -VIRTUAL_INF + 100) storeMaxScore -= ply;
 
-        ttScore[ttIndex]    = storeMaxScore;
-        ttHash[ttIndex]     = zobristKey[0];
-        ttDepth[ttIndex]    = (byte) depth;
-        ttFlag[ttIndex]     = flag;
-        ttBestMove[ttIndex] = bestMove;
+        for (int z = 0; z < 8; z++) {
+            ttIndex = (int) (zobristKeys[z] & (NB_TT_ENTRIES - 1));
+            ttScore[ttIndex]    = storeMaxScore;
+            ttHash[ttIndex]     = zobristKeys[z];
+            ttDepth[ttIndex]    = (byte) depth;
+            ttFlag[ttIndex]     = flag;
+            ttBestMove[ttIndex] = moveSymmetric(bestMove, z);
+        }
 
         return maxScore;
     }

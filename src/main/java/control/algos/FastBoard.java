@@ -255,7 +255,7 @@ public class FastBoard {
 
     public static void makeMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
                                 byte[] soldierCountStack, byte[] moscoviteCountStack,
-                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKeys,
                                 long sideToMove) {
         // update kingPosStack[ply+1], not kingPosStack[ply]
 
@@ -268,8 +268,9 @@ public class FastBoard {
         board[dst] = board[src];
         board[src] = EMPTY;
 
-        zobristKey[0] ^= zobrist[board[dst]][src];
-        zobristKey[0] ^= zobrist[board[dst]][dst];
+        Negamax.xorZobristKeys(zobrist, zobristKeys, board[dst], src);
+        Negamax.xorZobristKeys(zobrist, zobristKeys, board[dst], dst);
+
 
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
@@ -277,15 +278,18 @@ public class FastBoard {
             if (isMoscovite(board[capCoord])) moscoviteCountStack[ply+1]--;
             else soldierCountStack[ply+1]--;
 
-            zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
+
+            Negamax.xorZobristKeys(zobrist, zobristKeys, board[capCoord], capCoord);
+
             board[capCoord] = EMPTY;
         }
 
-        zobristKey[0] ^= sideToMove;
+        Negamax.xorZorbistKeysSideToMove(zobristKeys, sideToMove);
+
     }
 
     public static void undoMove(byte[] board, int move, int ply, byte[] captureCountStack, short[][] captureStack,
-                                byte[] kingPosStack, long[][] zobrist, long[] zobristKey,
+                                byte[] kingPosStack, long[][] zobrist, long[] zobristKeys,
                                 long sideToMove) {
         int src = move & 0x7F;
         int dst = (move >> 7) & 0x7F;
@@ -295,8 +299,8 @@ public class FastBoard {
         board[src] = board[dst];
         board[dst] = EMPTY;
 
-        zobristKey[0] ^= zobrist[board[src]][dst];
-        zobristKey[0] ^= zobrist[board[src]][src];
+        Negamax.xorZobristKeys(zobrist, zobristKeys, board[src], dst);
+        Negamax.xorZorbistKeysSideToMove(zobristKeys, sideToMove);
 
         for (int i = 0; i < captureCountStack[ply]; i++) {
             int capCoord = captureStack[ply][i] >> 3;
@@ -306,10 +310,10 @@ public class FastBoard {
 
             board[capCoord] = (byte) capPiece;
 
-            zobristKey[0] ^= zobrist[board[capCoord]][capCoord];
+            Negamax.xorZobristKeys(zobrist, zobristKeys, board[capCoord], capCoord);
         }
 
-        zobristKey[0] ^= sideToMove;
+        Negamax.xorZorbistKeysSideToMove(zobristKeys, sideToMove);
 
         kingPosStack[ply+1]         = kingPosStack[ply];
     }
