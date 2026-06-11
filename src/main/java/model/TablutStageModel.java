@@ -156,7 +156,7 @@ public class TablutStageModel extends GameStageModel {
 
     private void setupCallbacks() {
         onSelectionChange(() -> {
-            if (selected.size() == 0) {
+            if (selected.isEmpty()) {
                 board.resetReachableCells(false);
                 return;
             }
@@ -166,19 +166,19 @@ public class TablutStageModel extends GameStageModel {
 
         onMoveInContainer((el, gridDest, rowDest, colDest) -> {
             if (gridDest != board) return;
-            computePartyResult();
+            computePartyResult(rowDest, colDest);
         });
 
         onRemoveFromContainer((el, gridDest, rowDest, colDest) -> {
             if (gridDest != board) return;
-            computePartyResult();
+            computePartyResult(rowDest, colDest);
         });
     }
 
 
 
 
-    private void computePartyResult() {
+    private void computePartyResult(int rowDest, int colDest) {
         int idWinner = -1;
 
 
@@ -257,7 +257,7 @@ public class TablutStageModel extends GameStageModel {
 
         boolean kingInCenter = kingY == 4 && kingX == 4;
         boolean hasCenterNeighbor = false;
-
+        boolean playedPawnNextToKing = false;
 
         for (int i = 0; i < 4; i++) {
             int y = kingY + dy_vals[i];
@@ -273,13 +273,16 @@ public class TablutStageModel extends GameStageModel {
                 nbSurrounding++;
                 surroundMask |= 1 << i;
             }
+            if (rowDest+dy_vals[i] == kingY && colDest+dx_vals[i] == kingX) {
+                playedPawnNextToKing = true;
+            }
         }
 
 
         /* either the king is next to the center square and is surrounded by 3 moscovites,
          * or it is surrounded by 4 moscovites.
          */
-        if (model.getIdPlayer() == 1) {
+        if (model.getIdPlayer() == 1 && playedPawnNextToKing) {
             if (RuleSets.isAshtonRules(ruleSet)) {
                 if ((kingInCenter && nbSurrounding == 4) ||
                         (hasCenterNeighbor && nbSurrounding == 4) ||
