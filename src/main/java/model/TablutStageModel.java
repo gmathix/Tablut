@@ -94,6 +94,7 @@ public class TablutStageModel extends GameStageModel {
     public void setState(int state) { this.state = state; }
     public void setMode(int mode) { this.mode = mode; }
     public void setRuleSet(int ruleSet) { this.ruleSet = ruleSet; }
+    public void setWinMessage(String winMessage) { this.winMessage = winMessage; }
     public void setBoard(TablutBoard board) {
         this.board = board;
         addContainer(board);

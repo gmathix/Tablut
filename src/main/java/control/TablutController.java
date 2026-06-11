@@ -328,6 +328,9 @@ public class TablutController extends Controller {
                         timerTimeline=null;
 
                         model.setIdWinner(1-current);
+                        String loser = model.getIdWinner() == 0 ? "Moscovites" : "Swedish";
+                        ((TablutStageModel)model.getGameStage()).setWinMessage(loser + " ran out of time");
+
                         Platform.runLater(this::endOfTurn);
                     }
                 }));
@@ -486,7 +489,7 @@ public class TablutController extends Controller {
         String animation = teleport ? AnimationTypes.MOVE_TELEPORT : AnimationTypes.MOVE_LINEARPROP;
 
         actions.addSingleAction(new MoveWithinContainerAction(
-                model, element, dstY, dstX, animation, center.getX(), center.getY(), 10
+                model, element, dstY, dstX, animation, center.getX(), center.getY(), 15
         ));
         actions.addAll(genCapturesAction(model, element, board, dstY, dstX));
         actions.setDoEndOfTurn(true);
@@ -570,10 +573,9 @@ public class TablutController extends Controller {
         stageModel.getMaterialText().setText(String.format("Material: Swedish %d  |  Gold %d", material[0], material[1]));
         stageModel.getThreatText().setText(buildKingThreatMessage(stageModel));
 
-        if(timeLimit >0)
-            {
+        if(timeLimit >0) {
             updateNameLabels();
-            }
+        }
 
     }
 
@@ -780,7 +782,7 @@ public class TablutController extends Controller {
             TablutStageModel stageModel = (TablutStageModel) model.getGameStage();
             stageModel.getThreatText().setText(message);
 
-            if (stageModel.getMode() == TablutStageModel.MODE_PLAY) {
+            if (stageModel.getMode() != TablutStageModel.MODE_VIEW_GAME) {
                 showGamePGN(moveHistory.buildGameString());
             }
         }
