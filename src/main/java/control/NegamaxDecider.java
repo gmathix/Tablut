@@ -6,6 +6,7 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.Negamax;
+import control.algos.OpeningPlayer;
 import model.*;
 
 import java.util.List;
@@ -40,10 +41,26 @@ public class NegamaxDecider extends Decider {
         int turn = model.getIdPlayer();
 
 
+        int bestMoveInt;
 
-        Negamax.resetBuffers();
-        Negamax.configure(level, tablutBoard);
-        int bestMoveInt = Negamax.findBestMove(turn, ((TablutController) control).isBoardRepeated());
+
+        String moveSeq = tablutControl.getMoveHistory().toString().trim();
+        int openingMove = OpeningPlayer.makeOpeningMove(moveSeq);
+
+
+        boolean greenFirstMove = moveSeq.isEmpty() && turn == 0;
+        if (openingMove != -1 && !greenFirstMove) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ignored) {
+
+            }
+            bestMoveInt = openingMove;
+        } else {
+            Negamax.resetBuffers();
+            Negamax.configure(level, tablutBoard);
+            bestMoveInt = Negamax.findBestMove(turn, ((TablutController) control).isBoardRepeated());
+        }
 
 
         int src = bestMoveInt & 0x7F;

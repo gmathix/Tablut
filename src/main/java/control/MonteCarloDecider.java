@@ -6,10 +6,8 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.MonteCarlo;
-import model.Move;
-import model.Pawn;
-import model.TablutBoard;
-import model.TablutStageModel;
+import control.algos.OpeningPlayer;
+import model.*;
 
 import java.util.List;
 
@@ -39,10 +37,27 @@ public class MonteCarloDecider extends Decider  {
         int turn = model.getIdPlayer();
 
 
+        int bestMoveInt;
 
-        MonteCarlo.resetBuffers();
-        MonteCarlo.configure(level, tablutBoard);
-        int bestMoveInt = MonteCarlo.findBestMove(tablutBoard, turn, ((TablutController) control).isBoardRepeated());
+
+        String moveSeq = tablutControl.getMoveHistory().toString().trim();
+        int openingMove = OpeningPlayer.makeOpeningMove(moveSeq);
+
+
+        boolean greenFirstMove = moveSeq.isEmpty() && turn == 0;
+        if (openingMove != -1 && !greenFirstMove) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ignored) {
+
+            }
+            bestMoveInt = openingMove;
+        } else {
+            MonteCarlo.resetBuffers();
+            MonteCarlo.configure(level, tablutBoard);
+            bestMoveInt = MonteCarlo.findBestMove(tablutBoard, turn, ((TablutController) control).isBoardRepeated());
+        }
+
 
 
         int src = bestMoveInt & 0x7F;

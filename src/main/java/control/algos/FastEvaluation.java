@@ -10,12 +10,12 @@ public class FastEvaluation {
     public static final float VIRTUAL_INF = 10000f;
 
     // weights for each evaluation criteria
-    public static final float BLOCKING_MOSCOVITES_WEIGHT      = 25;
-    public static final float ENCERCLEMENT_WEIGHT             = 60;
-    public static final float EARLY_KING_SECURITY_WEIGHT      = 30;
-    public static final float MIDDLEGAME_KING_SECURITY_WEIGHT = 30;
-    public static final float MATERIAL_WEIGHT                 = 40;
-    public static final float POSITION_WEIGHT                 = 20;
+    public static final float BLOCKING_MOSCOVITES_WEIGHT      = 20;
+    public static final float ENCERCLEMENT_WEIGHT             = 42;
+    public static final float EARLY_KING_SECURITY_WEIGHT      = 20;
+    public static final float MIDDLEGAME_KING_SECURITY_WEIGHT = 20;
+    public static final float MATERIAL_WEIGHT                 = 57;
+    public static final float POSITION_WEIGHT                 = 12;
 
     public static final byte EMPTY     = 0;
     public static final byte MOSCOVITE = Pawn.PAWN_MOSCOVITE;
