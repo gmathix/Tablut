@@ -3,6 +3,7 @@ target/
 .kotlin
 src/main/java/out/
 *.tpgn
+*.log
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
