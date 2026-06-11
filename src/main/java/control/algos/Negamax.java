@@ -347,13 +347,14 @@ public class Negamax {
                 bestMoves = iterBestMoves; // replace the best moves list, don't accumulate
                 prevBestScore = bestScore;
 
-                System.out.printf("Done depth %d, analyzed %d positions so far\n\n", depth+1, positionsAnalyzed);
+                System.out.printf("Searched depth %d, analyzed %d positions so far\n\n", depth+1, positionsAnalyzed);
             }
 
         } catch (SearchTimeoutException e) {
             // ignore, keep the last fully completed iteration
         }
 
+        System.out.printf("Analyzed %d positions in total\n\n", positionsAnalyzed);
 
 //        System.out.printf("Average number of legal moves for swedish : %.3f\n" +
 //                          "Average number of legal moves for moscovites : %.3f\n",

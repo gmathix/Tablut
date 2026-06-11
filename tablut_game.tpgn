@@ -1,19 +1,27 @@
-[SwedishPlayer "Player 1"]
-[MoscovitePlayer "Player 2"]
-[StartingSide "0"]
+[SwedishPlayer "O(sarracino)"]
+[MoscovitePlayer "Negamax"]
+[StartingSide "1"]
 [Ruleset "17"]
 [Result "1-0"]
 
-1. E4F4 E2F2
-2. E3F3 H5H3
-3. F3G3 I4G4
-4. G5G6 I6H6
-5. G6G5 H3H2
-6. G3G2 F1G1
-7. F4F2 E1F1
-8. G5G3 D1D2
-9. F2F3 D2D4
-10. F3E3 D4E4
-11. F5F4 H6H7
-12. E5G5 E4E3
-13. G5G9 1-0
+1. D1D2 E4F4
+2. A4E4 E6D6
+3. I4G4 E5E6
+4. I6I7 D6D8
+5. A6A7 D8A8
+6. I5I6 A8D8
+7. B5B7 E6C6
+8. D9C9 G5G7
+9. I6F6 F5F4
+10. C9C8 D5D3
+11. C8C7 D3E3
+12. E1D1 C6E6
+13. D1D5 G7G6
+14. F9F6 G6G5
+15. F6G6 E6F6
+16. I7F7 F4F3
+17. A5A4 E3E4
+18. A4D4 F6F4
+19. F7F4 F4F7
+20. F4F6 F7I7
+1-0
