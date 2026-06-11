@@ -17,8 +17,6 @@ import java.util.List;
 
 
 public class TablutRootPane extends RootPane {
-    private static final int WINDOW_HEIGHT = 820;
-    private static final int WINDOW_WIDTH  = 1180;
 
     public TablutRootPane() {
         super();
@@ -222,19 +220,24 @@ public class TablutRootPane extends RootPane {
         char[] row = new char[]{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'};
         char[] col = new char[]{'1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
+        double coordFontSize = Constants.SMALL_FONT.getSize();
+        double coordOffsetH  = squareSize * 0.37;   // ~25 / 66 of a square
+        double coordAboveY   = squareSize * 0.42;   // ~28 / 66
+        double coordLeftX    = squareSize * 0.60;   // ~40 / 66
+        double coordBelowY   = squareSize * 0.64;   // ~42 / 66
+
         for (int i = 0; i < 9; i++) {
             Text text = new Text(Character.toString(row[i]));
-            text.setFont(new Font(24));
-            text.setX(startX + i*squareSize + 25);
-            text.setY(startY - 28);
-
+            text.setFont(new Font(coordFontSize));
+            text.setX(startX + i * squareSize + coordOffsetH);
+            text.setY(startY - coordAboveY);
             coords.add(text);
         }
         for (int i = 0; i < 9; i++) {
             Text text = new Text(Character.toString(col[i]));
-            text.setFont(new Font(24));
-            text.setX(startX - 40);
-            text.setY(startY + i*squareSize + 42);
+            text.setFont(new Font(coordFontSize));
+            text.setX(startX - coordLeftX);
+            text.setY(startY + i * squareSize + coordBelowY);
             coords.add(text);
         }
 
