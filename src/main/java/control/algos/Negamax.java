@@ -71,11 +71,6 @@ public class Negamax {
     public static final int   MAX_DEPTH                  = 9; // yeah we'll never reach this in acceptable time anyway
     public static final float VIRTUAL_INF                = FastEvaluation.VIRTUAL_INF;
     public static final int   ASPIRATION_WINDOW_DELTA    = 400;
-    public static final float SECOND_BEST_SCORE_TRESHOLD = 2f;
-
-    public static final int   OPENING_STAGE_DURATION     = 6;
-    public static final int   NB_OPENING_MOVES_CHOICE    = 8;
-    public static final float OPENING_SCORE_TRESHOLD     = 20f;
 
 
     // flags for TT entries
@@ -372,24 +367,6 @@ public class Negamax {
         if (bestMoves.size() > 1) {
             if (findAlternativeMove) {
                 bestMove = bestMoves.get(1);
-            } else {
-                BestMove secondBestMove = new BestMove(-1, Float.NEGATIVE_INFINITY);
-                if (currentMoveNumber < OPENING_STAGE_DURATION) {
-                    int maxIndex = Math.min(bestMoves.size(), NB_OPENING_MOVES_CHOICE) - 1;
-                    List<BestMove> subList = bestMoves.subList(0, maxIndex);
-                    while (!subList.isEmpty()) {
-                        int index = (int) (Math.random() * (subList.size() - 1));
-                        secondBestMove = subList.get(index);
-                        if (Math.abs(bestMove.score - secondBestMove.score) <= OPENING_SCORE_TRESHOLD) {
-                            break;
-                        } else {
-                            subList.remove(index);
-                        }
-                    }
-                    if (!subList.isEmpty()) {
-                        bestMove = secondBestMove;
-                    }
-                }
             }
         }
 
@@ -508,7 +485,7 @@ public class Negamax {
                 if (storeScore > VIRTUAL_INF - 100) storeScore += ply;
                 else if (storeScore < -VIRTUAL_INF + 100) storeScore -= ply;
 
-                for (int z = 0; z < 8; z++) { // store position info for every symmetric of the current board
+                for (int z = 0; z < 1; z++) { // store position info for every symmetric of the current board
                     ttIndex = (int) (zobristKeys[z] & (NB_TT_ENTRIES - 1));
                     ttScore[ttIndex] = storeScore;
                     ttHash[ttIndex]  = zobristKeys[z];
@@ -528,7 +505,7 @@ public class Negamax {
         if (storeMaxScore > VIRTUAL_INF - 100)      storeMaxScore += ply;
         else if (storeMaxScore < -VIRTUAL_INF + 100) storeMaxScore -= ply;
 
-        for (int z = 0; z < 8; z++) {
+        for (int z = 0; z < 1; z++) {
             ttIndex = (int) (zobristKeys[z] & (NB_TT_ENTRIES - 1));
             ttScore[ttIndex]    = storeMaxScore;
             ttHash[ttIndex]     = zobristKeys[z];

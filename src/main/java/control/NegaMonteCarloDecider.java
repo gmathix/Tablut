@@ -6,10 +6,7 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import control.algos.*;
-import model.Move;
-import model.Pawn;
-import model.TablutBoard;
-import model.TablutStageModel;
+import model.*;
 
 import java.util.List;
 
@@ -42,10 +39,27 @@ public class NegaMonteCarloDecider extends Decider {
         int turn = model.getIdPlayer();
 
 
+        int bestMoveInt;
 
-        NegaMonteCarlo.resetBuffers();
-        NegaMonteCarlo.configure(level, tablutBoard);
-        int bestMoveInt = NegaMonteCarlo.findBestMove(tablutBoard, turn, ((TablutController) control).isBoardRepeated());
+
+        String moveSeq = tablutControl.getMoveHistory().toString().trim();
+        int openingMove = OpeningPlayer.makeOpeningMove(moveSeq);
+
+
+        boolean greenFirstMove = moveSeq.isEmpty() && turn == 0;
+        if (openingMove != -1 && !greenFirstMove) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ignored) {
+
+            }
+            bestMoveInt = openingMove;
+        } else {
+            NegaMonteCarlo.resetBuffers();
+            NegaMonteCarlo.configure(level, tablutBoard);
+            bestMoveInt = NegaMonteCarlo.findBestMove(tablutBoard, turn, ((TablutController) control).isBoardRepeated());
+        }
+
 
         int src = bestMoveInt & 0x7F;
         int dst = (bestMoveInt >> 7) & 0x7F;

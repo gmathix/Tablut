@@ -411,12 +411,10 @@ public class TablutController extends Controller {
 
 
 
-
-
-
-
         GameStageModel gameStageModel = StageFactory.createStageModel(stageName, model);
         gameStageModel.createElements(gameStageModel.getDefaultElementFactory());
+
+        TablutStageModel stageModel = (TablutStageModel) gameStageModel;
 
         GameStageView gameStageView = StageFactory.createStageView(stageName, gameStageModel);
         gameStageView.createLooks();
@@ -431,8 +429,15 @@ public class TablutController extends Controller {
 
         model.startGame(gameStageModel);
         model.setIdPlayer(startingPlayerId);
-        ((TablutStageModel)gameStageModel).setMode(TablutStageModel.MODE_PLAY);
-        ((TablutStageModel)gameStageModel).setRuleSet(configRuleSet);
+
+        stageModel.setMode(TablutStageModel.MODE_PLAY);
+        stageModel.setRuleSet(configRuleSet);
+
+
+        if (RuleSets.isAshtonRules(stageModel.getRuleSet())) {
+            model.setIdPlayer(1);
+        }
+
 
         view.setView(gameStageView);
         view.getRootPane().setFocusTraversable(true);

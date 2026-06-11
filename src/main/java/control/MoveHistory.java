@@ -210,4 +210,14 @@ public class MoveHistory {
             tablutControl.getMoveHistoryIterator().previous();
         }
     }
+
+
+    @Override
+    public String toString() {
+        StringBuilder res = new StringBuilder();
+        for (Move move : moves) {
+            res.append(move.toString()).append(" ");
+        }
+        return res.toString();
+    }
 }
