@@ -98,7 +98,7 @@ public class OsarracinoBridge {
                 } catch (IOException ignored) {}
             }, "osarracino-stdout");
             logger.setDaemon(true);
-//            logger.start();  // uncomment this line to have osarracino's output in the terminal (spoiler : it's insanely verbose)
+            logger.start();  // uncomment this line to have osarracino's output in the terminal (spoiler : it's insanely verbose)
 
 
             osarracinoSocket = serverSocket.accept();

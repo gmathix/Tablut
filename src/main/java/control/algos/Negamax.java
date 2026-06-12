@@ -84,7 +84,8 @@ public class Negamax {
 
     private static int ruleSet;
     private static int searchTimeSeconds;
-    private static int positionsAnalyzed;
+    private static int movesExplored;
+
 
 
     // fun for experimenting
@@ -252,7 +253,7 @@ public class Negamax {
         float prevBestScore = Float.NEGATIVE_INFINITY;
 
 
-        positionsAnalyzed = 0;
+        movesExplored = 0;
         searchDeadlineNs = System.nanoTime() + searchTimeSeconds * 1000000000L;
         nbTTHits = 0;
         nbSymTTHits = 0;
@@ -313,6 +314,8 @@ public class Negamax {
                                 kingPosStack, zobrist, zobristKeys, sideToMove
                         );
 
+                        movesExplored++;
+
                         float score = -negamax(depth+1, 1, (turn + 1) % 2, -iterBeta, -iterAlpha);
 
                         FastBoard.undoMove(
@@ -342,14 +345,14 @@ public class Negamax {
                 bestMoves = iterBestMoves; // replace the best moves list, don't accumulate
                 prevBestScore = bestScore;
 
-//                System.out.printf("Searched depth %d, analyzed %d positions so far\n\n", depth+1, positionsAnalyzed);
+                System.out.printf("Searched depth %d, explored %d moves so far\n\n", depth+1, movesExplored);
             }
 
         } catch (SearchTimeoutException e) {
             // ignore, keep the last fully completed iteration
         }
 
-//        System.out.printf("Analyzed %d positions in total\n\n", positionsAnalyzed);
+        System.out.printf("Explored a total of %d moves\n\n", movesExplored);
 
 //        System.out.printf("Average number of legal moves for swedish : %.3f\n" +
 //                          "Average number of legal moves for moscovites : %.3f\n",
@@ -381,7 +384,7 @@ public class Negamax {
         if (System.nanoTime() >= searchDeadlineNs) throw TIMEOUT;
 
         float win = FastBoard.checkWin(board, ply, kingPosStack, ruleSet);
-        if (win != 0) positionsAnalyzed++;
+        if (win != 0) movesExplored++;
         if (win > 0) return turn == 0 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
         if (win < 0) return turn == 1 ? VIRTUAL_INF - ply : -VIRTUAL_INF + ply;
 
@@ -425,7 +428,6 @@ public class Negamax {
 
 
         if (depth == 0) {
-            positionsAnalyzed++;
             return FastEvaluation.evaluate(board, turn, ply, soldierCountStack, moscoviteCountStack, kingPosStack, ruleSet);
         }
 
@@ -463,6 +465,8 @@ public class Negamax {
                     board, move, ply, captureCountStack, captureStack, soldierCountStack, moscoviteCountStack,
                     kingPosStack, zobrist, zobristKeys, sideToMove
             );
+
+            movesExplored++;
 
             float score = -negamax(depth-1, ply+1, (turn+1) % 2, -beta, -alpha);
 

@@ -112,7 +112,7 @@ public final class TablutNewGameMenus {
         );
 
         VBox namesSection = new VBox(
-                sectionTitle("players nicknames"),
+                sectionTitle("Players nicknames"),
                 createInfoLabel("you can choode your nickname for this game"),
                 player2Field,
                 player1Field
@@ -125,7 +125,7 @@ public final class TablutNewGameMenus {
         RadioButton timer15Minutes = createModeButton("Timer 15 minutes", "limited time", 15, timeGroup);
 
         VBox timeSection = new VBox(
-                sectionTitle("time selection"),
+                sectionTitle("Time selection"),
                 createInfoLabel("each player the same amount of time be aware!! running out of time is considered as a loss"),
                 defaultTime,
                 timer5Minutes,
