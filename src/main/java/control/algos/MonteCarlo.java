@@ -86,7 +86,7 @@ public class MonteCarlo {
 
     // not used here, just kept for compatibility with FastBoard methods
     private static final long[][]  zobrist             = new long  [4][81];
-    private static final long[]    zobristKey          = new long  [1];
+    private static final long[]    zobristKey          = new long  [8];
     private static final long      sideToMove          = rng.nextLong();
 
 
