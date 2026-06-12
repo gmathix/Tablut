@@ -4,6 +4,7 @@ import model.Pawn;
 import model.TablutBoard;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -60,7 +61,7 @@ public class OsarracinoBridge {
      * if already running for the same side, does nothing.
      * if already running for a different side, stops and restart
      */
-    public static synchronized void startEngine(int side, int level) {
+    public static synchronized void startEngine(int side, int level, int portSwedish, int portMoscovite) {
         if (initialized && OsarracinoBridge.side == side) return;
         if (initialized) stop();
 
@@ -68,11 +69,12 @@ public class OsarracinoBridge {
 
         int timeoutS = level*2;
         String color = side == 0 ? "white" : "black";
-        int port = side == 0 ? PORT_SWEDISH : PORT_MOSCOVITE;
+        int port = side == 0 ? portSwedish : portMoscovite;
 
         try {
-            ServerSocket serverSocket = new ServerSocket(port);
+            ServerSocket serverSocket = new ServerSocket();
             serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(port));
             serverSocket.setSoTimeout(8000);
 
             Path binary = findBinary();
@@ -80,6 +82,7 @@ public class OsarracinoBridge {
                     binary.toAbsolutePath().toString(),
                     color,
                     "-t", String.valueOf(timeoutS),
+                    "-j", "1",
                     "-f", "off"
             );
             pb.redirectErrorStream(true);    // merge stderr into stdout
@@ -95,7 +98,7 @@ public class OsarracinoBridge {
                 } catch (IOException ignored) {}
             }, "osarracino-stdout");
             logger.setDaemon(true);
-            logger.start();  // uncomment this line to have osarracino's output in the terminal (spoiler : it's insanely verbose)
+//            logger.start();  // uncomment this line to have osarracino's output in the terminal (spoiler : it's insanely verbose)
 
 
             osarracinoSocket = serverSocket.accept();
@@ -107,8 +110,8 @@ public class OsarracinoBridge {
                     new BufferedOutputStream(osarracinoSocket.getOutputStream()));
 
             String name = recv();
-            System.out.printf("[OsarracinoBridge] %s connected as %s (search time ~%ds)%n",
-                    name, color.toUpperCase(), timeoutS);
+//            System.out.printf("[OsarracinoBridge] %s connected as %s (search time ~%ds)%n",
+//                    name, color.toUpperCase(), timeoutS);
 
             boardQueue.clear();
             moveQueue.clear();
@@ -121,6 +124,10 @@ public class OsarracinoBridge {
         } catch (Exception e) {
             throw new RuntimeException("[OsarracinoBridge] startup failed: " + e.getMessage(), e);
         }
+    }
+
+    public static synchronized void startEngine(int side, int level) {
+        startEngine(side, level, PORT_SWEDISH, PORT_MOSCOVITE);
     }
 
 
